@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'com.chaquo.python'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.0'
 }
 
 android {
@@ -18,15 +18,6 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
-        }
-        ndk {
-            abiFilters += ["arm64-v8a", "x86_64"]
-        }
-    }
-
-    sourceSets {
-        getByName("main") {
-            python.srcDir("src/main/python")
         }
     }
 
@@ -67,6 +58,10 @@ dependencies {
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
+    implementation "io.ktor:ktor-client-core:2.3.2"
+    implementation "io.ktor:ktor-client-cio:2.3.2"
+    implementation "io.ktor:ktor-client-content-negotiation:2.3.2"
+    implementation "io.ktor:ktor-serialization-kotlinx-json:2.3.2"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:4.5.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

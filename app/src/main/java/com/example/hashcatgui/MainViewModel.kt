@@ -6,45 +6,62 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
 class MainViewModel : ViewModel() {
 
-    private val pythonCracker = PythonCracker()
-    private val hashQueue = HashQueue(pythonCracker)
+    private val apiClient = HashcatApiClient()
 
-    val hashes = mutableStateListOf<Hash>()
+    val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
+    val hashToCrack = mutableStateOf("")
     val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
-
-    init {
-        hashes.addAll(hashQueue.hashes)
-    }
-
-    fun addHash(hash: String) {
-        hashQueue.addHash(hash)
-        hashes.clear()
-        hashes.addAll(hashQueue.hashes)
-    }
-
-    fun setWordlistPath(path: String) {
-        wordlistPath.value = path
-    }
+    val crackedPassword = mutableStateOf<String?>(null)
 
     fun startAttack() {
-        terminalOutput.add("Starting attack...")
+        terminalOutput.clear()
+        crackedPassword.value = null
+        terminalOutput.add("Starting remote attack...")
         viewModelScope.launch {
-            for (hash in hashes) {
-                if (hash.password == null) {
-                    terminalOutput.add("Attacking hash: ${hash.hash}")
-                    // TODO: Allow user to select hash algorithm
-                    hashQueue.attack(hash, wordlistPath.value, "md5")
-                    if (hash.password != null) {
-                        terminalOutput.add("Password found: ${hash.password}")
-                    } else {
-                        terminalOutput.add("Password not found for hash: ${hash.hash}")
-                    }
-                }
+            try {
+                val request = AttackRequest(
+                    hash = hashToCrack.value,
+                    hashType = 0, // Hardcoded for now
+                    wordlist = wordlistPath.value
+                )
+                val response = apiClient.startAttack(serverUrl.value, request)
+                terminalOutput.add("Attack started with job ID: ${response.jobId}")
+                pollForStatus(response.jobId)
+            } catch (e: Exception) {
+                terminalOutput.add("Error starting attack: ${e.message}")
             }
-            terminalOutput.add("Attack finished.")
+        }
+    }
+
+    private fun pollForStatus(jobId: String) {
+        viewModelScope.launch {
+            while (true) {
+                try {
+                    val response = apiClient.getAttackStatus(serverUrl.value, jobId)
+                    terminalOutput.add("Job ${response.jobId}: ${response.status}")
+                    if (response.status == "Cracked") {
+                        crackedPassword.value = response.crackedPassword
+                        terminalOutput.add("Password found: ${response.crackedPassword}")
+                        break
+                    } else if (response.status == "Exhausted" || response.status == "Aborted") {
+                        terminalOutput.add("Attack finished. Password not found.")
+                        break
+                    }
+                } catch (e: Exception) {
+                    terminalOutput.add("Error getting status: ${e.message}")
+                    break
+                }
+                delay(5000) // Poll every 5 seconds
+            }
         }
     }
 }
