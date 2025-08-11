@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
     var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Input", "Wordlist", "Mask", "Attack", "Output", "Terminal")
+    val tabs = listOf("Input", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Setup")
 
     Column {
         TabRow(selectedTabIndex = tabIndex) {
@@ -29,6 +29,7 @@ fun MainScreen(viewModel: MainViewModel) {
             3 -> AttackTab(viewModel)
             4 -> OutputTab(viewModel)
             5 -> TerminalTab(viewModel)
+            6 -> SetupTab()
         }
     }
 }
@@ -50,38 +51,21 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun InputTab(viewModel: MainViewModel) {
-    var hashInput by remember { mutableStateOf("") }
-
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
-            value = hashInput,
-            onValueChange = { hashInput = it },
-            label = { Text("Enter hash") },
+            value = viewModel.serverUrl.value,
+            onValueChange = { viewModel.serverUrl.value = it },
+            label = { Text("Server URL") },
             modifier = Modifier.fillMaxWidth()
         )
-        Row(
+        OutlinedTextField(
+            value = viewModel.hashToCrack.value,
+            onValueChange = { viewModel.hashToCrack.value = it },
+            label = { Text("Enter hash") },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(onClick = {
-                if (hashInput.isNotBlank()) {
-                    viewModel.addHash(hashInput)
-                    hashInput = ""
-                }
-            }) {
-                Text("Add Hash")
-            }
-            Button(onClick = { /* TODO: Implement file picker */ }) {
-                Text("Load from File")
-            }
-        }
-        LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
-            items(viewModel.hashes) { hash ->
-                Text(text = hash.hash, modifier = Modifier.padding(8.dp))
-            }
-        }
+                .padding(top = 8.dp)
+        )
     }
 }
 
@@ -103,10 +87,12 @@ fun WordlistTab(viewModel: MainViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { /* TODO: Implement file picker */ }) {
-            Text("Select Wordlist")
-        }
-        Text(text = "Selected wordlist: ${viewModel.wordlistPath.value}")
+        OutlinedTextField(
+            value = viewModel.wordlistPath.value,
+            onValueChange = { viewModel.wordlistPath.value = it },
+            label = { Text("Remote Wordlist Path") },
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -156,8 +142,6 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AttackTab(viewModel: MainViewModel) {
-    val command = "python cracker.py <hash> ${viewModel.wordlistPath.value} <algorithm>"
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -165,17 +149,8 @@ fun AttackTab(viewModel: MainViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        TextField(
-            value = command,
-            onValueChange = { },
-            readOnly = true,
-            label = { Text("Command") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
         Button(onClick = { viewModel.startAttack() }) {
-            Text("Start Attack")
+            Text("Start Remote Attack")
         }
     }
 }
@@ -192,24 +167,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-data class CrackedHash(val hash: String, val type: String, val password: String)
-
 @Composable
 fun OutputTab(viewModel: MainViewModel) {
-    LazyColumn(modifier = Modifier.padding(16.dp)) {
-        item {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text("Hash", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                Text("Type", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                Text("Password", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-            }
-        }
-        items(viewModel.hashes.filter { it.password != null }) { cracked ->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(cracked.hash, modifier = Modifier.weight(1f))
-                Text(cracked.verifiedHashType?.name ?: "", modifier = Modifier.weight(1f))
-                Text(cracked.password ?: "", modifier = Modifier.weight(1f))
-            }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (viewModel.crackedPassword.value != null) {
+            Text("Password Found!", fontWeight = FontWeight.Bold)
+            Text(viewModel.crackedPassword.value!!)
+        } else {
+            Text("No password found yet.")
         }
     }
 }
@@ -227,6 +198,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @Composable
 fun TerminalTab(viewModel: MainViewModel) {
     LazyColumn(
@@ -242,5 +216,82 @@ fun TerminalTab(viewModel: MainViewModel) {
                 fontFamily = FontFamily.Monospace
             )
         }
+    }
+}
+
+@Composable
+fun SetupTab() {
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState)
+    ) {
+        Text("Remote Hashcat Server Setup Guide", fontWeight = FontWeight.Bold)
+        Text(
+            """
+            To use this app, you need to set up a remote server with hashcat installed.
+            This server will listen for requests from the app and run the hashcat commands.
+
+            1. Install hashcat:
+               Follow the official instructions to install hashcat on your server.
+               https://hashcat.net/hashcat/
+
+            2. Install Python and Flask:
+               You will need Python 3 and the Flask web framework.
+               pip install Flask
+
+            3. Create the server script:
+               Create a file named `server.py` with the following content:
+            """.trimIndent()
+        )
+        Text(
+            """
+            from flask import Flask, request, jsonify
+            import subprocess
+
+            app = Flask(__name__)
+            jobs = {}
+
+            @app.route('/attack', methods=['POST'])
+            def start_attack():
+                data = request.get_json()
+                hash_to_crack = data['hash']
+                # WARNING: This is a simplified example.
+                # In a real application, you must validate and sanitize all inputs.
+                job_id = str(len(jobs))
+                proc = subprocess.Popen(['hashcat', '-m', '0', '-a', '0', hash_to_crack, '/path/to/your/wordlist.txt'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                jobs[job_id] = {'process': proc, 'status': 'Running', 'password': None}
+                return jsonify({'jobId': job_id, 'status': 'Running'})
+
+            @app.route('/attack/<job_id>', methods=['GET'])
+            def get_status(job_id):
+                job = jobs.get(job_id)
+                if not job:
+                    return jsonify({'status': 'Not Found'}), 404
+
+                # This is a simplified status check.
+                # A real implementation would need to parse hashcat's output.
+                return jsonify({'jobId': job_id, 'status': job['status'], 'crackedPassword': job['password']})
+
+            if __name__ == '__main__':
+                app.run(host='0.0.0.0', port=8080)
+            """.trimIndent(),
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier
+                .background(Color.LightGray)
+                .padding(8.dp)
+        )
+        Text(
+            """
+            4. Run the server:
+               python server.py
+
+            5. Configure the app:
+               Enter your server's URL in the "Input" tab of the app.
+               Make sure your server is accessible from your phone (e.g., on the same Wi-Fi network, or port-forwarded).
+            """.trimIndent()
+        )
     }
 }
