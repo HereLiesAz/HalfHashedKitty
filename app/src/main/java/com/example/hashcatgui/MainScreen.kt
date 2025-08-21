@@ -1,56 +1,137 @@
 package com.example.hashcatgui
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.hashcatgui.ui.theme.HashcatGUITheme
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisViewModel) {
     var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Input", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Setup")
+    val tabs = listOf("Input", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
 
-    Column {
-        TabRow(selectedTabIndex = tabIndex) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = tabIndex == index,
-                    onClick = { tabIndex = index },
-                    text = { Text(text = title) }
+    HashcatGUITheme {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Hashcat GUI") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    )
                 )
             }
-        }
-        when (tabIndex) {
-            0 -> InputTab(viewModel)
-            1 -> WordlistTab(viewModel)
-            2 -> MaskTab()
-            3 -> AttackTab(viewModel)
-            4 -> OutputTab(viewModel)
-            5 -> TerminalTab(viewModel)
-            6 -> SetupTab()
+        ) { paddingValues ->
+            Column(modifier = Modifier.padding(paddingValues).animateContentSize()) {
+                TabRow(selectedTabIndex = tabIndex) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = tabIndex == index,
+                            onClick = { tabIndex = index },
+                            text = { Text(text = title) }
+                        )
+                    }
+                }
+                when (tabIndex) {
+                    0 -> InputTab(mainViewModel)
+                    1 -> WordlistTab(mainViewModel)
+                    2 -> MaskTab()
+                    3 -> AttackTab(mainViewModel)
+                    4 -> OutputTab(mainViewModel)
+                    5 -> TerminalTab(mainViewModel)
+                    6 -> HashtopolisTab(hashtopolisViewModel)
+                    7 -> SetupTab()
+                }
+            }
         }
     }
 }
 
+@Composable
+fun HashtopolisTab(viewModel: HashtopolisViewModel) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        OutlinedTextField(
+            value = viewModel.serverUrl.value,
+            onValueChange = { viewModel.serverUrl.value = it },
+            label = { Text("Hashtopolis Server URL") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = viewModel.apiKey.value,
+            onValueChange = { viewModel.apiKey.value = it },
+            label = { Text("API Key") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        )
+        Button(
+            onClick = { viewModel.getAgents() },
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text("Get Agents")
+        }
+        if (viewModel.errorMessage.value != null) {
+            Text(
+                text = viewModel.errorMessage.value!!,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+        LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
+            items(viewModel.agents) { agent ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = agent.name, fontWeight = FontWeight.Bold)
+                        Text(text = "Status: ${agent.status}")
+                        Text(text = "Last Activity: ${agent.lastActivity}")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Preview for MainScreen
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview() {
+    MainScreen(MainViewModel(Application()), HashtopolisViewModel())
+}
+
+import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InputTab(viewModel: MainViewModel) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
             value = viewModel.serverUrl.value,
@@ -66,6 +147,38 @@ fun InputTab(viewModel: MainViewModel) {
                 .fillMaxWidth()
                 .padding(top = 8.dp)
         )
+
+        Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            OutlinedTextField(
+                value = viewModel.selectedHashMode.value?.second ?: "Select Hash Mode",
+                onValueChange = {},
+                label = { Text("Hash Mode") },
+                readOnly = true,
+                trailingIcon = {
+                    Icon(
+                        Icons.Default.ArrowDropDown,
+                        contentDescription = "Dropdown",
+                        Modifier.clickable { expanded = !expanded }
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                viewModel.hashModes.forEach { hashMode ->
+                    DropdownMenuItem(
+                        text = { Text(text = "${hashMode.first} - ${hashMode.second}") },
+                        onClick = {
+                            viewModel.selectedHashMode.value = hashMode
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -74,9 +187,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun WordlistTab(viewModel: MainViewModel) {
@@ -101,9 +211,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun MaskTab() {
@@ -136,9 +243,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun AttackTab(viewModel: MainViewModel) {
@@ -158,14 +262,9 @@ fun AttackTab(viewModel: MainViewModel) {
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun OutputTab(viewModel: MainViewModel) {
@@ -189,14 +288,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll

@@ -1,0 +1,91 @@
+# Android Studio
+.idea/
+.gradle/
+local.properties
+/app/build/
+/build/
+
+# Misc
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+
+# IntelliJ
+*.ipr
+*.iws
+*.iml
+modules.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml
+
+# Built application files
+*.apk
+*.aab
+*.ap_
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Files sent to the Dalvik VM for execution
+classes.dex
+
+# Built C++ files
+**/build/
+
+# Java
+*.class
+
+# Log files
+*.log
+
+# Keystore files
+*.jks
+*.keystore
+
+# External native build folder created in .cxx directory
+.cxx/
+
+# Crashlytics plugin
+com_crashlytics_export_strings.xml
+
+# Google services file
+google-services.json
+
+# Local properties
+local.properties
+
+# Proguard
+proguard/
+-obfuscation.map
+-seed.txt
+-usage.txt
+mapping.txt
+
+# Buck
+buck-out/
+.buckd/
+*.keystore
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/logs
+
+# Play store
+/release/
+
+# Kover
+/build/kover
+/build/reports/kover
+/kover/
+
+# Various
+*.swp
+*~
+.DS_Store
+out/
