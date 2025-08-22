@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -48,7 +48,7 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
             }
         ) { paddingValues ->
             Column(modifier = Modifier.padding(paddingValues).animateContentSize()) {
-                TabRow(selectedTabIndex = tabIndex) {
+                ScrollableTabRow(selectedTabIndex = tabIndex) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = tabIndex == index,
