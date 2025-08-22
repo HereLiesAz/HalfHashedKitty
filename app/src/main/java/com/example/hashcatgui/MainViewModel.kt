@@ -16,9 +16,10 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class MainViewModel(private val application: Application) : ViewModel() {
-
-    private val apiClient = HashcatApiClient()
+class MainViewModel(
+    private val application: Application,
+    private val apiClient: HashcatApiClient
+) : ViewModel() {
 
     val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
     val hashToCrack = mutableStateOf("")
@@ -36,20 +37,37 @@ class MainViewModel(private val application: Application) : ViewModel() {
         viewModelScope.launch {
             try {
                 val inputStream = application.resources.openRawResource(R.raw.modes)
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    val parts = line!!.split(" ".toRegex(), 2)
-                    if (parts.size == 2) {
-                        hashModes.add(Pair(parts[0].toInt(), parts[1]))
+                inputStream.bufferedReader().useLines { lines ->
+                    lines.forEach { line ->
+                        val parts = line.split(" ".toRegex(), 2)
+                        if (parts.size == 2) {
+                            try {
+                                hashModes.add(Pair(parts[0].toInt(), parts[1]))
+                            } catch (e: NumberFormatException) {
+                                android.util.Log.e("MainViewModel", "Failed to parse hash mode id: '${parts[0]}' in line: '$line'", e)
+                            }
+                        } else {
+                            android.util.Log.w("MainViewModel", "Line does not match expected format: '$line'")
+                        }
                     }
-                }
-                reader.close()
                 if (hashModes.isNotEmpty()) {
                     selectedHashMode.value = hashModes[0]
                 }
             } catch (e: Exception) {
                 terminalOutput.add("Error loading hash modes: ${e.message}")
+            }
+        }
+    }
+
+    fun uploadZipFile(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                terminalOutput.add("Uploading ZIP file...")
+                val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                // TODO: Add the rest of the file upload logic
+                terminalOutput.add("File upload functionality is not yet implemented.")
+            } catch (e: Exception) {
+                terminalOutput.add("Error uploading file: ${e.message}")
             }
         }
     }
@@ -101,11 +119,14 @@ class MainViewModel(private val application: Application) : ViewModel() {
         }
     }
 
-    class MainViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    class MainViewModelFactory(
+        private val application: Application,
+        private val apiClient: HashcatApiClient
+    ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(application) as T
+                return MainViewModel(application, apiClient) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
