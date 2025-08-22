@@ -1,4 +1,4 @@
-package com.example.hashcatgui.ui.tabs
+package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,10 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.hashcatgui.MainViewModel
 
 @Composable
-fun AttackTab(viewModel: MainViewModel) {
+fun MaskTab() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -21,8 +20,11 @@ fun AttackTab(viewModel: MainViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { viewModel.startAttack() }) {
-            Text("Start Remote Attack")
+        Button(onClick = { /* TODO: Implement mask creator */ }) {
+            Text("Create Mask")
+        }
+        Button(onClick = { /* TODO: Implement file picker */ }) {
+            Text("Select Mask File")
         }
     }
 }

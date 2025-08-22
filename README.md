@@ -1,4 +1,4 @@
-# hash-master v0.1.0
+# Half-Hashed Kitty
 
 # Intro
 

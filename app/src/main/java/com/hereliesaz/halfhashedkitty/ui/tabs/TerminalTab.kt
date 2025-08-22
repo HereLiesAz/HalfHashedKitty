@@ -1,4 +1,4 @@
-package com.example.hashcatgui.ui.tabs
+package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.example.hashcatgui.MainViewModel
+import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @Composable
 fun TerminalTab(viewModel: MainViewModel) {

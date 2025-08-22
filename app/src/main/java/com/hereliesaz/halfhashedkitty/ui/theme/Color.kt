@@ -1,4 +1,4 @@
-package com.example.hashcatgui.ui.theme
+package com.hereliesaz.halfhashedkitty.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

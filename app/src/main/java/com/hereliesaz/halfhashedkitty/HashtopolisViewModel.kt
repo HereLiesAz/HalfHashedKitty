@@ -1,4 +1,4 @@
-package com.example.hashcatgui
+package com.hereliesaz.halfhashedkitty
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf

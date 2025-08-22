@@ -1,4 +1,4 @@
-package com.example.hashcatgui.ui.tabs
+package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column

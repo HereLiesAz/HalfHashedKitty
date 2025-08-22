@@ -1,4 +1,4 @@
-package com.example.hashcatgui.ui.tabs
+package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.hashcatgui.HashtopolisViewModel
+import com.hereliesaz.halfhashedkitty.HashtopolisViewModel
 
 @Composable
 fun HashtopolisTab(viewModel: HashtopolisViewModel) {

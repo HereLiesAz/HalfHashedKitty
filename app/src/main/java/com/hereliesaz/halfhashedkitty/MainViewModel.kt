@@ -1,4 +1,4 @@
-package com.example.hashcatgui
+package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
 import android.content.Context
@@ -10,8 +10,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.lang.NumberFormatException
 
 class MainViewModel(

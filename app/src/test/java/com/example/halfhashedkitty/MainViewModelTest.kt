@@ -1,4 +1,4 @@
-package com.example.hashcatgui
+package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
 import android.content.res.Resources

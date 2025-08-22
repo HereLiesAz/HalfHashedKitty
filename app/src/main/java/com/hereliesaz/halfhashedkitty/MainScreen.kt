@@ -1,4 +1,4 @@
-package com.example.hashcatgui
+package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
 import androidx.compose.animation.animateContentSize
@@ -8,8 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.hashcatgui.ui.tabs.*
-import com.example.hashcatgui.ui.theme.HashcatGUITheme
+import com.hereliesaz.halfhashedkitty.ui.tabs.*
+import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -17,7 +17,7 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
     var tabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Input", "Wordlist", "Mask", "Command Builder", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
 
-    HashcatGUITheme {
+    HalfHashedKittyTheme {
         Scaffold(
             topBar = {
                 TopAppBar(

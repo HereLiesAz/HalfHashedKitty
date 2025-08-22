@@ -1,4 +1,4 @@
-package com.example.hashcatgui.ui.tabs
+package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.hashcatgui.MainViewModel
+import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

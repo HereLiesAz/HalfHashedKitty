@@ -1,4 +1,4 @@
-package com.example.hashcatgui
+package com.hereliesaz.halfhashedkitty
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import kotlinx.coroutines.Dispatchers

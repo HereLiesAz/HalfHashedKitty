@@ -1,18 +1,20 @@
-package com.example.hashcatgui.ui.tabs
+package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @Composable
-fun MaskTab() {
+fun WordlistTab(viewModel: MainViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -20,11 +22,11 @@ fun MaskTab() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { /* TODO: Implement mask creator */ }) {
-            Text("Create Mask")
-        }
-        Button(onClick = { /* TODO: Implement file picker */ }) {
-            Text("Select Mask File")
-        }
+        OutlinedTextField(
+            value = viewModel.wordlistPath.value,
+            onValueChange = { viewModel.wordlistPath.value = it },
+            label = { Text("Remote Wordlist Path") },
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

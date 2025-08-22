@@ -1,4 +1,4 @@
-package com.example.hashcatgui
+package com.hereliesaz.halfhashedkitty
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
