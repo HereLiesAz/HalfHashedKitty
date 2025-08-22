@@ -15,7 +15,8 @@ import java.io.InputStreamReader
 @OptIn(InternalSerializationApi::class) // Added OptIn here
 class MainViewModel(
     private val application: Application,
-    private val apiClient: HashcatApiClient
+    private val apiClient: HashcatApiClient,
+    private val cap2hashcatApiClient: Cap2HashcatApiClient
 ) : ViewModel() {
 
     val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
@@ -71,6 +72,29 @@ class MainViewModel(
                 }
             } catch (e: Exception) {
                 terminalOutput.add("Error loading hash modes: ${e.message}")
+            }
+        }
+    }
+
+    fun uploadPcapngFile(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                terminalOutput.add("Uploading PCAPNG file to cap2hashcat...")
+                val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                if (fileBytes != null) {
+                    val hash = cap2hashcatApiClient.uploadPcapngFile(fileBytes)
+                    if (hash.isNotEmpty()) {
+                        hashToCrack.value = hash
+                        terminalOutput.add("Extracted hash: $hash")
+                        identifyHash() // Automatically identify the hash type
+                    } else {
+                        terminalOutput.add("Failed to extract hash from file. The service might be down or the file is invalid.")
+                    }
+                } else {
+                    terminalOutput.add("Error reading file.")
+                }
+            } catch (e: Exception) {
+                terminalOutput.add("Error uploading file: ${e.message}")
             }
         }
     }
@@ -152,12 +176,13 @@ class MainViewModel(
 
     class MainViewModelFactory(
         private val application: Application,
-        private val apiClient: HashcatApiClient
+        private val apiClient: HashcatApiClient,
+        private val cap2hashcatApiClient: Cap2HashcatApiClient
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(application, apiClient) as T
+                return MainViewModel(application, apiClient, cap2hashcatApiClient) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

@@ -78,5 +78,5 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
 fun DefaultPreview() {
     // Also need to update the theme in the Preview if it uses it directly
     // For now, MainScreen is called which now uses the correct theme
-    MainScreen(MainViewModel(Application(), HashcatApiClient()), HashtopolisViewModel())
+    MainScreen(MainViewModel(Application(), HashcatApiClient(), Cap2HashcatApiClient()), HashtopolisViewModel())
 }
