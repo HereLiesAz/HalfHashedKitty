@@ -15,7 +15,9 @@ import java.io.InputStreamReader
 @OptIn(InternalSerializationApi::class) // Added OptIn here
 class MainViewModel(
     private val application: Application,
-    private val apiClient: HashcatApiClient
+    private val apiClient: HashcatApiClient,
+    private val cap2hashcatApiClient: Cap2HashcatApiClient,
+    private val toolManager: ToolManager
 ) : ViewModel() {
 
     val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
@@ -30,6 +32,10 @@ class MainViewModel(
     val rulesFile = mutableStateOf("")
     val customMask = mutableStateOf("")
     val force = mutableStateOf(false)
+
+    // State for packet capturing
+    val isCapturing = mutableStateOf(false)
+    val captureOutput = mutableStateListOf<String>()
 
     init {
         loadHashModes()
@@ -71,6 +77,79 @@ class MainViewModel(
                 }
             } catch (e: Exception) {
                 terminalOutput.add("Error loading hash modes: ${e.message}")
+            }
+        }
+    }
+
+    // Placeholder functions for capture logic
+    fun startCapture() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            isCapturing.value = true
+            captureOutput.clear()
+
+            captureOutput.add("Checking for root access...")
+            if (!RootUtils.isRooted()) {
+                captureOutput.add("[ERROR] Root access is not available. This feature is for rooted devices only.")
+                isCapturing.value = false
+                return@launch
+            }
+            captureOutput.add("Root access granted.")
+
+            captureOutput.add("Preparing tools...")
+            toolManager.installTools()
+            captureOutput.add("Tools are ready.")
+
+            captureOutput.add("Starting monitor mode on wlan0...")
+            val airmonResult = RootUtils.executeAsRoot(toolManager.getToolPath("airmon-ng") + " start wlan0")
+            airmonResult.stdout.lines().forEach { if(it.isNotBlank()) captureOutput.add(it) }
+            airmonResult.stderr.lines().forEach { if(it.isNotBlank()) captureOutput.add("[STDERR] $it") }
+
+            // We need to find the monitor interface name, e.g., wlan0mon
+            val monitorInterface = airmonResult.stdout.lines().find { it.contains("monitor mode enabled on") }
+                ?.substringAfter("enabled on ")?.substringBefore(")")?.trim()
+
+            if (monitorInterface == null) {
+                captureOutput.add("[ERROR] Failed to start monitor mode.")
+                isCapturing.value = false
+                return@launch
+            }
+
+            captureOutput.add("Monitor mode enabled on $monitorInterface. Starting capture...")
+            // The actual process handling for airodump-ng will be more complex
+            // and will be handled in the next refinement.
+            captureOutput.add("... (airodump-ng execution logic to be implemented) ...")
+
+        }
+    }
+
+    fun stopCapture() {
+        isCapturing.value = false
+        captureOutput.add("Stopping capture... (Not implemented yet)")
+        // In the next step, this will:
+        // 1. Kill the airodump-ng process
+        // 2. Stop monitor mode
+        // 3. Process the capture file
+    }
+
+    fun uploadPcapngFile(context: android.content.Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                terminalOutput.add("Uploading PCAPNG file to cap2hashcat...")
+                val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                if (fileBytes != null) {
+                    val hash = cap2hashcatApiClient.uploadPcapngFile(fileBytes)
+                    if (hash.isNotEmpty()) {
+                        hashToCrack.value = hash
+                        terminalOutput.add("Extracted hash: $hash")
+                        identifyHash() // Automatically identify the hash type
+                    } else {
+                        terminalOutput.add("Failed to extract hash from file. The service might be down or the file is invalid.")
+                    }
+                } else {
+                    terminalOutput.add("Error reading file.")
+                }
+            } catch (e: Exception) {
+                terminalOutput.add("Error uploading file: ${e.message}")
             }
         }
     }
@@ -152,12 +231,14 @@ class MainViewModel(
 
     class MainViewModelFactory(
         private val application: Application,
-        private val apiClient: HashcatApiClient
+        private val apiClient: HashcatApiClient,
+        private val cap2hashcatApiClient: Cap2HashcatApiClient,
+        private val toolManager: ToolManager
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(application, apiClient) as T
+                return MainViewModel(application, apiClient, cap2hashcatApiClient, toolManager) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

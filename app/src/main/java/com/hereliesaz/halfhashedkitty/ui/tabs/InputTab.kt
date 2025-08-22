@@ -20,11 +20,19 @@ import kotlinx.serialization.InternalSerializationApi
 fun InputTab(viewModel: MainViewModel) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
+    val zipLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
             viewModel.uploadZipFile(context, it)
+        }
+    }
+
+    val pcapngLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            viewModel.uploadPcapngFile(context, it)
         }
     }
 
@@ -52,8 +60,11 @@ fun InputTab(viewModel: MainViewModel) {
             Button(onClick = { viewModel.identifyHash() }) {
                 Text("Auto-detect Hash Type")
             }
-            Button(onClick = { launcher.launch("application/zip") }) {
+            Button(onClick = { zipLauncher.launch("application/zip") }) {
                 Text("Upload ZIP File")
+            }
+            Button(onClick = { pcapngLauncher.launch("*/*") }) {
+                Text("Upload PCAPNG")
             }
         }
 
