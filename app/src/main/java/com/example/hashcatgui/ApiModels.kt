@@ -22,7 +22,7 @@ data class AttackResponse(
 
 @Serializable
 data class HashIdentificationResponse(
-    val hashModes: List<Pair<Int, String>>
+    val hashModes: List<HashMode>
 )
 
 @Serializable
