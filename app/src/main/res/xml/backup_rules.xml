@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!--
-   In order to provide a more secure default for backups,
-   manually specify which files/folders to include.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for more information.
-    -->
+    <!-- For more information on backup rules, see https://developer.android.com/guide/topics/data/autobackup -->
+    <include domain="file" path="."/>
+    <include domain="database" path="."/>
     <include domain="sharedpref" path="."/>
-    <exclude domain="sharedpref" path="device_id.xml"/>
+    <include domain="external" path="."/>
+    <include domain="root" path="."/>
 </full-backup-content>

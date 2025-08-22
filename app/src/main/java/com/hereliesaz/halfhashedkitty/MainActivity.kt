@@ -8,20 +8,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme
+import com.hereliesaz.halfhashedkitty.ui.theme.HashcatGUITheme
 
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.MainViewModelFactory(application, HashcatApiClient())
     }
-    private val hashtopolisViewModel: HashtopolisViewModel by viewModels {
-        HashtopolisViewModel.HashtopolisViewModelFactory(HashtopolisApiClient())
-    }
+    private val hashtopolisViewModel: HashtopolisViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            HalfHashedKittyTheme {
+            HashcatGUITheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
