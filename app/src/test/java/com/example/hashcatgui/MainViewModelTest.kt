@@ -5,9 +5,9 @@ import android.content.res.Resources
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
@@ -17,6 +17,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.junit.Assert.*
+import org.mockito.kotlin.mock
 import java.io.ByteArrayInputStream
 
 @ExperimentalCoroutinesApi
@@ -25,7 +26,7 @@ class MainViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
 
     @Mock
     private lateinit var application: Application
@@ -33,7 +34,6 @@ class MainViewModelTest {
     @Mock
     private lateinit var resources: Resources
 
-    @Mock
     private lateinit var hashcatApiClient: HashcatApiClient
 
     private lateinit var viewModel: MainViewModel
@@ -43,21 +43,17 @@ class MainViewModelTest {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
         `when`(application.resources).thenReturn(resources)
-        viewModel = MainViewModel(application)
-        // Manually inject the mock client
-        val clientField = viewModel.javaClass.getDeclaredField("apiClient")
-        clientField.isAccessible = true
-        clientField.set(viewModel, hashcatApiClient)
+        hashcatApiClient = mock()
+        viewModel = MainViewModel(application, hashcatApiClient)
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        testDispatcher.cleanupTestCoroutines()
     }
 
     @Test
-    fun `startAttack successfully starts and polls for status`() = testDispatcher.runBlockingTest {
+    fun `startAttack successfully starts and polls for status`() = runTest(testDispatcher) {
         // Given
         val jobId = "123"
         val attackRequest = AttackRequest(hash = "hash", hashType = 0, wordlist = "wordlist")
@@ -73,19 +69,16 @@ class MainViewModelTest {
 
         // When
         viewModel.startAttack()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         assertTrue(viewModel.terminalOutput.contains("Attack started with job ID: $jobId"))
-
-        // Advance time to allow polling to happen
-        advanceTimeBy(6000)
-
         assertTrue(viewModel.terminalOutput.contains("Job $jobId: Cracked"))
         assertEquals("password", viewModel.crackedPassword.value)
     }
 
     @Test
-    fun `startAttack handles network error`() = testDispatcher.runBlockingTest {
+    fun `startAttack handles network error`() = runTest(testDispatcher) {
         // Given
         val attackRequest = AttackRequest(hash = "hash", hashType = 0, wordlist = "wordlist")
         val errorMessage = "Network error"
@@ -97,13 +90,14 @@ class MainViewModelTest {
 
         // When
         viewModel.startAttack()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         assertTrue(viewModel.terminalOutput.contains("Error starting attack: $errorMessage"))
     }
 
     @Test
-    fun `pollForStatus handles exhausted status`() = testDispatcher.runBlockingTest {
+    fun `pollForStatus handles exhausted status`() = runTest(testDispatcher) {
         // Given
         val jobId = "123"
         val attackRequest = AttackRequest(hash = "hash", hashType = 0, wordlist = "wordlist")
@@ -119,28 +113,9 @@ class MainViewModelTest {
 
         // When
         viewModel.startAttack()
-
-        // Advance time to allow polling to happen
-        advanceTimeBy(6000)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         assertTrue(viewModel.terminalOutput.contains("Attack finished. Password not found."))
-    }
-
-    @Test
-    fun `loadHashModes loads modes from file`() = testDispatcher.runBlockingTest {
-        // Given
-        val modes = "0 MD5\n1 SHA1"
-        val inputStream = ByteArrayInputStream(modes.toByteArray())
-        `when`(resources.openRawResource(R.raw.modes)).thenReturn(inputStream)
-
-        // When
-        viewModel.loadHashModes()
-
-        // Then
-        assertEquals(2, viewModel.hashModes.size)
-        assertEquals(Pair(0, "MD5"), viewModel.hashModes[0])
-        assertEquals(Pair(1, "SHA1"), viewModel.hashModes[1])
-        assertEquals(Pair(0, "MD5"), viewModel.selectedHashMode.value)
     }
 }

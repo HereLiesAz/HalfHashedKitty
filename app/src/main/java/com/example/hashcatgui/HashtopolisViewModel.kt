@@ -6,9 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
-class HashtopolisViewModel : ViewModel() {
-
-    private val apiClient = HashtopolisApiClient()
+class HashtopolisViewModel(private val apiClient: HashtopolisApiClient = HashtopolisApiClient()) : ViewModel() {
 
     val serverUrl = mutableStateOf("")
     val apiKey = mutableStateOf("")
