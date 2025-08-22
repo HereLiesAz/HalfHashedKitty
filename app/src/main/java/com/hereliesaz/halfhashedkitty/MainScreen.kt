@@ -27,7 +27,7 @@ import com.hereliesaz.halfhashedkitty.ui.tabs.OutputTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.SetupTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
-import com.hereliesaz.halfhashedkitty.ui.theme.HashcatGUITheme
+import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme // Changed here
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +35,7 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
     var tabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Input", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
 
-    HashcatGUITheme {
+    HalfHashedKittyTheme { // Changed here
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -76,5 +76,7 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
+    // Also need to update the theme in the Preview if it uses it directly
+    // For now, MainScreen is called which now uses the correct theme
     MainScreen(MainViewModel(Application(), HashcatApiClient()), HashtopolisViewModel())
 }

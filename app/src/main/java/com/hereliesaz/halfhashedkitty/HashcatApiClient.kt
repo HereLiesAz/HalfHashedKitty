@@ -9,6 +9,7 @@ import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
 class HashcatApiClient {
@@ -23,6 +24,7 @@ class HashcatApiClient {
         }
     }
 
+    @OptIn(InternalSerializationApi::class)
     suspend fun startAttack(serverUrl: String, request: AttackRequest): AttackResponse {
         return client.post("$serverUrl/attack") {
             contentType(ContentType.Application.Json)
@@ -30,10 +32,12 @@ class HashcatApiClient {
         }.body()
     }
 
+    @OptIn(InternalSerializationApi::class)
     suspend fun getAttackStatus(serverUrl: String, jobId: String): AttackResponse {
         return client.get("$serverUrl/attack/$jobId").body()
     }
 
+    @OptIn(InternalSerializationApi::class)
     suspend fun identifyHash(serverUrl: String, hash: String): HashIdentificationResponse {
         return client.post("$serverUrl/identify") {
             contentType(ContentType.Application.Json)
@@ -53,6 +57,6 @@ class HashcatApiClient {
                     }
                 )
             )
-        }.body()
+        }.body<UploadResponse>()
     }
 }

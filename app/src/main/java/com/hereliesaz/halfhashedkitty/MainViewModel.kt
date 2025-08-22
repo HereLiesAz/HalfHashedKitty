@@ -8,9 +8,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.InternalSerializationApi
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
+@OptIn(InternalSerializationApi::class) // Added OptIn here
 class MainViewModel(
     private val application: Application,
     private val apiClient: HashcatApiClient
