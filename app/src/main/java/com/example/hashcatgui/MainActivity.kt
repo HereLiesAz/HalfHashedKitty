@@ -14,7 +14,9 @@ class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.MainViewModelFactory(application, HashcatApiClient())
     }
-    private val hashtopolisViewModel: HashtopolisViewModel by viewModels()
+    private val hashtopolisViewModel: HashtopolisViewModel by viewModels {
+        HashtopolisViewModel.HashtopolisViewModelFactory(HashtopolisApiClient())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

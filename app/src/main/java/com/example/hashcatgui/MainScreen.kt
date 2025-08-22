@@ -4,36 +4,18 @@ import android.app.Application
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.hashcatgui.ui.tabs.AttackTab
-import com.example.hashcatgui.ui.tabs.HashtopolisTab
-import com.example.hashcatgui.ui.tabs.InputTab
-import com.example.hashcatgui.ui.tabs.MaskTab
-import com.example.hashcatgui.ui.tabs.OutputTab
-import com.example.hashcatgui.ui.tabs.SetupTab
-import com.example.hashcatgui.ui.tabs.TerminalTab
-import com.example.hashcatgui.ui.tabs.WordlistTab
+import com.example.hashcatgui.ui.tabs.*
 import com.example.hashcatgui.ui.theme.HashcatGUITheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisViewModel) {
     var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Input", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
+    val tabs = listOf("Input", "Wordlist", "Mask", "Command Builder", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
 
     HashcatGUITheme {
         Scaffold(
@@ -61,20 +43,20 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
                     0 -> InputTab(mainViewModel)
                     1 -> WordlistTab(mainViewModel)
                     2 -> MaskTab()
-                    3 -> AttackTab(mainViewModel)
-                    4 -> OutputTab(mainViewModel)
-                    5 -> TerminalTab(mainViewModel)
-                    6 -> HashtopolisTab(hashtopolisViewModel)
-                    7 -> SetupTab()
+                    3 -> CommandBuilderTab(mainViewModel)
+                    4 -> AttackTab(mainViewModel)
+                    5 -> OutputTab(mainViewModel)
+                    6 -> TerminalTab(mainViewModel)
+                    7 -> HashtopolisTab(hashtopolisViewModel)
+                    8 -> SetupTab()
                 }
             }
         }
     }
 }
 
-// Preview for MainScreen
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    MainScreen(MainViewModel(Application(), HashcatApiClient()), HashtopolisViewModel())
+    MainScreen(MainViewModel(Application(), HashcatApiClient()), HashtopolisViewModel(HashtopolisApiClient()))
 }

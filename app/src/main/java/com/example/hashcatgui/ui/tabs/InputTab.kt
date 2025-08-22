@@ -1,24 +1,15 @@
 package com.example.hashcatgui.ui.tabs
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.hashcatgui.MainViewModel
 
@@ -26,6 +17,14 @@ import com.example.hashcatgui.MainViewModel
 @Composable
 fun InputTab(viewModel: MainViewModel) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            viewModel.uploadZipFile(context, it)
+        }
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
         OutlinedTextField(
@@ -42,10 +41,24 @@ fun InputTab(viewModel: MainViewModel) {
                 .fillMaxWidth()
                 .padding(top = 8.dp)
         )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(onClick = { viewModel.identifyHash() }) {
+                Text("Auto-detect Hash Type")
+            }
+            Button(onClick = { launcher.launch("application/zip") }) {
+                Text("Upload ZIP File")
+            }
+        }
+
 
         Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             OutlinedTextField(
-                value = viewModel.selectedHashMode.value?.second ?: "Select Hash Mode",
+                value = viewModel.selectedHashMode.value?.name ?: "Select Hash Mode",
                 onValueChange = {},
                 label = { Text("Hash Mode") },
                 readOnly = true,
@@ -65,7 +78,7 @@ fun InputTab(viewModel: MainViewModel) {
             ) {
                 viewModel.hashModes.forEach { hashMode ->
                     DropdownMenuItem(
-                        text = { Text(text = "${hashMode.first} - ${hashMode.second}") },
+                        text = { Text(text = "${hashMode.id} - ${hashMode.name}") },
                         onClick = {
                             viewModel.selectedHashMode.value = hashMode
                             expanded = false

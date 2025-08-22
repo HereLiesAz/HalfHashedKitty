@@ -3,7 +3,7 @@ package com.example.hashcatgui
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -15,7 +15,6 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.junit.Assert.*
-import org.mockito.kotlin.mock
 
 @ExperimentalCoroutinesApi
 class HashtopolisViewModelTest {
@@ -23,8 +22,9 @@ class HashtopolisViewModelTest {
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
-    private val testDispatcher = StandardTestDispatcher()
+    private val testDispatcher = UnconfinedTestDispatcher()
 
+    @Mock
     private lateinit var hashtopolisApiClient: HashtopolisApiClient
 
     private lateinit var viewModel: HashtopolisViewModel
@@ -33,7 +33,6 @@ class HashtopolisViewModelTest {
     fun setup() {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
-        hashtopolisApiClient = mock()
         viewModel = HashtopolisViewModel(hashtopolisApiClient)
     }
 
@@ -43,14 +42,13 @@ class HashtopolisViewModelTest {
     }
 
     @Test
-    fun `getAgents successfully fetches agents`() = runTest(testDispatcher) {
+    fun `getAgents successfully fetches agents`() = runTest {
         // Given
         val agents = listOf(Agent(1, "Agent1", "Running", "now"))
         `when`(hashtopolisApiClient.getAgents(viewModel.serverUrl.value, viewModel.apiKey.value)).thenReturn(agents)
 
         // When
         viewModel.getAgents()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         assertEquals(1, viewModel.agents.size)
@@ -59,14 +57,13 @@ class HashtopolisViewModelTest {
     }
 
     @Test
-    fun `getAgents handles network error`() = runTest(testDispatcher) {
+    fun `getAgents handles network error`() = runTest {
         // Given
         val errorMessage = "Network error"
         `when`(hashtopolisApiClient.getAgents(viewModel.serverUrl.value, viewModel.apiKey.value)).thenThrow(RuntimeException(errorMessage))
 
         // When
         viewModel.getAgents()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         assertEquals(0, viewModel.agents.size)
