@@ -1,6 +1,6 @@
 # Android Studio
-.idea/
-.gradle/
+./idea/
+./gradle/
 local.properties
 /app/build/
 /build/
@@ -89,3 +89,6 @@ fastlane/logs
 *~
 .DS_Store
 out/
+/.idea/
+/.kotlin/
+/.gradle/
