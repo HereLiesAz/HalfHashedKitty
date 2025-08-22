@@ -50,6 +50,8 @@ class MainViewModel(
                             android.util.Log.w("MainViewModel", "Line does not match expected format: '$line'")
                         }
                     }
+                }
+
                 if (hashModes.isNotEmpty()) {
                     selectedHashMode.value = hashModes[0]
                 }
