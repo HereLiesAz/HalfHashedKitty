@@ -12,7 +12,12 @@ import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme // Changed h
 
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels {
-        MainViewModel.MainViewModelFactory(application, HashcatApiClient(), Cap2HashcatApiClient())
+        MainViewModel.MainViewModelFactory(
+            application,
+            HashcatApiClient(),
+            Cap2HashcatApiClient(),
+            ToolManager(applicationContext)
+        )
     }
     private val hashtopolisViewModel: HashtopolisViewModel by viewModels()
 

@@ -38,6 +38,7 @@ class MainViewModelTest {
 
     private lateinit var hashcatApiClient: HashcatApiClient
     private lateinit var cap2hashcatApiClient: Cap2HashcatApiClient
+    private lateinit var toolManager: ToolManager
 
     private lateinit var viewModel: MainViewModel
 
@@ -48,7 +49,8 @@ class MainViewModelTest {
         `when`(application.resources).thenReturn(resources)
         hashcatApiClient = mock()
         cap2hashcatApiClient = mock()
-        viewModel = MainViewModel(application, hashcatApiClient, cap2hashcatApiClient)
+        toolManager = mock()
+        viewModel = MainViewModel(application, hashcatApiClient, cap2hashcatApiClient, toolManager)
     }
 
     @After
