@@ -3,27 +3,31 @@ package com.example.hashcatgui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.hashcatgui.ui.theme.HashcatGUITheme
 
-import androidx.activity.ComponentActivity
-import androidx.activity.viewModels
-
 class MainActivity : ComponentActivity() {
+    private val mainViewModel: MainViewModel by viewModels {
+        MainViewModel.MainViewModelFactory(application)
+    }
+    private val hashtopolisViewModel: HashtopolisViewModel by viewModels {
+        HashtopolisViewModel.HashtopolisViewModelFactory(HashtopolisApiClient())
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel: MainViewModel by viewModels()
         setContent {
             HashcatGUITheme {
                 // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    MainScreen(viewModel)
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainScreen(mainViewModel, hashtopolisViewModel)
                 }
             }
         }

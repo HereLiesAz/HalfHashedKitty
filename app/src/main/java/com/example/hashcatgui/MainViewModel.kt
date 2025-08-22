@@ -1,18 +1,19 @@
 package com.example.hashcatgui
 
+import android.app.Application
+import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
-
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
-class MainViewModel : ViewModel() {
+class MainViewModel(private val application: Application) : ViewModel() {
 
     private val apiClient = HashcatApiClient()
 
@@ -21,8 +22,92 @@ class MainViewModel : ViewModel() {
     val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
     val crackedPassword = mutableStateOf<String?>(null)
+    val hashModes = mutableStateListOf<Pair<Int, String>>()
+    val selectedHashMode = mutableStateOf<Pair<Int, String>?>(null)
+
+    // Command Builder properties
+    val attackModes = listOf(
+        Pair(0, "Straight"),
+        Pair(1, "Combination"),
+        Pair(3, "Brute-force"),
+        Pair(6, "Hybrid Wordlist + Mask"),
+        Pair(7, "Hybrid Mask + Wordlist")
+    )
+    val selectedAttackMode = mutableStateOf(attackModes[0])
+    val rulesFile = mutableStateOf("")
+    val customMask = mutableStateOf("")
+    val force = mutableStateOf(false)
+
+    init {
+        loadHashModes()
+    }
+
+    internal fun loadHashModes() {
+        viewModelScope.launch {
+            try {
+                val inputStream = application.resources.openRawResource(R.raw.modes)
+                inputStream.bufferedReader().useLines { lines ->
+                    lines.forEach {
+                        val parts = it.split(" ".toRegex(), 2)
+                        if (parts.size == 2) {
+                            hashModes.add(Pair(parts[0].toInt(), parts[1]))
+                        }
+                    }
+                }
+                if (hashModes.isNotEmpty()) {
+                    selectedHashMode.value = hashModes[0]
+                }
+            } catch (e: Exception) {
+                terminalOutput.add("Error loading hash modes: ${e.message}")
+            }
+        }
+    }
+
+    fun identifyHash() {
+        viewModelScope.launch {
+            try {
+                terminalOutput.add("Identifying hash...")
+                val response = apiClient.identifyHash(serverUrl.value, hashToCrack.value)
+                if (response.hashModes.isNotEmpty()) {
+                    val bestGuess = response.hashModes[0]
+                    selectedHashMode.value = hashModes.find { it.first == bestGuess.first }
+                    terminalOutput.add("Hash identified as: ${selectedHashMode.value?.second}")
+                } else {
+                    terminalOutput.add("Could not identify hash type.")
+                }
+            } catch (e: Exception) {
+                terminalOutput.add("Error identifying hash: ${e.message}")
+            }
+        }
+    }
+
+    fun uploadZipFile(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            try {
+                terminalOutput.add("Uploading ZIP file...")
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val fileBytes = inputStream?.readBytes()
+                inputStream?.close()
+
+                if (fileBytes != null) {
+                    val response = apiClient.uploadZipFile(serverUrl.value, fileBytes)
+                    hashToCrack.value = response.hash
+                    terminalOutput.add("Hash extracted from ZIP file: ${response.hash}")
+                } else {
+                    terminalOutput.add("Error reading file.")
+                }
+            } catch (e: Exception) {
+                terminalOutput.add("Error uploading file: ${e.message}")
+            }
+        }
+    }
 
     fun startAttack() {
+        val currentHashMode = selectedHashMode.value
+        if (currentHashMode == null) {
+            terminalOutput.add("Please select a hash mode.")
+            return
+        }
         terminalOutput.clear()
         crackedPassword.value = null
         terminalOutput.add("Starting remote attack...")
@@ -30,8 +115,12 @@ class MainViewModel : ViewModel() {
             try {
                 val request = AttackRequest(
                     hash = hashToCrack.value,
-                    hashType = 0, // Hardcoded for now
-                    wordlist = wordlistPath.value
+                    hashType = currentHashMode.first,
+                    attackMode = selectedAttackMode.value.first,
+                    wordlist = wordlistPath.value.ifEmpty { null },
+                    rules = rulesFile.value.ifEmpty { null },
+                    mask = customMask.value.ifEmpty { null },
+                    force = force.value
                 )
                 val response = apiClient.startAttack(serverUrl.value, request)
                 terminalOutput.add("Attack started with job ID: ${response.jobId}")
@@ -62,6 +151,16 @@ class MainViewModel : ViewModel() {
                 }
                 delay(5000) // Poll every 5 seconds
             }
+        }
+    }
+
+    class MainViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return MainViewModel(application) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 }

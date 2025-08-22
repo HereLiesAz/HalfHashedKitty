@@ -11,7 +11,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-class HashcatApiClient {
+class HashtopolisApiClient {
 
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -53,6 +53,14 @@ class HashcatApiClient {
                     }
                 )
             )
+        }.body()
+    }
+
+    suspend fun getAgents(serverUrl: String, apiKey: String): List<Agent> {
+        // This is a placeholder implementation. The exact endpoint for getting agents
+        // is unknown due to the lack of API documentation. This is a reasonable guess.
+        return client.get("$serverUrl/api/v2/agents") {
+            header("Authorization", "Bearer $apiKey")
         }.body()
     }
 }
