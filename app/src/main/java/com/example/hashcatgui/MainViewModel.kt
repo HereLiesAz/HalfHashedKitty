@@ -1,6 +1,8 @@
 package com.example.hashcatgui
 
 import android.app.Application
+import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -10,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.lang.NumberFormatException
 
 class MainViewModel(
     private val application: Application,
@@ -21,22 +24,36 @@ class MainViewModel(
     val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
     val crackedPassword = mutableStateOf<String?>(null)
-    val hashModes = mutableStateListOf<Pair<Int, String>>()
-    val selectedHashMode = mutableStateOf<Pair<Int, String>?>(null)
+    val hashModes = mutableStateListOf<HashModeInfo>()
+    val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
+
+    // Command Builder properties
+    val attackModes = listOf(
+        HashModeInfo(0, "Straight"),
+        HashModeInfo(1, "Combination"),
+        HashModeInfo(3, "Brute-force"),
+        HashModeInfo(6, "Hybrid Wordlist + Mask"),
+        HashModeInfo(7, "Hybrid Mask + Wordlist")
+    )
+    val selectedAttackMode = mutableStateOf(attackModes[0])
+    val rulesFile = mutableStateOf("")
+    val customMask = mutableStateOf("")
+    val force = mutableStateOf(false)
 
     init {
         loadHashModes()
     }
 
-    private fun loadHashModes() {
+    internal fun loadHashModes() {
         viewModelScope.launch {
             try {
-                application.resources.openRawResource(R.raw.modes).bufferedReader().useLines { lines ->
+                val inputStream = application.resources.openRawResource(R.raw.modes)
+                inputStream.bufferedReader().useLines { lines ->
                     lines.forEach { line ->
                         val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
                             try {
-                                hashModes.add(Pair(parts[0].toInt(), parts[1]))
+                                hashModes.add(HashModeInfo(parts[0].toInt(), parts[1]))
                             } catch (e: NumberFormatException) {
                                 android.util.Log.e("MainViewModel", "Failed to parse hash mode id: '${parts[0]}' in line: '$line'", e)
                             }
@@ -46,7 +63,7 @@ class MainViewModel(
                     }
                 }
                 if (hashModes.isNotEmpty()) {
-                    selectedHashMode.value = hashModes.first()
+                    selectedHashMode.value = hashModes[0]
                 }
             } catch (e: Exception) {
                 terminalOutput.add("Error loading hash modes: ${e.message}")
@@ -54,13 +71,37 @@ class MainViewModel(
         }
     }
 
-    fun uploadZipFile(context: android.content.Context, uri: android.net.Uri) {
+    fun identifyHash() {
+        viewModelScope.launch {
+            try {
+                terminalOutput.add("Identifying hash...")
+                val response = apiClient.identifyHash(serverUrl.value, hashToCrack.value)
+                if (response.hashModes.isNotEmpty()) {
+                    val bestGuess = response.hashModes[0]
+                    selectedHashMode.value = hashModes.find { it.id == bestGuess.id }
+                    terminalOutput.add("Hash identified as: ${selectedHashMode.value?.name}")
+                } else {
+                    terminalOutput.add("Could not identify hash type.")
+                }
+            } catch (e: Exception) {
+                terminalOutput.add("Error identifying hash: ${e.message}")
+            }
+        }
+    }
+
+    fun uploadZipFile(context: Context, uri: Uri) {
         viewModelScope.launch {
             try {
                 terminalOutput.add("Uploading ZIP file...")
                 val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                // TODO: Add the rest of the file upload logic
-                terminalOutput.add("File upload functionality is not yet implemented.")
+
+                if (fileBytes != null) {
+                    val response = apiClient.uploadZipFile(serverUrl.value, fileBytes)
+                    hashToCrack.value = response.hash
+                    terminalOutput.add("Hash extracted from ZIP file: ${response.hash}")
+                } else {
+                    terminalOutput.add("Error reading file.")
+                }
             } catch (e: Exception) {
                 terminalOutput.add("Error uploading file: ${e.message}")
             }
@@ -68,7 +109,8 @@ class MainViewModel(
     }
 
     fun startAttack() {
-        if (selectedHashMode.value == null) {
+        val currentHashMode = selectedHashMode.value
+        if (currentHashMode == null) {
             terminalOutput.add("Please select a hash mode.")
             return
         }
@@ -79,8 +121,12 @@ class MainViewModel(
             try {
                 val request = AttackRequest(
                     hash = hashToCrack.value,
-                    hashType = selectedHashMode.value!!.first,
-                    wordlist = wordlistPath.value
+                    hashType = currentHashMode.id,
+                    attackMode = selectedAttackMode.value.id,
+                    wordlist = wordlistPath.value.ifEmpty { null },
+                    rules = rulesFile.value.ifEmpty { null },
+                    mask = customMask.value.ifEmpty { null },
+                    force = force.value
                 )
                 val response = apiClient.startAttack(serverUrl.value, request)
                 terminalOutput.add("Attack started with job ID: ${response.jobId}")
