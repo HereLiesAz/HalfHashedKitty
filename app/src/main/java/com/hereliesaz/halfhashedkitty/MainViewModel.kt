@@ -23,11 +23,30 @@ class MainViewModel(
     val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
     val crackedPassword = mutableStateOf<String?>(null)
-    val hashModes = mutableStateListOf<Pair<Int, String>>()
-    val selectedHashMode = mutableStateOf<Pair<Int, String>?>(null)
+    val hashModes = mutableStateListOf<HashModeInfo>()
+    val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
+    val attackModes = mutableStateListOf<AttackMode>()
+    val selectedAttackMode = mutableStateOf(AttackMode(0, "Straight"))
+    val rulesFile = mutableStateOf("")
+    val customMask = mutableStateOf("")
+    val force = mutableStateOf(false)
 
     init {
         loadHashModes()
+        loadAttackModes()
+    }
+
+    private fun loadAttackModes() {
+        // Mock data for now
+        attackModes.addAll(
+            listOf(
+                AttackMode(0, "Straight"),
+                AttackMode(1, "Combination"),
+                AttackMode(3, "Brute-force"),
+                AttackMode(6, "Hybrid Wordlist + Mask"),
+                AttackMode(7, "Hybrid Mask + Wordlist")
+            )
+        )
     }
 
     private fun loadHashModes() {
@@ -38,7 +57,7 @@ class MainViewModel(
                         val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
                             try {
-                                hashModes.add(Pair(parts[0].toInt(), parts[1]))
+                                hashModes.add(HashModeInfo(parts[0].toInt(), parts[1]))
                             } catch (e: NumberFormatException) {
                                 android.util.Log.e("MainViewModel", "Failed to parse hash mode id: '${parts[0]}' in line: '$line'", e)
                             }
@@ -52,6 +71,21 @@ class MainViewModel(
                 }
             } catch (e: Exception) {
                 terminalOutput.add("Error loading hash modes: ${e.message}")
+            }
+        }
+    }
+
+    fun identifyHash() {
+        viewModelScope.launch {
+            try {
+                val response = apiClient.identifyHash(serverUrl.value, hashToCrack.value)
+                hashModes.clear()
+                hashModes.addAll(response.hashModes)
+                if (hashModes.isNotEmpty()) {
+                    selectedHashMode.value = hashModes.first()
+                }
+            } catch (e: Exception) {
+                terminalOutput.add("Error identifying hash: ${e.message}")
             }
         }
     }
@@ -81,7 +115,7 @@ class MainViewModel(
             try {
                 val request = AttackRequest(
                     hash = hashToCrack.value,
-                    hashType = selectedHashMode.value!!.first,
+                    hashType = selectedHashMode.value!!.id,
                     wordlist = wordlistPath.value
                 )
                 val response = apiClient.startAttack(serverUrl.value, request)

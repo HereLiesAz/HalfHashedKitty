@@ -13,7 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.MainViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+import kotlinx.serialization.InternalSerializationApi
+
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun InputTab(viewModel: MainViewModel) {
     var expanded by remember { mutableStateOf(false) }
