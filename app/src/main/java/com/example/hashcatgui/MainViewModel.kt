@@ -6,15 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
-
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class MainViewModel(
     private val application: Application,
@@ -36,8 +31,7 @@ class MainViewModel(
     private fun loadHashModes() {
         viewModelScope.launch {
             try {
-                val inputStream = application.resources.openRawResource(R.raw.modes)
-                inputStream.bufferedReader().useLines { lines ->
+                application.resources.openRawResource(R.raw.modes).bufferedReader().useLines { lines ->
                     lines.forEach { line ->
                         val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
@@ -50,8 +44,9 @@ class MainViewModel(
                             android.util.Log.w("MainViewModel", "Line does not match expected format: '$line'")
                         }
                     }
+                }
                 if (hashModes.isNotEmpty()) {
-                    selectedHashMode.value = hashModes[0]
+                    selectedHashMode.value = hashModes.first()
                 }
             } catch (e: Exception) {
                 terminalOutput.add("Error loading hash modes: ${e.message}")
