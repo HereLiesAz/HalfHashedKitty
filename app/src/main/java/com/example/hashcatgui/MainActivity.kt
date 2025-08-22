@@ -12,7 +12,7 @@ import com.example.hashcatgui.ui.theme.HashcatGUITheme
 
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels {
-        MainViewModel.MainViewModelFactory(application)
+        MainViewModel.MainViewModelFactory(application, HashcatApiClient())
     }
     private val hashtopolisViewModel: HashtopolisViewModel by viewModels {
         HashtopolisViewModel.HashtopolisViewModelFactory(HashtopolisApiClient())

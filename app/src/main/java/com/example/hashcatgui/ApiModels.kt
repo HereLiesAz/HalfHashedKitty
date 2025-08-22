@@ -21,8 +21,14 @@ data class AttackResponse(
 )
 
 @Serializable
+data class HashModeInfo(
+    val id: Int,
+    val name: String
+)
+
+@Serializable
 data class HashIdentificationResponse(
-    val hashModes: List<HashMode>
+    val hashModes: List<HashModeInfo>
 )
 
 @Serializable

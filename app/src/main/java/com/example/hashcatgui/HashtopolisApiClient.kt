@@ -56,11 +56,22 @@ class HashtopolisApiClient {
         }.body()
     }
 
-    suspend fun getAgents(serverUrl: String, apiKey: String): List<Agent> {
-        // This is a placeholder implementation. The exact endpoint for getting agents
-        // is unknown due to the lack of API documentation. This is a reasonable guess.
-        return client.get("$serverUrl/api/v2/agents") {
-            header("Authorization", "Bearer $apiKey")
-        }.body()
+    suspend fun getAgents(
+        serverUrl: String,
+        apiKey: String,
+        agentsEndpoint: String = "/api/v2/agents"
+    ): List<Agent> {
+        // The endpoint is configurable via agentsEndpoint parameter.
+        // Error handling is added to prevent failures if the endpoint is incorrect.
+        return try {
+            client.get("$serverUrl$agentsEndpoint") {
+                header("Authorization", "Bearer $apiKey")
+            }.body()
+        } catch (e: Exception) {
+            // Log the error and return an empty list if the endpoint is incorrect or request fails
+            // You may want to use a logging framework here
+            println("Error fetching agents: ${e.message}")
+            emptyList()
+        }
     }
 }

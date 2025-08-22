@@ -12,26 +12,28 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.lang.NumberFormatException
 
-class MainViewModel(private val application: Application) : ViewModel() {
-
-    private val apiClient = HashcatApiClient()
+class MainViewModel(
+    private val application: Application,
+    private val apiClient: HashcatApiClient
+) : ViewModel() {
 
     val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
     val hashToCrack = mutableStateOf("")
     val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
     val crackedPassword = mutableStateOf<String?>(null)
-    val hashModes = mutableStateListOf<Pair<Int, String>>()
-    val selectedHashMode = mutableStateOf<Pair<Int, String>?>(null)
+    val hashModes = mutableStateListOf<HashModeInfo>()
+    val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
 
     // Command Builder properties
     val attackModes = listOf(
-        Pair(0, "Straight"),
-        Pair(1, "Combination"),
-        Pair(3, "Brute-force"),
-        Pair(6, "Hybrid Wordlist + Mask"),
-        Pair(7, "Hybrid Mask + Wordlist")
+        HashModeInfo(0, "Straight"),
+        HashModeInfo(1, "Combination"),
+        HashModeInfo(3, "Brute-force"),
+        HashModeInfo(6, "Hybrid Wordlist + Mask"),
+        HashModeInfo(7, "Hybrid Mask + Wordlist")
     )
     val selectedAttackMode = mutableStateOf(attackModes[0])
     val rulesFile = mutableStateOf("")
@@ -47,10 +49,16 @@ class MainViewModel(private val application: Application) : ViewModel() {
             try {
                 val inputStream = application.resources.openRawResource(R.raw.modes)
                 inputStream.bufferedReader().useLines { lines ->
-                    lines.forEach {
-                        val parts = it.split(" ".toRegex(), 2)
+                    lines.forEach { line ->
+                        val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
-                            hashModes.add(Pair(parts[0].toInt(), parts[1]))
+                            try {
+                                hashModes.add(HashModeInfo(parts[0].toInt(), parts[1]))
+                            } catch (e: NumberFormatException) {
+                                android.util.Log.e("MainViewModel", "Failed to parse hash mode id: '${parts[0]}' in line: '$line'", e)
+                            }
+                        } else {
+                            android.util.Log.w("MainViewModel", "Line does not match expected format: '$line'")
                         }
                     }
                 }
@@ -70,8 +78,8 @@ class MainViewModel(private val application: Application) : ViewModel() {
                 val response = apiClient.identifyHash(serverUrl.value, hashToCrack.value)
                 if (response.hashModes.isNotEmpty()) {
                     val bestGuess = response.hashModes[0]
-                    selectedHashMode.value = hashModes.find { it.first == bestGuess.first }
-                    terminalOutput.add("Hash identified as: ${selectedHashMode.value?.second}")
+                    selectedHashMode.value = hashModes.find { it.id == bestGuess.id }
+                    terminalOutput.add("Hash identified as: ${selectedHashMode.value?.name}")
                 } else {
                     terminalOutput.add("Could not identify hash type.")
                 }
@@ -85,8 +93,7 @@ class MainViewModel(private val application: Application) : ViewModel() {
         viewModelScope.launch {
             try {
                 terminalOutput.add("Uploading ZIP file...")
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val fileBytes = inputStream?.use { it.readBytes() }
+                val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
 
                 if (fileBytes != null) {
                     val response = apiClient.uploadZipFile(serverUrl.value, fileBytes)
@@ -114,8 +121,8 @@ class MainViewModel(private val application: Application) : ViewModel() {
             try {
                 val request = AttackRequest(
                     hash = hashToCrack.value,
-                    hashType = currentHashMode.first,
-                    attackMode = selectedAttackMode.value.first,
+                    hashType = currentHashMode.id,
+                    attackMode = selectedAttackMode.value.id,
                     wordlist = wordlistPath.value.ifEmpty { null },
                     rules = rulesFile.value.ifEmpty { null },
                     mask = customMask.value.ifEmpty { null },
@@ -153,11 +160,14 @@ class MainViewModel(private val application: Application) : ViewModel() {
         }
     }
 
-    class MainViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    class MainViewModelFactory(
+        private val application: Application,
+        private val apiClient: HashcatApiClient
+    ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(application) as T
+                return MainViewModel(application, apiClient) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

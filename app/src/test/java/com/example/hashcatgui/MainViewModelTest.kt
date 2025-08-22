@@ -1,7 +1,6 @@
 package com.example.hashcatgui
 
 import android.app.Application
-import android.content.Context
 import android.content.res.Resources
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import kotlinx.coroutines.Dispatchers
@@ -42,11 +41,7 @@ class MainViewModelTest {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
         `when`(application.resources).thenReturn(resources)
-        viewModel = MainViewModel(application)
-        // Manually inject the mock client
-        val clientField = viewModel.javaClass.getDeclaredField("apiClient")
-        clientField.isAccessible = true
-        clientField.set(viewModel, hashcatApiClient)
+        viewModel = MainViewModel(application, hashcatApiClient)
     }
 
     @After
@@ -67,8 +62,8 @@ class MainViewModelTest {
 
         viewModel.hashToCrack.value = "hash"
         viewModel.wordlistPath.value = "wordlist"
-        viewModel.selectedHashMode.value = Pair(0, "MD5")
-        viewModel.selectedAttackMode.value = Pair(0, "Straight")
+        viewModel.selectedHashMode.value = HashModeInfo(0, "MD5")
+        viewModel.selectedAttackMode.value = HashModeInfo(0, "Straight")
 
         // When
         viewModel.startAttack()
@@ -91,8 +86,8 @@ class MainViewModelTest {
 
         viewModel.hashToCrack.value = "hash"
         viewModel.wordlistPath.value = "wordlist"
-        viewModel.selectedHashMode.value = Pair(0, "MD5")
-        viewModel.selectedAttackMode.value = Pair(0, "Straight")
+        viewModel.selectedHashMode.value = HashModeInfo(0, "MD5")
+        viewModel.selectedAttackMode.value = HashModeInfo(0, "Straight")
 
 
         // When
@@ -115,8 +110,8 @@ class MainViewModelTest {
 
         viewModel.hashToCrack.value = "hash"
         viewModel.wordlistPath.value = "wordlist"
-        viewModel.selectedHashMode.value = Pair(0, "MD5")
-        viewModel.selectedAttackMode.value = Pair(0, "Straight")
+        viewModel.selectedHashMode.value = HashModeInfo(0, "MD5")
+        viewModel.selectedAttackMode.value = HashModeInfo(0, "Straight")
 
         // When
         viewModel.startAttack()
@@ -139,8 +134,8 @@ class MainViewModelTest {
 
         // Then
         assertEquals(2, viewModel.hashModes.size)
-        assertEquals(Pair(0, "MD5"), viewModel.hashModes[0])
-        assertEquals(Pair(1, "SHA1"), viewModel.hashModes[1])
-        assertEquals(Pair(0, "MD5"), viewModel.selectedHashMode.value)
+        assertEquals(HashModeInfo(0, "MD5"), viewModel.hashModes[0])
+        assertEquals(HashModeInfo(1, "SHA1"), viewModel.hashModes[1])
+        assertEquals(HashModeInfo(0, "MD5"), viewModel.selectedHashMode.value)
     }
 }
