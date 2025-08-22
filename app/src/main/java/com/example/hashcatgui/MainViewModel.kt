@@ -86,8 +86,7 @@ class MainViewModel(private val application: Application) : ViewModel() {
             try {
                 terminalOutput.add("Uploading ZIP file...")
                 val inputStream = context.contentResolver.openInputStream(uri)
-                val fileBytes = inputStream?.readBytes()
-                inputStream?.close()
+                val fileBytes = inputStream?.use { it.readBytes() }
 
                 if (fileBytes != null) {
                     val response = apiClient.uploadZipFile(serverUrl.value, fileBytes)
