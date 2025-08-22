@@ -51,6 +51,7 @@ class MainViewModel(
                         }
                     }
                 }
+
                 if (hashModes.isNotEmpty()) {
                     selectedHashMode.value = hashModes[0]
                 }
