@@ -19,7 +19,9 @@ import org.mockito.MockitoAnnotations
 import org.junit.Assert.*
 import org.mockito.kotlin.mock
 import java.io.ByteArrayInputStream
+import kotlinx.serialization.InternalSerializationApi
 
+@OptIn(InternalSerializationApi::class)
 @ExperimentalCoroutinesApi
 class MainViewModelTest {
 
@@ -65,7 +67,7 @@ class MainViewModelTest {
 
         viewModel.hashToCrack.value = "hash"
         viewModel.wordlistPath.value = "wordlist"
-        viewModel.selectedHashMode.value = Pair(0, "MD5")
+        viewModel.selectedHashMode.value = HashModeInfo(0, "MD5")
 
         // When
         viewModel.startAttack()
@@ -86,7 +88,7 @@ class MainViewModelTest {
 
         viewModel.hashToCrack.value = "hash"
         viewModel.wordlistPath.value = "wordlist"
-        viewModel.selectedHashMode.value = Pair(0, "MD5")
+        viewModel.selectedHashMode.value = HashModeInfo(0, "MD5")
 
         // When
         viewModel.startAttack()
@@ -109,7 +111,7 @@ class MainViewModelTest {
 
         viewModel.hashToCrack.value = "hash"
         viewModel.wordlistPath.value = "wordlist"
-        viewModel.selectedHashMode.value = Pair(0, "MD5")
+        viewModel.selectedHashMode.value = HashModeInfo(0, "MD5")
 
         // When
         viewModel.startAttack()
