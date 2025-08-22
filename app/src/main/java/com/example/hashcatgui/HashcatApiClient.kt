@@ -31,4 +31,13 @@ class HashcatApiClient {
     suspend fun getAttackStatus(serverUrl: String, jobId: String): AttackResponse {
         return client.get("$serverUrl/attack/$jobId").body()
     }
+
+    suspend fun identifyHash(serverUrl: String, hash: String): HashIdentificationResponse {
+        // This is a placeholder implementation. The exact endpoint for hash identification
+        // is unknown. This is a reasonable guess.
+        return client.post("$serverUrl/identify") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("hash" to hash))
+        }.body()
+    }
 }
