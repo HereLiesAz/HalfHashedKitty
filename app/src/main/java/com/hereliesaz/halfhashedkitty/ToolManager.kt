@@ -57,9 +57,9 @@ class ToolManager(private val context: Context) {
                         input.copyTo(output)
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: java.io.IOException) {
                 // Handle error, e.g., log it or notify user
-                System.err.println("Failed to copy tool '$toolName': ${e.message}")
+                android.util.Log.e("ToolManager", "Failed to copy tool '$toolName'", e)
                 return false
             }
         }
