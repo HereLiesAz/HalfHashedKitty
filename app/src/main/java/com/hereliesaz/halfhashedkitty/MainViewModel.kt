@@ -120,8 +120,8 @@ class MainViewModel(
                 captureOutput.add("Starting monitor mode on $wifiInterface...")
                 val airmonResult = RootUtils.executeAsRoot(toolManager.getToolPath("airmon-ng") + " start " + wifiInterface)
                 val airmonStdoutLines = airmonResult.stdout.lines()
-                airmonStdoutLines.filter { it.isNotBlank() }.forEach { captureOutput.add(it) }
-                airmonResult.stderr.lines().filter { it.isNotBlank() }.forEach { captureOutput.add("[STDERR] $it") }
+                airmonStdoutLines.forEach { if(it.isNotBlank()) captureOutput.add(it) }
+                airmonResult.stderr.lines().forEach { if(it.isNotBlank()) captureOutput.add("[STDERR] $it") }
 
                 val monitorInterface = airmonStdoutLines.find { it.contains("monitor mode enabled on") }
                     ?.substringAfter("enabled on ")?.substringBefore(")")?.trim()
@@ -135,6 +135,9 @@ class MainViewModel(
                 captureOutput.add("Monitor mode enabled on $monitorInterface. Starting capture...")
                 captureOutput.add("... (airodump-ng execution logic to be implemented) ...")
 
+            } catch (e: java.io.IOException) {
+                captureOutput.add("[FATAL] An I/O error occurred: ${e.message}")
+                isCapturing.value = false
             } catch (e: Exception) {
                 captureOutput.add("[FATAL] An unexpected error occurred: ${e.message}")
                 isCapturing.value = false

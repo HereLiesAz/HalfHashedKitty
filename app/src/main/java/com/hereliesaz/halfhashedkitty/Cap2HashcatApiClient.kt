@@ -10,6 +10,10 @@ import org.jsoup.Jsoup
 
 class Cap2HashcatApiClient {
 
+    companion object {
+        private const val CAP2HASHCAT_URL = "https://hashcat.net/cap2hashcat/"
+    }
+
     private val client = HttpClient(CIO)
 
     fun close() {
@@ -17,7 +21,7 @@ class Cap2HashcatApiClient {
     }
 
     suspend fun uploadPcapngFile(file: ByteArray): String {
-        val response = client.post("https://hashcat.net/cap2hashcat/") {
+        val response = client.post(CAP2HASHCAT_URL) {
             setBody(
                 MultiPartFormDataContent(
                     formData {

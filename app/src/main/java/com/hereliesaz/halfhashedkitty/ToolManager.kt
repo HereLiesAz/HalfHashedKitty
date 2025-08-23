@@ -36,7 +36,7 @@ class ToolManager(private val context: Context) {
 
         val abi = getBestSupportedAbi()
         if (abi == null) {
-            android.util.Log.e("ToolManager", "Device architecture is not supported.")
+            System.err.println("Device architecture is not supported.")
             return false
         }
         System.out.println("Using ABI: $abi")
@@ -57,9 +57,9 @@ class ToolManager(private val context: Context) {
                         input.copyTo(output)
                     }
                 }
-            } catch (e: java.io.IOException) {
+            } catch (e: Exception) {
                 // Handle error, e.g., log it or notify user
-                android.util.Log.e("ToolManager", "Failed to copy tool '$toolName'", e)
+                System.err.println("Failed to copy tool '$toolName': ${e.message}")
                 return false
             }
         }

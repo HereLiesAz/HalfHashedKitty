@@ -31,8 +31,14 @@ object RootUtils {
             val exitCode = process.waitFor()
 
             ShellOutput(stdout, stderr, exitCode)
+        } catch (e: java.io.IOException) {
+            ShellOutput("", "I/O error executing root command: ${e.localizedMessage}", -1)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt() // Preserve the interrupted status
+            ShellOutput("", "Command execution was interrupted: ${e.localizedMessage}", -1)
         } catch (e: Exception) {
-            ShellOutput("", e.localizedMessage ?: "Unknown error executing root command", -1)
+            // Catch any other unexpected exceptions
+            ShellOutput("", "An unexpected error occurred: ${e.localizedMessage}", -1)
         }
     }
 }
