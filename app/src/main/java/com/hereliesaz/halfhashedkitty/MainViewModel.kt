@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
@@ -15,7 +16,9 @@ import java.io.InputStreamReader
 @OptIn(InternalSerializationApi::class) // Added OptIn here
 class MainViewModel(
     private val application: Application,
-    private val apiClient: HashcatApiClient
+    private val apiClient: HashcatApiClient,
+    private val cap2hashcatApiClient: Cap2HashcatApiClient,
+    private val toolManager: ToolManager
 ) : ViewModel() {
 
     val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
@@ -30,6 +33,10 @@ class MainViewModel(
     val rulesFile = mutableStateOf("")
     val customMask = mutableStateOf("")
     val force = mutableStateOf(false)
+
+    // State for packet capturing
+    val isCapturing = mutableStateOf(false)
+    val captureOutput = mutableStateListOf<String>()
 
     init {
         loadHashModes()
@@ -75,6 +82,109 @@ class MainViewModel(
         }
     }
 
+    // Placeholder functions for capture logic
+    fun startCapture() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                isCapturing.value = true
+                captureOutput.clear()
+
+                captureOutput.add("Checking for root access...")
+                val rootCheck = RootUtils.executeAsRoot("id")
+                if (rootCheck.exitCode != 0) {
+                    captureOutput.add("[ERROR] Root access check failed.")
+                    if(rootCheck.stderr.isNotBlank()) {
+                        captureOutput.add("[STDERR] ${rootCheck.stderr}")
+                    }
+                    isCapturing.value = false
+                    return@launch
+                }
+                captureOutput.add("Root access granted.")
+
+                captureOutput.add("Preparing tools...")
+                if (!toolManager.installTools()) {
+                    captureOutput.add("[ERROR] Failed to install tools. Check logs for details.")
+                    isCapturing.value = false
+                    return@launch
+                }
+                captureOutput.add("Tools are ready.")
+
+                captureOutput.add("Finding wireless interface...")
+                val wifiInterface = findWirelessInterface()
+                if (wifiInterface == null) {
+                    captureOutput.add("[ERROR] No wireless interface (wlanX) found.")
+                    isCapturing.value = false
+                    return@launch
+                }
+                captureOutput.add("Found wireless interface: $wifiInterface")
+
+                captureOutput.add("Starting monitor mode on $wifiInterface...")
+                val airmonResult = RootUtils.executeAsRoot(toolManager.getToolPath("airmon-ng") + " start " + wifiInterface)
+                val airmonStdoutLines = airmonResult.stdout.lines()
+                airmonStdoutLines.forEach { if(it.isNotBlank()) captureOutput.add(it) }
+                airmonResult.stderr.lines().forEach { if(it.isNotBlank()) captureOutput.add("[STDERR] $it") }
+
+                val monitorInterface = airmonStdoutLines.find { it.contains("monitor mode enabled on") }
+                    ?.substringAfter("enabled on ")?.substringBefore(")")?.trim()
+
+                if (monitorInterface == null) {
+                    captureOutput.add("[ERROR] Failed to start monitor mode. Check dmesg or logcat for driver errors.")
+                    isCapturing.value = false
+                    return@launch
+                }
+
+                captureOutput.add("Monitor mode enabled on $monitorInterface. Starting capture...")
+                captureOutput.add("... (airodump-ng execution logic to be implemented) ...")
+
+            } catch (e: java.io.IOException) {
+                captureOutput.add("[FATAL] An I/O error occurred: ${e.message}")
+                isCapturing.value = false
+            } catch (e: Exception) {
+                captureOutput.add("[FATAL] An unexpected error occurred: ${e.message}")
+                isCapturing.value = false
+            }
+        }
+    }
+
+    private fun findWirelessInterface(): String? {
+        val result = RootUtils.executeAsRoot("ls /sys/class/net")
+        return result.stdout.lines().find { it.startsWith("wlan") }
+    }
+
+    fun stopCapture() {
+        isCapturing.value = false
+        captureOutput.add("Stopping capture... (Not implemented yet)")
+        // In the next step, this will:
+        // 1. Kill the airodump-ng process
+        // 2. Stop monitor mode
+        // 3. Process the capture file
+    }
+
+    fun uploadPcapngFile(context: android.content.Context, uri: android.net.Uri): Job {
+        return viewModelScope.launch {
+            terminalOutput.add("Uploading PCAPNG file to cap2hashcat...")
+            try {
+                val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                if (fileBytes != null) {
+                    val hash = cap2hashcatApiClient.uploadPcapngFile(fileBytes)
+                    if (hash.isNotEmpty()) {
+                        hashToCrack.value = hash
+                        terminalOutput.add("Extracted hash: $hash")
+                        identifyHash() // Automatically identify the hash type
+                    } else {
+                        terminalOutput.add("[ERROR] Failed to extract hash from file. The service might be down or the file is invalid.")
+                    }
+                } else {
+                    terminalOutput.add("[ERROR] Error reading file.")
+                }
+            } catch (e: java.io.IOException) {
+                terminalOutput.add("[ERROR] File I/O error: ${e.message}")
+            } catch (e: Exception) {
+                terminalOutput.add("[ERROR] An unexpected error occurred during upload: ${e.message}")
+            }
+        }
+    }
+
     fun identifyHash() {
         viewModelScope.launch {
             try {
@@ -85,7 +195,7 @@ class MainViewModel(
                     selectedHashMode.value = hashModes.first()
                 }
             } catch (e: Exception) {
-                terminalOutput.add("Error identifying hash: ${e.message}")
+                terminalOutput.add("[ERROR] Error identifying hash: ${e.message}")
             }
         }
     }
@@ -97,8 +207,10 @@ class MainViewModel(
                 val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 // TODO: Add the rest of the file upload logic
                 terminalOutput.add("File upload functionality is not yet implemented.")
+            } catch (e: java.io.IOException) {
+                terminalOutput.add("[ERROR] File I/O error: ${e.message}")
             } catch (e: Exception) {
-                terminalOutput.add("Error uploading file: ${e.message}")
+                terminalOutput.add("[ERROR] An unexpected error occurred during upload: ${e.message}")
             }
         }
     }
@@ -122,7 +234,7 @@ class MainViewModel(
                 terminalOutput.add("Attack started with job ID: ${response.jobId}")
                 pollForStatus(response.jobId)
             } catch (e: Exception) {
-                terminalOutput.add("Error starting attack: ${e.message}")
+                terminalOutput.add("[ERROR] Error starting attack: ${e.message}")
             }
         }
     }
@@ -152,14 +264,22 @@ class MainViewModel(
 
     class MainViewModelFactory(
         private val application: Application,
-        private val apiClient: HashcatApiClient
+        private val apiClient: HashcatApiClient,
+        private val cap2hashcatApiClient: Cap2HashcatApiClient,
+        private val toolManager: ToolManager
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(application, apiClient) as T
+                return MainViewModel(application, apiClient, cap2hashcatApiClient, toolManager) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        apiClient.close()
+        cap2hashcatApiClient.close()
     }
 }
