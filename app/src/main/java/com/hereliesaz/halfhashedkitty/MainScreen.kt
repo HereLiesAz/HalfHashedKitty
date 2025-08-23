@@ -1,85 +1,97 @@
 package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.InputTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.OutputTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.SetupTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.CaptureTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
-import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme // Changed here
+import com.hereliesaz.aznavrail.AzNavRail
+import com.hereliesaz.aznavrail.NavItem
+import com.hereliesaz.aznavrail.NavItemData
+import com.hereliesaz.halfhashedkitty.ui.screens.ScannerScreen
+import com.hereliesaz.halfhashedkitty.ui.tabs.*
+import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.websocket.*
+import io.ktor.websocket.*
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisViewModel) {
-    var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Input", "Capture", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
+    var selectedIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Setup", "Input", "Attack", "Wordlist", "Mask", "Output", "Capture", "Terminal", "Hashtopolis", "Command", "Scan QR")
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
-    HalfHashedKittyTheme { // Changed here
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Hashcat GUI") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.primary,
+    val client = HttpClient(CIO) {
+        install(WebSockets)
+    }
+
+    val navItems = tabs.mapIndexed { index, title ->
+        NavItem(
+            text = title,
+            data = NavItemData.Action(onClick = { selectedIndex = index }),
+            showOnRail = true
+        )
+    }
+
+    HalfHashedKittyTheme {
+        Row {
+            AzNavRail(
+                menuSections = listOf(
+                    com.hereliesaz.aznavrail.NavRailMenuSection(
+                        title = "Main",
+                        items = navItems
                     )
                 )
-            }
-        ) { paddingValues ->
-            Column(modifier = Modifier.padding(paddingValues).animateContentSize()) {
-                ScrollableTabRow(selectedTabIndex = tabIndex) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = tabIndex == index,
-                            onClick = { tabIndex = index },
-                            text = { Text(text = title) }
-                        )
+            )
+
+            when (selectedIndex) {
+                0 -> SetupTab(mainViewModel)
+                1 -> InputTab(mainViewModel)
+                2 -> AttackTab(mainViewModel)
+                3 -> WordlistTab(mainViewModel)
+                4 -> MaskTab(mainViewModel)
+                5 -> OutputTab(mainViewModel)
+                6 -> CaptureTab(mainViewModel)
+                7 -> TerminalTab(mainViewModel)
+                8 -> HashtopolisTab(hashtopolisViewModel)
+                9 -> CommandBuilderTab(mainViewModel)
+                10 -> ScannerScreen(onQrCodeScanned = { qrCode ->
+                    Toast.makeText(context, "Connecting to $qrCode", Toast.LENGTH_SHORT).show()
+                    val parts = qrCode.split(":")
+                    if (parts.size == 2) {
+                        val host = parts[0]
+                        val port = parts[1].toIntOrNull()
+                        if (port != null) {
+                            coroutineScope.launch {
+                                try {
+                                    client.webSocket(method = io.ktor.http.HttpMethod.Get, host = host, port = port, path = "/") {
+                                        Log.d("MainScreen", "WebSocket connection established")
+                                        for (frame in incoming) {
+                                            frame as? Frame.Text ?: continue
+                                            val receivedText = frame.readText()
+                                            Log.d("MainScreen", "Received: $receivedText")
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MainScreen", "WebSocket connection failed", e)
+                                }
+                            }
+                        }
                     }
-                }
-                when (tabIndex) {
-                    0 -> InputTab(mainViewModel)
-                    1 -> CaptureTab(mainViewModel)
-                    2 -> WordlistTab(mainViewModel)
-                    3 -> MaskTab()
-                    4 -> AttackTab(mainViewModel)
-                    5 -> OutputTab(mainViewModel)
-                    6 -> TerminalTab(mainViewModel)
-                    7 -> HashtopolisTab(hashtopolisViewModel)
-                    8 -> SetupTab()
-                }
+                })
             }
         }
     }
 }
 
-// Preview for MainScreen
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    // Also need to update the theme in the Preview if it uses it directly
-    // For now, MainScreen is called which now uses the correct theme
     MainScreen(
         MainViewModel(
             Application(),
