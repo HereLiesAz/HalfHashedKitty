@@ -1,7 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -38,12 +39,15 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.10"
     }
     packagingOptions {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 }
 
@@ -58,10 +62,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("io.ktor:ktor-client-core:3.2.3")
-    implementation("io.ktor:ktor-client-cio:3.2.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.2.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("io.ktor:ktor-client-core:2.3.12")
+    implementation("io.ktor:ktor-client-cio:2.3.12")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
     implementation("org.jsoup:jsoup:1.21.1")
     implementation("com.github.HereLiesAz:AzNavRail:1.9")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
