@@ -36,7 +36,7 @@ class ToolManager(private val context: Context) {
 
         val abi = getBestSupportedAbi()
         if (abi == null) {
-            System.err.println("Device architecture is not supported.")
+            android.util.Log.e("ToolManager", "Device architecture is not supported.")
             return false
         }
         System.out.println("Using ABI: $abi")
