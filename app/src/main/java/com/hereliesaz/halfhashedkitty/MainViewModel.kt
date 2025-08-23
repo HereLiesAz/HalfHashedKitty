@@ -124,8 +124,10 @@ class MainViewModel(
                 airmonStdoutLines.forEach { if(it.isNotBlank()) captureOutput.add(it) }
                 airmonResult.stderr.lines().forEach { if(it.isNotBlank()) captureOutput.add("[STDERR] $it") }
 
-                val monitorInterface = airmonStdoutLines.find { it.contains("monitor mode enabled on") }
-                    ?.substringAfter("enabled on ")?.substringBefore(")")?.trim()
+                val monitorInterface = airmonResult.stdout.let {
+                    val regex = """monitor mode enabled on\s+(\w+)""".toRegex()
+                    regex.find(it)?.groups?.get(1)?.value
+                }
 
                 if (monitorInterface == null) {
                     captureOutput.add("[ERROR] Failed to start monitor mode. Check dmesg or logcat for driver errors.")
@@ -202,15 +204,16 @@ class MainViewModel(
 
     fun uploadZipFile(context: android.content.Context, uri: android.net.Uri) {
         viewModelScope.launch {
+            terminalOutput.add("Uploading ZIP file...")
             try {
-                terminalOutput.add("Uploading ZIP file...")
                 val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                // TODO: Add the rest of the file upload logic
+                // TODO: Add the rest of the file upload logic, which would likely involve
+                // calling a method on `apiClient` similar to how `uploadPcapngFile` works.
                 terminalOutput.add("File upload functionality is not yet implemented.")
             } catch (e: java.io.IOException) {
-                terminalOutput.add("[ERROR] File I/O error: ${e.message}")
+                terminalOutput.add("[ERROR] File I/O error while reading ZIP file: ${e.message}")
             } catch (e: Exception) {
-                terminalOutput.add("[ERROR] An unexpected error occurred during upload: ${e.message}")
+                terminalOutput.add("[ERROR] An unexpected error occurred during ZIP upload: ${e.message}")
             }
         }
     }

@@ -2,10 +2,15 @@ package com.hereliesaz.halfhashedkitty
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 
 class ToolManager(private val context: Context) {
+
+    companion object {
+        private const val TAG = "ToolManager"
+    }
 
     private val tools = listOf("aircrack-ng", "airodump-ng", "airmon-ng", "hcxdumptool")
     private val supportedAbis = listOf("arm64-v8a", "armeabi-v7a") // Add more as you bundle them
@@ -36,10 +41,10 @@ class ToolManager(private val context: Context) {
 
         val abi = getBestSupportedAbi()
         if (abi == null) {
-            System.err.println("Device architecture is not supported.")
+            Log.e(TAG, "Device architecture is not supported.")
             return false
         }
-        System.out.println("Using ABI: $abi")
+        Log.i(TAG, "Using ABI: $abi")
 
         // Ensure the bin directory exists and is clean
         if (binDir.exists()) {
@@ -58,8 +63,7 @@ class ToolManager(private val context: Context) {
                     }
                 }
             } catch (e: Exception) {
-                // Handle error, e.g., log it or notify user
-                System.err.println("Failed to copy tool '$toolName': ${e.message}")
+                Log.e(TAG, "Failed to copy tool '$toolName'", e)
                 return false
             }
         }
@@ -68,7 +72,7 @@ class ToolManager(private val context: Context) {
         val chmodCommands = tools.map { "chmod 755 ${getToolPath(it)}" }
         val result = RootUtils.executeAsRoot(*chmodCommands.toTypedArray())
         if (result.exitCode != 0) {
-            System.err.println("Failed to make tools executable: ${result.stderr}")
+            Log.e(TAG, "Failed to make tools executable: ${result.stderr}")
             return false
         }
         return true
