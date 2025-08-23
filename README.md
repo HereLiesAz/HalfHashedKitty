@@ -1,6 +1,6 @@
 # Half-Hashed Kitty
 
-*[Banner image not found at the specified path]*
+*[app/main/src/res/drawable/halfhashedkitty_banner.png]*
 
 ## Intro
 
