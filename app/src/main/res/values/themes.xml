@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.HalfHashedKitty" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- Base application theme. -->
+    <style name="Theme.HalfHashedKitty" parent="Theme.HalfHashedKitty.Starting">
+        <!-- Customize your light theme here. -->
         <item name="android:statusBarColor">@color/purple_700</item>
+    </style>
+
+    <!-- Splash Screen Theme -->
+    <style name="Theme.HalfHashedKitty.Starting" parent="Theme.SplashScreen">
+        <!-- Set the splash screen background -->
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <!-- Set your custom icon as the animated icon -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/halfhashedkitty2</item>
+        <!-- Optional: set the duration of the splash screen icon animation -->
+        <item name="windowSplashScreenAnimationDuration">500</item>
+        <!-- Post-splash screen theme -->
+        <item name="postSplashScreenTheme">@style/Theme.HalfHashedKitty</item>
     </style>
 </resources>
