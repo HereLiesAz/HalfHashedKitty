@@ -23,11 +23,10 @@ import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
-import androidx.camera.core.ExperimentalGetImage
+import com.hereliesaz.halfhashedkitty.QrCodeAnalyzer
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
-@OptIn(ExperimentalGetImage::class)
 @Composable
 fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
     val context = LocalContext.current
@@ -70,25 +69,7 @@ fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
                         .build()
                     imageAnalysis.setAnalyzer(
                         Executors.newSingleThreadExecutor(),
-                        { imageProxy ->
-                            val options = BarcodeScannerOptions.Builder()
-                                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                                .build()
-                            val scanner = BarcodeScanning.getClient(options)
-                            val image = InputImage.fromMediaImage(
-                                imageProxy.image!!,
-                                imageProxy.imageInfo.rotationDegrees
-                            )
-                            scanner.process(image)
-                                .addOnSuccessListener { barcodes ->
-                                    if (barcodes.isNotEmpty()) {
-                                        onQrCodeScanned(barcodes[0].rawValue ?: "")
-                                    }
-                                }
-                                .addOnCompleteListener {
-                                    imageProxy.close()
-                                }
-                        }
+                        QrCodeAnalyzer(onQrCodeScanned)
                     )
 
                     try {
