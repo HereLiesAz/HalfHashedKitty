@@ -10,7 +10,7 @@
     <!-- Splash Screen Theme -->
     <style name="Theme.HalfHashedKitty.Starting" parent="Theme.SplashScreen">
         <!-- Set the splash screen background -->
-        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
         <!-- Set your custom icon as the animated icon -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/halfhashedkitty2</item>
         <!-- Optional: set the duration of the splash screen icon animation -->

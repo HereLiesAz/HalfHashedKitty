@@ -34,3 +34,9 @@ data class AttackResponse(
 data class UploadResponse(
     val hash: String
 )
+
+@InternalSerializationApi @Serializable
+data class AttackMode(
+    val id: Int,
+    val name: String
+)
