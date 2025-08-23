@@ -2,6 +2,7 @@ package com.hereliesaz.halfhashedkitty
 
 import java.io.BufferedReader
 import java.io.DataOutputStream
+import java.io.File
 import java.io.InputStreamReader
 
 object RootUtils {
@@ -12,9 +13,26 @@ object RootUtils {
         return executeAsRoot("id").exitCode == 0
     }
 
+    private fun findSuBinary(): String? {
+        val paths = arrayOf(
+            "/system/app/Superuser.apk", "/sbin/su", "/system/bin/su", "/system/xbin/su",
+            "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
+            "/system/bin/failsafe/su", "/data/local/su", "/su/bin/su"
+        )
+        for (path in paths) {
+            if (File(path).exists()) return path
+        }
+        return null
+    }
+
     fun executeAsRoot(vararg commands: String): ShellOutput {
+        val suPath = findSuBinary()
+        if (suPath == null) {
+            return ShellOutput("", "Could not find 'su' binary on this device.", -1)
+        }
+
         return try {
-            val process = Runtime.getRuntime().exec("su")
+            val process = Runtime.getRuntime().exec(suPath)
 
             DataOutputStream(process.outputStream).use { os ->
                 for (command in commands) {

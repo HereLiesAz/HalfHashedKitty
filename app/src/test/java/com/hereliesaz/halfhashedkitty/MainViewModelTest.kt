@@ -141,8 +141,8 @@ class MainViewModelTest {
         `when`(hashcatApiClient.identifyHash(any(), any())).thenReturn(HashIdentificationResponse(listOf(HashModeInfo(22000, "WPA-PBKDF2-PMKID+EAPOL"))))
 
         // When
-        viewModel.uploadPcapngFile(context, uri)
-        testDispatcher.scheduler.advanceUntilIdle()
+        val job = viewModel.uploadPcapngFile(context, uri)
+        job.join() // Wait for the launched coroutine to complete
 
         // Then
         assertEquals(expectedHash, viewModel.hashToCrack.value)

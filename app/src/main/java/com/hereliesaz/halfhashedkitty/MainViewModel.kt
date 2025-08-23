@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.InternalSerializationApi
@@ -159,8 +160,8 @@ class MainViewModel(
         // 3. Process the capture file
     }
 
-    fun uploadPcapngFile(context: android.content.Context, uri: android.net.Uri) {
-        viewModelScope.launch {
+    fun uploadPcapngFile(context: android.content.Context, uri: android.net.Uri): Job {
+        return viewModelScope.launch {
             terminalOutput.add("Uploading PCAPNG file to cap2hashcat...")
             try {
                 val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
