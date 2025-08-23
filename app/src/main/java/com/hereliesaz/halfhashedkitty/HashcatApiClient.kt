@@ -25,6 +25,10 @@ class HashcatApiClient {
         }
     }
 
+    fun close() {
+        client.close()
+    }
+
     suspend fun startAttack(serverUrl: String, request: AttackRequest): AttackResponse {
         return client.post("$serverUrl/attack") {
             contentType(ContentType.Application.Json)

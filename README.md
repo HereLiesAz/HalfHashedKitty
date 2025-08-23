@@ -1,53 +1,59 @@
 # Half-Hashed Kitty
 
-# Intro
+*[Banner image not found at the specified path]*
 
-The hash-master project is intended to provide a Graphical User Interface that uses the functionality of [Hashcat](https://hashcat.net/hashcat/) as well as associated utilities.  
+## Intro
 
-This project is in its infancy and has plenty of bugs.  If you spot any please submit an issue with as much detail as possible.
+Half-Hashed Kitty is an Android application that provides a Graphical User Interface for various WiFi security auditing tools, including the `aircrack-ng` suite and online hash-cracking utilities. It allows users to both process existing capture files and perform live, on-device packet capturing on supported hardware.
 
-The easiest way to get going with this is to simply run the .jar file from a Kali or Parrot machine for the convienence of access to the built in wordlists, I run it on Pop\!\_OS and presume any Ubuntu derivative would be fine.  
+This project is under active development. If you spot any bugs, please submit an issue with as much detail as possible.
 
-You will need to have hashid, CeWL, and maskprocessor (mp64) installed.  The first two are easy to get from the repository with `apt install -y hashid && apt install -y cewl` while maskprocessor I usually grab straight from github: https://github.com/hashcat/maskprocessor/releases/tag/v0.73
+## Features
 
-## Current summary of features:
+- **File-based Handshake Extraction**:
+  - Upload `.pcapng` capture files directly within the app.
+  - Automatically sends the capture to the `hashcat.net/cap2hashcat` online service to extract the WPA/WPA2 handshake.
+  - The extracted hash is loaded into the app for further actions.
 
-- User input hashes are analyzed at import for possible hash type using [hashid](http://psypanda.github.io/hashID/), these are not visible to the user but are used internally.  
-- The 'Magic' mode attempts to crack each hash using a dictionary attack and the possible modes identified during import.  
-- The normal 'Attack' shows the user the wordlist and rule that has been set.
-- Users can create a custom wordlist using [CeWL](https://digi.ninja/projects/cewl.php).  
-- Creating a custom hashcat rule is done with a simple tool that makes limited use of the very powerful [maskprocessor](https://hashcat.net/wiki/doku.php?id=maskprocessor). 
+- **On-Device Packet Capture (Root Required)**:
+  - Perform live WPA/WPA2 handshake captures.
+  - Automatically checks for root access and handles the installation of necessary command-line tools.
+  - Dynamically detects the device's CPU architecture and wireless interface (`wlanX`) to ensure compatibility.
+  - Provides a "Capture" tab with a terminal-like view for real-time output from the capture process.
+  - **Note**: This feature requires a rooted device with a wireless chipset that supports monitor mode.
 
-The ultimate objective is to separate the GUI from the back end logic as much as possible with a view towards modularity and allowing future frontend development to be independant from the core functions. 
-<p>&nbsp;</p>
+- **Hashcat Integration**:
+  - A full GUI for managing hashcat and hashtopolis tasks.
+  - Auto-detection of hash types.
+  - Support for various attack modes, including dictionary and mask attacks.
 
-# Current and Planned Functionality as of 0.1.0
+## Requirements
 
-- [ ] Hash input
-	- [x] Read from file
-	- [x] Copy and Paste 
-	- [ ] HashQueue.Hash extraction (i.e. user uploads encrypted zip and app extracts the hash)
-	- [x] Inputs populate 'queue' table on GUI
-	- [x] Auto-detects most likely hash type
-- [ ] Output
-	- [x] Table in GUI alongside respective hashes
-	- [ ] Rainbow Table
-	- [ ] CSV
-	- [ ] Report
-	- [ ] Greppable
-- [x] Magic mode
-	- [x] For a given `HashQueue.Hash` object, iterate through possible hash types and attempt to crack
-- [ ] Command Builder
-	- [ ] Use checkboxes to toggle command line arguments
-	- [x] Use dropdowns or file chooser to select word lists
-	- [ ] Command to be used is created in real time and available for copy and paste
-- [x] Rules
-	- [x] User can easily make and save custom rules
-	- [x] Created rules are available from Command Builder
-	- [x] integrate maskprocessor
-- [ ] Dynamic custom wordlist attacks
-	- [ ] All modes operate on-demand so not to kill disk space
-	- [x] CeWL used for targeted web-scraping
-	- [ ] princeprocessor for compound wordlist
-	- [ ] kwprocessor for keyboard walk attacks (i.e. 1qaz!QAZ2wsx@WSX)
+1.  **Android Version**: Android 8.0 (Oreo) or newer.
+2.  **Root Access**: Required for the on-device packet capturing feature. The app will request `su` permissions when the capture is started.
+3.  **Monitor Mode Interface**: For on-device capturing, a wireless chipset that supports monitor mode is essential. This may require custom firmware (e.g., Nexmon) or an external USB WiFi adapter that is compatible with Android.
 
+## Roadmap
+
+### Desktop App: Integrate Hashcat and Hashtopolis (with Docker)
+
+- Set up hashtopolis and hashcat using Docker.
+- Implement UI in the desktop app to manage the Docker containers (e.g., start/stop buttons).
+- Create a Java client to interact with the Hashtopolis API.
+- Design and implement a UI in the desktop app for managing hashcat tasks (e.g., creating tasks, viewing results) via the Hashtopolis API.
+
+### Android & Desktop App: Finalize Connection and UI
+
+- Implement the WebSocket client in the Android app to receive real-time updates from the desktop app.
+- Create a UI in the Android app to display the status and results of hashcat/hashtopolis tasks.
+
+### Final Testing and Verification
+
+- Thoroughly test the entire workflow:
+  - Android app UI and navigation.
+  - Root command execution.
+  - QR code scanning and connection.
+  - Desktop app functionality.
+  - Docker container management.
+  - WebSocket communication.
+  - Task management via the Hashtopolis API.
