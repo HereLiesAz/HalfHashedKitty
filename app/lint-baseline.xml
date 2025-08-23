@@ -85,30 +85,8 @@
         errorLine2="                        ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hereliesaz/halfhashedkitty/ui/screens/ScannerScreen.kt"
-            line="72"
+            line="74"
             column="25"/>
-    </issue>
-
-    <issue
-        id="ViewModelConstructorInComposable"
-        message="Constructing a view model in a composable"
-        errorLine1="        MainViewModel("
-        errorLine2="        ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hereliesaz/halfhashedkitty/MainScreen.kt"
-            line="84"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="ViewModelConstructorInComposable"
-        message="Constructing a view model in a composable"
-        errorLine1="        HashtopolisViewModel()"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/hereliesaz/halfhashedkitty/MainScreen.kt"
-            line="90"
-            column="9"/>
     </issue>
 
     <issue
@@ -125,7 +103,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hereliesaz/halfhashedkitty/MainScreen.kt"
-            line="36"
+            line="37"
             column="32"/>
     </issue>
 
