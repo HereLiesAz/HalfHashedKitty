@@ -1,6 +1,7 @@
 # Half-Hashed Kitty
 
-*[app/main/src/res/drawable/halfhashedkitty_banner.png]*
+![Alt text](app/main/src/res/drawable/halfhashedkitty_banner.png?raw=true "Half-Hashed Kitty")
+
 
 ## Intro
 
