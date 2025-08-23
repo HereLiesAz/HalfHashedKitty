@@ -25,6 +25,7 @@ import com.hereliesaz.halfhashedkitty.ui.tabs.InputTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.OutputTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.SetupTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.CaptureTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
 import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme // Changed here
@@ -33,7 +34,7 @@ import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme // Changed h
 @Composable
 fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisViewModel) {
     var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Input", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
+    val tabs = listOf("Input", "Capture", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
 
     HalfHashedKittyTheme { // Changed here
         Scaffold(
@@ -59,13 +60,14 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
                 }
                 when (tabIndex) {
                     0 -> InputTab(mainViewModel)
-                    1 -> WordlistTab(mainViewModel)
-                    2 -> MaskTab()
-                    3 -> AttackTab(mainViewModel)
-                    4 -> OutputTab(mainViewModel)
-                    5 -> TerminalTab(mainViewModel)
-                    6 -> HashtopolisTab(hashtopolisViewModel)
-                    7 -> SetupTab()
+                    1 -> CaptureTab(mainViewModel)
+                    2 -> WordlistTab(mainViewModel)
+                    3 -> MaskTab()
+                    4 -> AttackTab(mainViewModel)
+                    5 -> OutputTab(mainViewModel)
+                    6 -> TerminalTab(mainViewModel)
+                    7 -> HashtopolisTab(hashtopolisViewModel)
+                    8 -> SetupTab()
                 }
             }
         }
@@ -78,5 +80,13 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
 fun DefaultPreview() {
     // Also need to update the theme in the Preview if it uses it directly
     // For now, MainScreen is called which now uses the correct theme
-    MainScreen(MainViewModel(Application(), HashcatApiClient()), HashtopolisViewModel())
+    MainScreen(
+        MainViewModel(
+            Application(),
+            HashcatApiClient(),
+            Cap2HashcatApiClient(),
+            ToolManager(Application())
+        ),
+        HashtopolisViewModel()
+    )
 }
