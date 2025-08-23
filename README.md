@@ -29,7 +29,7 @@ This project is under active development. If you spot any bugs, please submit an
 
 ## Requirements
 
-1.  **Android Version**: Android 5.0 (Lollipop) or newer.
+1.  **Android Version**: Android 8.0 (Oreo) or newer.
 2.  **Root Access**: Required for the on-device packet capturing feature. The app will request `su` permissions when the capture is started.
 3.  **Monitor Mode Interface**: For on-device capturing, a wireless chipset that supports monitor mode is essential. This may require custom firmware (e.g., Nexmon) or an external USB WiFi adapter that is compatible with Android.
 

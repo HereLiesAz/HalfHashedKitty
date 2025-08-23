@@ -37,7 +37,7 @@ class Cap2HashcatApiClient {
 
         // Use Jsoup to reliably parse the HTML response
         val doc = Jsoup.parse(responseBody)
-        val textarea = doc.select("textarea").first() // Select the first textarea
+        val textarea = doc.select("textarea").firstOrNull() // Select the first textarea, or null
 
         return if (textarea != null) {
             textarea.text().trim()
