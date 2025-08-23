@@ -17,6 +17,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.junit.Assert.*
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import java.io.ByteArrayInputStream
 import kotlinx.serialization.InternalSerializationApi
@@ -99,7 +100,7 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        assertTrue(viewModel.terminalOutput.contains("Error starting attack: $errorMessage"))
+        assertTrue(viewModel.terminalOutput.contains("[ERROR] Error starting attack: $errorMessage"))
     }
 
     @Test
@@ -123,5 +124,29 @@ class MainViewModelTest {
 
         // Then
         assertTrue(viewModel.terminalOutput.contains("Attack finished. Password not found."))
+    }
+
+    @Test
+    fun `uploadPcapngFile success`() = runTest(testDispatcher) {
+        // Given
+        val context = mock<android.content.Context>()
+        val contentResolver = mock<android.content.ContentResolver>()
+        val uri = mock<android.net.Uri>()
+        val inputStream = ByteArrayInputStream("pcap data".toByteArray())
+        val expectedHash = "WPA*01*...*..."
+
+        `when`(context.contentResolver).thenReturn(contentResolver)
+        `when`(contentResolver.openInputStream(uri)).thenReturn(inputStream)
+        `when`(cap2hashcatApiClient.uploadPcapngFile(any())).thenReturn(expectedHash)
+        `when`(hashcatApiClient.identifyHash(any(), any())).thenReturn(HashIdentificationResponse(listOf(HashModeInfo(22000, "WPA-PBKDF2-PMKID+EAPOL"))))
+
+        // When
+        viewModel.uploadPcapngFile(context, uri)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Then
+        assertEquals(expectedHash, viewModel.hashToCrack.value)
+        assertTrue(viewModel.terminalOutput.contains("Extracted hash: $expectedHash"))
+        assertEquals(22000, viewModel.selectedHashMode.value?.id)
     }
 }

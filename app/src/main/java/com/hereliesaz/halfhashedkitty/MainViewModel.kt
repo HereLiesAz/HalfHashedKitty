@@ -84,42 +84,67 @@ class MainViewModel(
     // Placeholder functions for capture logic
     fun startCapture() {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            isCapturing.value = true
-            captureOutput.clear()
+            try {
+                isCapturing.value = true
+                captureOutput.clear()
 
-            captureOutput.add("Checking for root access...")
-            if (!RootUtils.isRooted()) {
-                captureOutput.add("[ERROR] Root access is not available. This feature is for rooted devices only.")
+                captureOutput.add("Checking for root access...")
+                val rootCheck = RootUtils.executeAsRoot("id")
+                if (rootCheck.exitCode != 0) {
+                    captureOutput.add("[ERROR] Root access check failed.")
+                    if(rootCheck.stderr.isNotBlank()) {
+                        captureOutput.add("[STDERR] ${rootCheck.stderr}")
+                    }
+                    isCapturing.value = false
+                    return@launch
+                }
+                captureOutput.add("Root access granted.")
+
+                captureOutput.add("Preparing tools...")
+                if (!toolManager.installTools()) {
+                    captureOutput.add("[ERROR] Failed to install tools. Check logs for details.")
+                    isCapturing.value = false
+                    return@launch
+                }
+                captureOutput.add("Tools are ready.")
+
+                captureOutput.add("Finding wireless interface...")
+                val wifiInterface = findWirelessInterface()
+                if (wifiInterface == null) {
+                    captureOutput.add("[ERROR] No wireless interface (wlanX) found.")
+                    isCapturing.value = false
+                    return@launch
+                }
+                captureOutput.add("Found wireless interface: $wifiInterface")
+
+                captureOutput.add("Starting monitor mode on $wifiInterface...")
+                val airmonResult = RootUtils.executeAsRoot(toolManager.getToolPath("airmon-ng") + " start " + wifiInterface)
+                val airmonStdoutLines = airmonResult.stdout.lines()
+                airmonStdoutLines.filter { it.isNotBlank() }.forEach { captureOutput.add(it) }
+                airmonResult.stderr.lines().filter { it.isNotBlank() }.forEach { captureOutput.add("[STDERR] $it") }
+
+                val monitorInterface = airmonStdoutLines.find { it.contains("monitor mode enabled on") }
+                    ?.substringAfter("enabled on ")?.substringBefore(")")?.trim()
+
+                if (monitorInterface == null) {
+                    captureOutput.add("[ERROR] Failed to start monitor mode. Check dmesg or logcat for driver errors.")
+                    isCapturing.value = false
+                    return@launch
+                }
+
+                captureOutput.add("Monitor mode enabled on $monitorInterface. Starting capture...")
+                captureOutput.add("... (airodump-ng execution logic to be implemented) ...")
+
+            } catch (e: Exception) {
+                captureOutput.add("[FATAL] An unexpected error occurred: ${e.message}")
                 isCapturing.value = false
-                return@launch
             }
-            captureOutput.add("Root access granted.")
-
-            captureOutput.add("Preparing tools...")
-            toolManager.installTools()
-            captureOutput.add("Tools are ready.")
-
-            captureOutput.add("Starting monitor mode on wlan0...")
-            val airmonResult = RootUtils.executeAsRoot(toolManager.getToolPath("airmon-ng") + " start wlan0")
-            airmonResult.stdout.lines().forEach { if(it.isNotBlank()) captureOutput.add(it) }
-            airmonResult.stderr.lines().forEach { if(it.isNotBlank()) captureOutput.add("[STDERR] $it") }
-
-            // We need to find the monitor interface name, e.g., wlan0mon
-            val monitorInterface = airmonResult.stdout.lines().find { it.contains("monitor mode enabled on") }
-                ?.substringAfter("enabled on ")?.substringBefore(")")?.trim()
-
-            if (monitorInterface == null) {
-                captureOutput.add("[ERROR] Failed to start monitor mode.")
-                isCapturing.value = false
-                return@launch
-            }
-
-            captureOutput.add("Monitor mode enabled on $monitorInterface. Starting capture...")
-            // The actual process handling for airodump-ng will be more complex
-            // and will be handled in the next refinement.
-            captureOutput.add("... (airodump-ng execution logic to be implemented) ...")
-
         }
+    }
+
+    private fun findWirelessInterface(): String? {
+        val result = RootUtils.executeAsRoot("ls /sys/class/net")
+        return result.stdout.lines().find { it.startsWith("wlan") }
     }
 
     fun stopCapture() {
@@ -133,8 +158,8 @@ class MainViewModel(
 
     fun uploadPcapngFile(context: android.content.Context, uri: android.net.Uri) {
         viewModelScope.launch {
+            terminalOutput.add("Uploading PCAPNG file to cap2hashcat...")
             try {
-                terminalOutput.add("Uploading PCAPNG file to cap2hashcat...")
                 val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 if (fileBytes != null) {
                     val hash = cap2hashcatApiClient.uploadPcapngFile(fileBytes)
@@ -143,13 +168,15 @@ class MainViewModel(
                         terminalOutput.add("Extracted hash: $hash")
                         identifyHash() // Automatically identify the hash type
                     } else {
-                        terminalOutput.add("Failed to extract hash from file. The service might be down or the file is invalid.")
+                        terminalOutput.add("[ERROR] Failed to extract hash from file. The service might be down or the file is invalid.")
                     }
                 } else {
-                    terminalOutput.add("Error reading file.")
+                    terminalOutput.add("[ERROR] Error reading file.")
                 }
+            } catch (e: java.io.IOException) {
+                terminalOutput.add("[ERROR] File I/O error: ${e.message}")
             } catch (e: Exception) {
-                terminalOutput.add("Error uploading file: ${e.message}")
+                terminalOutput.add("[ERROR] An unexpected error occurred during upload: ${e.message}")
             }
         }
     }
@@ -164,7 +191,7 @@ class MainViewModel(
                     selectedHashMode.value = hashModes.first()
                 }
             } catch (e: Exception) {
-                terminalOutput.add("Error identifying hash: ${e.message}")
+                terminalOutput.add("[ERROR] Error identifying hash: ${e.message}")
             }
         }
     }
@@ -176,8 +203,10 @@ class MainViewModel(
                 val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 // TODO: Add the rest of the file upload logic
                 terminalOutput.add("File upload functionality is not yet implemented.")
+            } catch (e: java.io.IOException) {
+                terminalOutput.add("[ERROR] File I/O error: ${e.message}")
             } catch (e: Exception) {
-                terminalOutput.add("Error uploading file: ${e.message}")
+                terminalOutput.add("[ERROR] An unexpected error occurred during upload: ${e.message}")
             }
         }
     }
@@ -201,7 +230,7 @@ class MainViewModel(
                 terminalOutput.add("Attack started with job ID: ${response.jobId}")
                 pollForStatus(response.jobId)
             } catch (e: Exception) {
-                terminalOutput.add("Error starting attack: ${e.message}")
+                terminalOutput.add("[ERROR] Error starting attack: ${e.message}")
             }
         }
     }
@@ -242,5 +271,11 @@ class MainViewModel(
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        apiClient.close()
+        cap2hashcatApiClient.close()
     }
 }

@@ -1,14 +1,20 @@
 package com.hereliesaz.halfhashedkitty
 
 import android.content.Context
+import android.os.Build
 import java.io.File
 import java.io.FileOutputStream
 
 class ToolManager(private val context: Context) {
 
     private val tools = listOf("aircrack-ng", "airodump-ng", "airmon-ng", "hcxdumptool")
-    private val arch: String = "arm64-v8a" // In a real app, this should be detected dynamically
+    private val supportedAbis = listOf("arm64-v8a", "armeabi-v7a") // Add more as you bundle them
     private val binDir: File = File(context.filesDir, "bin")
+
+    private fun getBestSupportedAbi(): String? {
+        val deviceAbis = Build.SUPPORTED_ABIS
+        return supportedAbis.firstOrNull { deviceAbis.contains(it) }
+    }
 
     fun getToolPath(toolName: String): String {
         return File(binDir, toolName).absolutePath
@@ -22,11 +28,18 @@ class ToolManager(private val context: Context) {
         return true
     }
 
-    fun installTools() {
+    fun installTools(): Boolean {
         if (areToolsInstalled()) {
             // Optional: could add a force reinstall flag
-            return
+            return true
         }
+
+        val abi = getBestSupportedAbi()
+        if (abi == null) {
+            android.util.Log.e("ToolManager", "Device architecture is not supported.")
+            return false
+        }
+        System.out.println("Using ABI: $abi")
 
         // Ensure the bin directory exists and is clean
         if (binDir.exists()) {
@@ -36,7 +49,7 @@ class ToolManager(private val context: Context) {
 
         // Copy tools from assets
         tools.forEach { toolName ->
-            val assetPath = "$arch/$toolName"
+            val assetPath = "$abi/$toolName"
             val destinationFile = File(binDir, toolName)
             try {
                 context.assets.open(assetPath).use { input ->
@@ -44,10 +57,10 @@ class ToolManager(private val context: Context) {
                         input.copyTo(output)
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: java.io.IOException) {
                 // Handle error, e.g., log it or notify user
-                // For now, we'll just print to stderr for debugging
-                System.err.println("Failed to copy tool '$toolName': ${e.message}")
+                android.util.Log.e("ToolManager", "Failed to copy tool '$toolName'", e)
+                return false
             }
         }
 
@@ -55,8 +68,9 @@ class ToolManager(private val context: Context) {
         val chmodCommands = tools.map { "chmod 755 ${getToolPath(it)}" }
         val result = RootUtils.executeAsRoot(*chmodCommands.toTypedArray())
         if (result.exitCode != 0) {
-            // Handle error, e.g., throw an exception or return a status
             System.err.println("Failed to make tools executable: ${result.stderr}")
+            return false
         }
+        return true
     }
 }

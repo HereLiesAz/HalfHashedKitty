@@ -15,30 +15,24 @@ object RootUtils {
     fun executeAsRoot(vararg commands: String): ShellOutput {
         return try {
             val process = Runtime.getRuntime().exec("su")
-            val os = DataOutputStream(process.outputStream)
-            val stdoutReader = BufferedReader(InputStreamReader(process.inputStream))
-            val stderrReader = BufferedReader(InputStreamReader(process.errorStream))
 
-            for (command in commands) {
-                os.writeBytes("$command\n")
+            DataOutputStream(process.outputStream).use { os ->
+                for (command in commands) {
+                    os.writeBytes("$command\n")
+                    os.flush()
+                }
+                os.writeBytes("exit\n")
                 os.flush()
             }
 
-            os.writeBytes("exit\n")
-            os.flush()
-            os.close()
-
-            val stdout = stdoutReader.readText()
-            val stderr = stderrReader.readText()
+            val stdout = process.inputStream.bufferedReader().use { it.readText() }
+            val stderr = process.errorStream.bufferedReader().use { it.readText() }
 
             val exitCode = process.waitFor()
 
-            stdoutReader.close()
-            stderrReader.close()
-
             ShellOutput(stdout, stderr, exitCode)
         } catch (e: Exception) {
-            ShellOutput("", e.message ?: "Error executing root command", -1)
+            ShellOutput("", e.localizedMessage ?: "Unknown error executing root command", -1)
         }
     }
 }
