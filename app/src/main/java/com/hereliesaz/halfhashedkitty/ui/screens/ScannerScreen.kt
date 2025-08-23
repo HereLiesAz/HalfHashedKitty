@@ -23,9 +23,11 @@ import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
+import androidx.camera.core.ExperimentalGetImage
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
+@OptIn(ExperimentalGetImage::class)
 @Composable
 fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
     val context = LocalContext.current
