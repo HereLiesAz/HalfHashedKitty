@@ -120,8 +120,8 @@ class MainViewModel(
                 captureOutput.add("Starting monitor mode on $wifiInterface...")
                 val airmonResult = RootUtils.executeAsRoot(toolManager.getToolPath("airmon-ng") + " start " + wifiInterface)
                 val airmonStdoutLines = airmonResult.stdout.lines()
-                airmonStdoutLines.forEach { if(it.isNotBlank()) captureOutput.add(it) }
-                airmonResult.stderr.lines().forEach { if(it.isNotBlank()) captureOutput.add("[STDERR] $it") }
+                airmonStdoutLines.filter { it.isNotBlank() }.forEach { captureOutput.add(it) }
+                airmonResult.stderr.lines().filter { it.isNotBlank() }.forEach { captureOutput.add("[STDERR] $it") }
 
                 val monitorInterface = airmonStdoutLines.find { it.contains("monitor mode enabled on") }
                     ?.substringAfter("enabled on ")?.substringBefore(")")?.trim()
