@@ -90,6 +90,28 @@
     </issue>
 
     <issue
+        id="ViewModelConstructorInComposable"
+        message="Constructing a view model in a composable"
+        errorLine1="        MainViewModel("
+        errorLine2="        ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hereliesaz/halfhashedkitty/MainScreen.kt"
+            line="84"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="ViewModelConstructorInComposable"
+        message="Constructing a view model in a composable"
+        errorLine1="        HashtopolisViewModel()"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hereliesaz/halfhashedkitty/MainScreen.kt"
+            line="90"
+            column="9"/>
+    </issue>
+
+    <issue
         id="ObsoleteSdkInt"
         message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 26. Merge all the resources in this folder into `mipmap-anydpi`.">
         <location
@@ -103,7 +125,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hereliesaz/halfhashedkitty/MainScreen.kt"
-            line="37"
+            line="36"
             column="32"/>
     </issue>
 
