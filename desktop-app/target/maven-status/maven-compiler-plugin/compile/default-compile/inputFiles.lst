@@ -1,0 +1,11 @@
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/Main.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/api/HashtopolisApiClient.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/api/HashtopolisApiModels.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/docker/DockerManager.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/ui/ConnectionPanel.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/ui/MainFrame.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/ui/NewTaskDialog.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/ui/ServicesPanel.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/ui/TasksPanel.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/util/IpUtils.java
+/app/desktop-app/src/main/java/com/hereliesaz/connectionmanager/websocket/WebSocketManager.java
