@@ -30,11 +30,13 @@ import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
 import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme // Changed here
 
+import com.hereliesaz.halfhashedkitty.ui.tabs.PiControlTab
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisViewModel) {
+fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisViewModel, piControlViewModel: PiControlViewModel) {
     var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Input", "Capture", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
+    val tabs = listOf("Pi Control", "Input", "Capture", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
 
     HalfHashedKittyTheme { // Changed here
         Scaffold(
@@ -59,15 +61,16 @@ fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisVi
                     }
                 }
                 when (tabIndex) {
-                    0 -> InputTab(mainViewModel)
-                    1 -> CaptureTab(mainViewModel)
-                    2 -> WordlistTab(mainViewModel)
-                    3 -> MaskTab()
-                    4 -> AttackTab(mainViewModel)
-                    5 -> OutputTab(mainViewModel)
-                    6 -> TerminalTab(mainViewModel)
-                    7 -> HashtopolisTab(hashtopolisViewModel)
-                    8 -> SetupTab()
+                    0 -> PiControlTab(piControlViewModel)
+                    1 -> InputTab(mainViewModel)
+                    2 -> CaptureTab(mainViewModel)
+                    3 -> WordlistTab(mainViewModel)
+                    4 -> MaskTab()
+                    5 -> AttackTab(mainViewModel)
+                    6 -> OutputTab(mainViewModel)
+                    7 -> TerminalTab(mainViewModel)
+                    8 -> HashtopolisTab(hashtopolisViewModel)
+                    9 -> SetupTab()
                 }
             }
         }
@@ -87,6 +90,7 @@ fun DefaultPreview() {
             Cap2HashcatApiClient(),
             ToolManager(Application())
         ),
-        HashtopolisViewModel()
+        HashtopolisViewModel(),
+        PiControlViewModel()
     )
 }

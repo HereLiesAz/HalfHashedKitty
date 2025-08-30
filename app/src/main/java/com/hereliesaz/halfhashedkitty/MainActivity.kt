@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         )
     }
     private val hashtopolisViewModel: HashtopolisViewModel by viewModels()
+    private val piControlViewModel: PiControlViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,7 +31,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(mainViewModel, hashtopolisViewModel)
+                    MainScreen(mainViewModel, hashtopolisViewModel, piControlViewModel)
                 }
             }
         }
