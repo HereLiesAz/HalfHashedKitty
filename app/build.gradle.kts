@@ -68,7 +68,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
     implementation("org.jsoup:jsoup:1.21.1")
-    implementation("com.github.HereLiesAz:AzNavRail:1.9")
+    implementation("com.github.HereLiesAz:AzNavRail:2.3")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
 
     val camerax_version = "1.5.0-rc01"
