@@ -1,17 +1,8 @@
 package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,65 +10,64 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.CaptureTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.InputTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.OutputTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.PiControlTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.SetupTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.CaptureTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
-import com.hereliesaz.halfhashedkitty.ui.theme.HalfHashedKittyTheme // Changed here
 
-import com.hereliesaz.halfhashedkitty.ui.tabs.PiControlTab
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(mainViewModel: MainViewModel, hashtopolisViewModel: HashtopolisViewModel, piControlViewModel: PiControlViewModel) {
-    var tabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Pi Control", "Input", "Capture", "Wordlist", "Mask", "Attack", "Output", "Terminal", "Hashtopolis", "Setup")
+fun MainScreen(
+    viewModel: MainViewModel,
+    hashtopolisViewModel: HashtopolisViewModel,
+    piControlViewModel: PiControlViewModel
+) {
+    var selectedId by remember { mutableStateOf("Setup") }
+    val tabs = listOf(
+        "Setup",
+        "Input",
+        "Attack",
+        "Wordlist",
+        "Mask",
+        "Capture",
+        "Terminal",
+        "Output",
+        "Hashtopolis",
+        "Pi Control"
+    )
 
-    HalfHashedKittyTheme { // Changed here
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Hashcat GUI") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.primary,
-                    )
-                )
-            }
-        ) { paddingValues ->
-            Column(modifier = Modifier.padding(paddingValues).animateContentSize()) {
-                ScrollableTabRow(selectedTabIndex = tabIndex) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = tabIndex == index,
-                            onClick = { tabIndex = index },
-                            text = { Text(text = title) }
-                        )
-                    }
-                }
-                when (tabIndex) {
-                    0 -> PiControlTab(piControlViewModel)
-                    1 -> InputTab(mainViewModel)
-                    2 -> CaptureTab(mainViewModel)
-                    3 -> WordlistTab(mainViewModel)
-                    4 -> MaskTab()
-                    5 -> AttackTab(mainViewModel)
-                    6 -> OutputTab(mainViewModel)
-                    7 -> TerminalTab(mainViewModel)
-                    8 -> HashtopolisTab(hashtopolisViewModel)
-                    9 -> SetupTab()
+    Row(modifier = Modifier.fillMaxSize()) {
+        AzNavRail {
+            tabs.forEach { tab ->
+                azRailItem(id = tab, text = tab) {
+                    selectedId = tab
                 }
             }
+        }
+        when (selectedId) {
+            "Setup" -> SetupTab()
+            "Input" -> InputTab(viewModel)
+            "Attack" -> AttackTab(viewModel)
+            "Wordlist" -> WordlistTab(viewModel)
+            "Mask" -> MaskTab()
+            "Capture" -> CaptureTab(viewModel)
+            "Terminal" -> TerminalTab(viewModel)
+            "Output" -> OutputTab(viewModel)
+            "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
+            "Pi Control" -> PiControlTab(piControlViewModel)
         }
     }
 }
 
 // Preview for MainScreen
+// Suppressed for preview mode, where it's acceptable to construct ViewModels directly.
+@Suppress("ViewModelConstructorInComposable")
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
