@@ -50,15 +50,20 @@ fun CaptureTab(viewModel: MainViewModel) {
                 .fillMaxSize()
                 .padding(top = 8.dp)
                 .background(Color.Black)
-                .padding(8.dp)
+                .padding(8.dp),
+            contentAlignment = androidx.compose.ui.Alignment.Center
         ) {
-            LazyColumn(state = listState) {
-                items(viewModel.captureOutput) { line ->
-                    Text(
-                        text = line,
-                        fontFamily = FontFamily.Monospace,
-                        color = Color.White
-                    )
+            if (viewModel.captureOutput.isEmpty()) {
+                Text("Capture is not running. Press 'Start Capture' to begin.", color = Color.Gray)
+            } else {
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    items(viewModel.captureOutput) { line ->
+                        Text(
+                            text = line,
+                            fontFamily = FontFamily.Monospace,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
