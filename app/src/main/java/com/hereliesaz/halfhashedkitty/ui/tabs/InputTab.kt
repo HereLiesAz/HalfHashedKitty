@@ -4,11 +4,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.MainViewModel
@@ -54,16 +56,32 @@ fun InputTab(viewModel: MainViewModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(top = 8.dp)
         ) {
-            Button(onClick = { viewModel.identifyHash() }) {
-                Text("Auto-detect Hash Type")
+            OutlinedButton(
+                onClick = { viewModel.identifyHash() },
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
+                shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)
+            ) {
+                Text("Detect Hash")
             }
-            Button(onClick = { zipLauncher.launch("application/zip") }) {
-                Text("Upload ZIP File")
+            OutlinedButton(
+                onClick = { zipLauncher.launch("application/zip") },
+                modifier = Modifier
+                    .weight(1f),
+                shape = RoundedCornerShape(0.dp)
+            ) {
+                Text("Upload Zip")
             }
-            Button(onClick = { pcapngLauncher.launch("*/*") }) {
+            OutlinedButton(
+                onClick = { pcapngLauncher.launch("*/*") },
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)),
+                shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
+            ) {
                 Text("Upload PCAPNG")
             }
         }
