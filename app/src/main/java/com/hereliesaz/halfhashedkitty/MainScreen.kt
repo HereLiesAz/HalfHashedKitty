@@ -28,30 +28,21 @@ fun MainScreen(
     hashtopolisViewModel: HashtopolisViewModel,
     piControlViewModel: PiControlViewModel
 ) {
-    var selectedId by remember { mutableStateOf("Setup") }
-    val tabs = listOf(
-        "Setup",
-        "Input",
-        "Attack",
-        "Wordlist",
-        "Mask",
-        "Capture",
-        "Terminal",
-        "Output",
-        "Hashtopolis",
-        "Pi Control"
-    )
+    var selectedId by remember { mutableStateOf("Input") }
 
     Row(modifier = Modifier.fillMaxSize()) {
         AzNavRail {
-            tabs.forEach { tab ->
-                azRailItem(id = tab, text = tab) {
-                    selectedId = tab
-                }
-            }
+            azRailItem(id = "Input", text = "Input") { selectedId = "Input" }
+            azRailItem(id = "Attack", text = "Attack") { selectedId = "Attack" }
+            azRailItem(id = "Wordlist", text = "Wordlist") { selectedId = "Wordlist" }
+            azRailItem(id = "Mask", text = "Mask") { selectedId = "Mask" }
+            azRailItem(id = "Capture", text = "Capture") { selectedId = "Capture" }
+            azRailItem(id = "Terminal", text = "Terminal") { selectedId = "Terminal" }
+            azRailItem(id = "Output", text = "Output") { selectedId = "Output" }
+            azRailItem(id = "Hashtopolis", text = "Hashtopolis") { selectedId = "Hashtopolis" }
+            azRailItem(id = "Pi Control", text = "Pi Control") { selectedId = "Pi Control" }
         }
         when (selectedId) {
-            "Setup" -> SetupTab()
             "Input" -> InputTab(viewModel)
             "Attack" -> AttackTab(viewModel)
             "Wordlist" -> WordlistTab(viewModel)
