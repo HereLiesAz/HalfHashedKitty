@@ -39,4 +39,57 @@
             <version>2.10.1</version>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>
+                                        com.hereliesaz.connectionmanager.ConnectionManager
+                                    </mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.4.0</version>
+                <executions>
+                    <execution>
+                        <id>jpackage</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jpackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <name>ConnectionManager</name>
+                    <appVersion>1.0.0</appVersion>
+                    <vendor>Half-Hashed Kitty</vendor>
+                    <destination>target/dist</destination>
+                    <input>${project.build.directory}</input>
+                    <mainClass>com.hereliesaz.connectionmanager.ConnectionManager</mainClass>
+                    <mainJar>connection-manager-1.0-SNAPSHOT-jar-with-dependencies.jar</mainJar>
+                    <type>DEB</type>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
