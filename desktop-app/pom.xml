@@ -39,4 +39,76 @@
             <version>2.10.1</version>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+<<<<<<< HEAD
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+=======
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+>>>>>>> origin/feature/build-pc-app
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+<<<<<<< HEAD
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>
+                                        com.hereliesaz.connectionmanager.ConnectionManager
+                                    </mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+=======
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.hereliesaz.connectionmanager.Main</mainClass>
+                                </transformer>
+                            </transformers>
+>>>>>>> origin/feature/build-pc-app
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+<<<<<<< HEAD
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.4.0</version>
+                <executions>
+                    <execution>
+                        <id>jpackage</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jpackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <name>ConnectionManager</name>
+                    <appVersion>1.0.0</appVersion>
+                    <vendor>Half-Hashed Kitty</vendor>
+                    <destination>target/dist</destination>
+                    <input>${project.build.directory}</input>
+                    <mainClass>com.hereliesaz.connectionmanager.ConnectionManager</mainClass>
+                    <mainJar>connection-manager-1.0-SNAPSHOT-jar-with-dependencies.jar</mainJar>
+                    <type>DEB</type>
+                </configuration>
+            </plugin>
+=======
+>>>>>>> origin/feature/build-pc-app
+        </plugins>
+    </build>
 </project>
