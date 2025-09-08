@@ -42,12 +42,12 @@ services:
     ports:
       - "4200:80"
 
-  hashcat:
-    build:
-      context: https://github.com/hashcat/hashcat.git
-    image: hashcat-custom
-    container_name: hashcat
-    restart: "no"
+#  hashcat:
+#    build:
+#      context: https://github.com/hashcat/hashcat.git
+#    image: hashcat-custom
+#    container_name: hashcat
+#    restart: "no"
 
 volumes:
   db:
