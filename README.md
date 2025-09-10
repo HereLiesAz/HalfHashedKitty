@@ -2,59 +2,62 @@
 
 ![Alt text](app/src/main/res/drawable/half_hashed_kitty_banner.png?raw=true "Half-Hashed Kitty")
 
-
 ## Intro
 
-Half-Hashed Kitty is an Android application that provides a Graphical User Interface for various WiFi security auditing tools, including the `aircrack-ng` suite and online hash-cracking utilities. It allows users to both process existing capture files and perform live, on-device packet capturing on supported hardware.
+Half-Hashed Kitty is a project that consists of an Android application and a desktop application for WiFi security auditing.
 
 This project is under active development. If you spot any bugs, please submit an issue with as much detail as possible.
 
-## Features
+## Desktop Application
 
-- **File-based Handshake Extraction**:
-  - Upload `.pcapng` capture files directly within the app.
-  - Automatically sends the capture to the `hashcat.net/cap2hashcat` online service to extract the WPA/WPA2 handshake.
-  - The extracted hash is loaded into the app for further actions.
+The desktop application is a Java application that acts as a connection manager for the Android application.
 
-- **On-Device Packet Capture (Root Required)**:
-  - Perform live WPA/WPA2 handshake captures.
-  - Automatically checks for root access and handles the installation of necessary command-line tools.
-  - Dynamically detects the device's CPU architecture and wireless interface (`wlanX`) to ensure compatibility.
-  - Provides a "Capture" tab with a terminal-like view for real-time output from the capture process.
-  - **Note**: This feature requires a rooted device with a wireless chipset that supports monitor mode.
+### Building the Desktop Application
 
-- **Hashcat Integration**:
-  - A full GUI for managing hashcat and hashtopolis tasks.
-  - Auto-detection of hash types.
-  - Support for various attack modes, including dictionary and mask attacks.
+To build the desktop application, you need to have Java 8 or newer and Maven installed.
 
-## Requirements
+Navigate to the `desktop-app` directory and run the following command:
+```
+mvn clean package
+```
+This will create a fat jar in the `target` directory named `connection-manager-1.0-SNAPSHOT.jar`.
 
-1.  **Android Version**: Android 8.0 (Oreo) or newer.
-2.  **Root Access**: Required for the on-device packet capturing feature. The app will request `su` permissions when the capture is started.
-3.  **Monitor Mode Interface**: For on-device capturing, a wireless chipset that supports monitor mode is essential. This may require custom firmware (e.g., Nexmon) or an external USB WiFi adapter that is compatible with Android.
+### Running the Desktop Application
 
-## Roadmap
+To run the desktop application, you can use the provided wrapper scripts in the `desktop-app` directory:
+-   `run.sh` for Linux and Mac.
+-   `run.bat` for Windows.
 
-### Desktop App: Integrate Hashcat and Hashtopolis (with Docker)
+Alternatively, you can run the fat jar directly from the command line:
+```
+java -jar desktop-app/target/connection-manager-1.0-SNAPSHOT.jar
+```
 
-- Set up hashtopolis and hashcat using Docker.
-- Implement UI in the desktop app to manage the Docker containers (e.g., start/stop buttons).
-- Create a Java client to interact with the Hashtopolis API.
-- Design and implement a UI in the desktop app for managing hashcat tasks (e.g., creating tasks, viewing results) via the Hashtopolis API.
+### Desktop Application UI
 
-### Android & Desktop App: Finalize Connection and UI
+The desktop application has a single screen with a QR code and an input field for an API key.
 
-- Implement the WebSocket client in the Android app to receive real-time updates from the desktop app.
-- Create a UI in the Android app to display the status and results of hashcat/hashtopolis tasks.
+-   **QR Code**: Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.
+-   **API Key**: Enter the API key from the Hashtopolis web interface.
 
-### Final Testing and Verification
+## Android Application
 
-- Thoroughly test the entire workflow:
-  - Android app UI and navigation.
-  - Root command execution.
-  - QR code scanning and connection.
-  - Desktop app functionality.
-  - Docker container management.
-  - WebSocket communication.
-  - Task management via the Hashtopolis API.
+The Android application provides a user interface for various WiFi security auditing tools.
+
+### Building the Android Application
+
+To build the Android application, you need to have Android Studio installed. Open the project in Android Studio and build it.
+
+### Android Application UI
+
+The Android application has a tabbed interface with the following tabs:
+
+-   **Input**: This tab is for providing the input for the hash cracking process. You can either enter the hash directly, or upload a ZIP or PCAPNG file to extract the hash from it.
+-   **Attack**: This tab is for starting the hash cracking attack on the remote server.
+-   **Wordlist**: This tab is for specifying the path to the wordlist file on the remote server.
+-   **Mask**: This tab is for creating and selecting masks for hash cracking attacks.
+-   **Capture**: This tab is for capturing wireless network packets to get the handshake for hash cracking.
+-   **Terminal**: This tab shows the raw output from the tools that are being run.
+-   **Output**: This tab will show the cracked password once it has been found.
+-   **Hashtopolis**: This tab is for connecting to a Hashtopolis server to manage your hash cracking agents.
+-   **Pi Control**: This tab is for connecting to a Raspberry Pi that is running the necessary tools.

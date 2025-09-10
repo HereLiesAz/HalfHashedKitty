@@ -28,6 +28,7 @@ fun CaptureTab(viewModel: MainViewModel) {
     }
 
     Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+        Text("This tab is for capturing wireless network packets to get the handshake for hash cracking.")
         Button(
             onClick = {
                 if (viewModel.isCapturing.value) {

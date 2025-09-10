@@ -19,8 +19,8 @@ fun OutputTab(viewModel: MainViewModel) {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
+        Text("This tab will show the cracked password once it has been found.")
         if (viewModel.crackedPassword.value != null) {
             Text("Password Found!", fontWeight = FontWeight.Bold)
             Text(viewModel.crackedPassword.value!!)

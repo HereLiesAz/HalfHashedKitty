@@ -57,6 +57,7 @@ fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        Text("Scan the QR code from the desktop application to connect.", modifier = Modifier.padding(16.dp))
         if (hasCameraPermission) {
             AndroidView(
                 factory = { context ->

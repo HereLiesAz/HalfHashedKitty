@@ -37,6 +37,7 @@ fun InputTab(viewModel: MainViewModel) {
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
+        Text("This tab is for providing the input for the hash cracking process. You can either enter the hash directly, or upload a ZIP or PCAPNG file to extract the hash from it.")
         OutlinedTextField(
             value = viewModel.serverUrl.value,
             onValueChange = { viewModel.serverUrl.value = it },

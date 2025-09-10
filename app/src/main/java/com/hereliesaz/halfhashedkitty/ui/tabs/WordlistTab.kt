@@ -20,8 +20,8 @@ fun WordlistTab(viewModel: MainViewModel) {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
+        Text("This tab is for specifying the path to the wordlist file on the remote server.")
         OutlinedTextField(
             value = viewModel.wordlistPath.value,
             onValueChange = { viewModel.wordlistPath.value = it },
