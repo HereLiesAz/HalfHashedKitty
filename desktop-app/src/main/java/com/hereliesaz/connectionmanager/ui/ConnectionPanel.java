@@ -21,6 +21,11 @@ public class ConnectionPanel extends JPanel {
     public ConnectionPanel(String connectionString) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
+        // Instructions
+        JLabel instructionsLabel = new JLabel("Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.");
+        instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        add(instructionsLabel);
+
         // QR Code
         try {
             BufferedImage qrImage = generateQrCode(connectionString);
@@ -33,6 +38,10 @@ public class ConnectionPanel extends JPanel {
         }
 
         // API Key Input
+        JLabel apiKeyLabel = new JLabel("Enter the API key from the Hashtopolis web interface.");
+        apiKeyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        add(apiKeyLabel);
+
         JPanel apiKeyPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         apiKeyPanel.add(new JLabel("API Key:"));
         apiKeyField = new JTextField(30);

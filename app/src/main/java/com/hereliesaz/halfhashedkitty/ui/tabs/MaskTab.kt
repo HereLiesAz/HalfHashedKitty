@@ -18,8 +18,8 @@ fun MaskTab() {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
+        Text("This tab is for creating and selecting masks for hash cracking attacks.")
         Button(onClick = { /* TODO: Implement mask creator */ }) {
             Text("Create Mask")
         }
