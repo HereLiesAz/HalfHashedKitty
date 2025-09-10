@@ -13,6 +13,7 @@ import com.hereliesaz.halfhashedkitty.HashtopolisViewModel
 @Composable
 fun HashtopolisTab(viewModel: HashtopolisViewModel) {
     Column(modifier = Modifier.padding(16.dp)) {
+        Text("This tab is for connecting to a Hashtopolis server to manage your hash cracking agents.")
         OutlinedTextField(
             value = viewModel.serverUrl.value,
             onValueChange = { viewModel.serverUrl.value = it },

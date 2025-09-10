@@ -1,8 +1,11 @@
 #!/bin/bash
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 java -jar target/connection-manager-1.0-SNAPSHOT-jar-with-dependencies.jar
 =======
+=======
+>>>>>>> origin/feature/build-pc-app
 =======
 >>>>>>> origin/feature/build-pc-app
 if ! [ -x "$(command -v java)" ]; then
@@ -11,6 +14,9 @@ if ! [ -x "$(command -v java)" ]; then
 fi
 java -jar target/connection-manager-1.0-SNAPSHOT.jar
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> origin/feature/build-pc-app
+=======
 >>>>>>> origin/feature/build-pc-app
 =======
 >>>>>>> origin/feature/build-pc-app

@@ -19,8 +19,8 @@ fun AttackTab(viewModel: MainViewModel) {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
+        Text("This tab is for starting the hash cracking attack on the remote server.")
         Button(onClick = { viewModel.startAttack() }) {
             Text("Start Remote Attack")
         }
