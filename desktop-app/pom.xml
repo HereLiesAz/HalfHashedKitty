@@ -44,8 +44,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.3.0</version>
+=======
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+>>>>>>> origin/feature/build-pc-app
 =======
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.2.4</version>
@@ -54,6 +59,7 @@
                     <execution>
                         <phase>package</phase>
                         <goals>
+<<<<<<< HEAD
 <<<<<<< HEAD
                             <goal>single</goal>
                         </goals>
@@ -69,6 +75,8 @@
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
 =======
+=======
+>>>>>>> origin/feature/build-pc-app
                             <goal>shade</goal>
                         </goals>
                         <configuration>
@@ -77,11 +85,15 @@
                                     <mainClass>com.hereliesaz.connectionmanager.Main</mainClass>
                                 </transformer>
                             </transformers>
+<<<<<<< HEAD
+>>>>>>> origin/feature/build-pc-app
+=======
 >>>>>>> origin/feature/build-pc-app
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+<<<<<<< HEAD
 <<<<<<< HEAD
             <plugin>
                 <groupId>org.panteleyev</groupId>
@@ -107,6 +119,8 @@
                     <type>DEB</type>
                 </configuration>
             </plugin>
+=======
+>>>>>>> origin/feature/build-pc-app
 =======
 >>>>>>> origin/feature/build-pc-app
         </plugins>
