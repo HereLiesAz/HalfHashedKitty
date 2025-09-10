@@ -1,7 +1,11 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.background
+<<<<<<< HEAD
 import androidx.compose.foundation.layout.Box
+=======
+import androidx.compose.foundation.layout.Column
+>>>>>>> origin/feature/build-pc-app
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +21,7 @@ import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @Composable
 fun TerminalTab(viewModel: MainViewModel) {
+<<<<<<< HEAD
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -35,6 +40,22 @@ fun TerminalTab(viewModel: MainViewModel) {
                         fontFamily = FontFamily.Monospace
                     )
                 }
+=======
+    Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+        Text("This tab shows the raw output from the tools that are being run.")
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .padding(16.dp)
+        ) {
+            items(viewModel.terminalOutput) { line ->
+                Text(
+                    text = line,
+                    color = Color.White,
+                    fontFamily = FontFamily.Monospace
+                )
+>>>>>>> origin/feature/build-pc-app
             }
         }
     }

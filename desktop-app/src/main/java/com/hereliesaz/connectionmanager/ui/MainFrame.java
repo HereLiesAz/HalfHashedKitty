@@ -22,28 +22,6 @@ public class MainFrame extends JFrame {
         connectionPanel = new ConnectionPanel(connectionString);
         tabbedPane.addTab("Connection", connectionPanel);
 
-        ServicesPanel servicesPanel = new ServicesPanel();
-        tabbedPane.addTab("Services", servicesPanel);
-
-        tasksPanel = new TasksPanel(this); // Pass the frame reference
-        tabbedPane.addTab("Tasks", tasksPanel);
-
         add(tabbedPane);
-
-        tabbedPane.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                if (tabbedPane.getSelectedComponent() == tasksPanel) {
-                    String apiKey = connectionPanel.getApiKey();
-                    if (apiKey != null && !apiKey.isEmpty()) {
-                        apiClient = new HashtopolisApiClient("http://localhost:8080", apiKey);
-                        tasksPanel.setApiClient(apiClient);
-                        tasksPanel.refreshTasks();
-                    } else {
-                        JOptionPane.showMessageDialog(MainFrame.this, "Please enter an API key in the Connection tab.", "API Key Required", JOptionPane.WARNING_MESSAGE);
-                        tabbedPane.setSelectedComponent(connectionPanel);
-                    }
-                }
-            }
-        });
     }
 }
