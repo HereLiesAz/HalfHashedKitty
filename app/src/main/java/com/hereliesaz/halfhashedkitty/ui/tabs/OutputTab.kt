@@ -20,12 +20,13 @@ fun OutputTab(viewModel: MainViewModel) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("This tab will show the cracked password once it has been found.")
+        Text("This tab will show the cracked password once it has been found.", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(16.dp))
         if (viewModel.crackedPassword.value != null) {
             Text("Password Found!", fontWeight = FontWeight.Bold)
             Text(viewModel.crackedPassword.value!!)
         } else {
-            Text("No password found yet.")
+            Text("No password found yet. Check the Terminal tab for progress.")
         }
     }
 }

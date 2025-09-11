@@ -1,18 +1,15 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import com.hereliesaz.halfhashedkitty.MainViewModel
+import com.hereliesaz.halfhashedkitty.ui.screens.ScannerScreen
 
 @Composable
-fun PCConnectionTab() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("PC Connection Screen")
-    }
+fun PCConnectionTab(viewModel: MainViewModel) {
+    ScannerScreen(
+        instructionText = "Scan the QR code from the desktop application to connect.",
+        onQrCodeScanned = { qrCodeValue ->
+            viewModel.onQrCodeScanned(qrCodeValue)
+        }
+    )
 }
