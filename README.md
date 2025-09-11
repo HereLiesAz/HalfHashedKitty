@@ -33,15 +33,25 @@ Alternatively, you can run the fat jar directly from the command line:
 java -jar desktop-app/target/connection-manager-1.0-SNAPSHOT.jar
 ```
 
+### Connecting to a Hashtopolis Server
+
+The desktop application acts as a client for a [Hashtopolis](https://hashtopolis.org/) server. You need to have a Hashtopolis server running to use the task management features of the desktop app.
+
+You can either install Hashtopolis manually on your local machine or a remote server, or use the provided (but now removed) Docker Compose file for a quick local setup.
+
+Once you have a running Hashtopolis server, you can connect the desktop application to it using the "Connection" tab.
+
 ### Desktop Application UI
 
-The desktop application has a tabbed interface with one tab: "Connection".
+The desktop application has a tabbed interface.
 
--   **Connection Tab**: This tab contains all the elements for connecting the Android app and the Hashtopolis server.
-    -   **Instructions**: A label with instructions on how to use the QR code.
-    -   **QR Code**: Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.
-    -   **API Key**: A text field to enter the API key from the Hashtopolis web interface.
-    -   **Save Key Button**: A button to save the API key.
+-   **Connection Tab**: This tab is for connecting to the Android app and the Hashtopolis server.
+    -   **QR Code**: Scan this QR code with the Android app to connect it to this desktop application.
+    -   **Server URL**: Enter the URL of your Hashtopolis server (e.g., `http://localhost:8080`).
+    -   **API Key**: Enter the API key from your Hashtopolis web interface.
+    -   **Save Settings Button**: Saves the Server URL and API Key.
+    -   **Connect Button**: Connects to the Hashtopolis server and opens the "Tasks" tab.
+-   **Tasks Tab**: This tab displays the list of tasks from the Hashtopolis server. It is enabled after a successful connection.
 
 ## Android Application
 

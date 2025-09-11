@@ -16,13 +16,14 @@ import java.util.Map;
 
 public class ConnectionPanel extends JPanel {
     private JTextField apiKeyField;
+    private JTextField serverUrlField;
     private String apiKey;
+    private String serverUrl;
+    private JButton connectButton;
 
     public ConnectionPanel(String connectionString) {
-        setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.gridwidth = 1;
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Instructions
         gbc.gridx = 0;
@@ -30,6 +31,8 @@ public class ConnectionPanel extends JPanel {
         gbc.anchor = GridBagConstraints.CENTER;
         JLabel instructionsLabel = new JLabel("Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.");
         add(instructionsLabel, gbc);
+
+        add(Box.createRigidArea(new Dimension(0, 10)));
 
         // QR Code
         gbc.gridy = 1;
@@ -45,46 +48,54 @@ public class ConnectionPanel extends JPanel {
         }
         gbc.weighty = 0.0;
 
-        // Input Panel
-        gbc.gridy = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        add(createInputPanel(), gbc);
+        add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Input Fields
+        add(createInputFieldsPanel());
     }
 
-    private JPanel createInputPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(2, 2, 2, 2);
-        gbc.anchor = GridBagConstraints.WEST;
+    private JPanel createInputFieldsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        // Server URL
+        JPanel serverUrlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        serverUrlPanel.add(new JLabel("Server URL:"));
+        serverUrlField = new JTextField(30);
+        serverUrlPanel.add(serverUrlField);
+        panel.add(serverUrlPanel);
+
+        JLabel serverUrlInstruction = new JLabel("The URL of your Hashtopolis server.");
+        serverUrlInstruction.setFont(serverUrlInstruction.getFont().deriveFont(10f));
+        serverUrlInstruction.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(serverUrlInstruction);
 
         // API Key
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(new JLabel("API Key:"), gbc);
-
-        gbc.gridx = 1;
+        JPanel apiKeyPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        apiKeyPanel.add(new JLabel("API Key:    "));
         apiKeyField = new JTextField(30);
-        panel.add(apiKeyField, gbc);
+        apiKeyPanel.add(apiKeyField);
+        panel.add(apiKeyPanel);
 
-        gbc.gridy = 1;
         JLabel apiKeyInstruction = new JLabel("Enter the API key from your Hashtopolis web interface.");
         apiKeyInstruction.setFont(apiKeyInstruction.getFont().deriveFont(10f));
-        panel.add(apiKeyInstruction, gbc);
+        apiKeyInstruction.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(apiKeyInstruction);
 
-        // Save Button
-        gbc.gridx = 1;
-        gbc.gridy = 2;
-        JButton saveButton = new JButton("Save Key");
-        panel.add(saveButton, gbc);
+        add(Box.createRigidArea(new Dimension(0, 10)));
 
-        gbc.gridy = 3;
-        JLabel saveButtonInstruction = new JLabel("Click to save the API key.");
-        saveButtonInstruction.setFont(saveButtonInstruction.getFont().deriveFont(10f));
-        panel.add(saveButtonInstruction, gbc);
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton saveButton = new JButton("Save Settings");
+        connectButton = new JButton("Connect");
+        buttonPanel.add(saveButton);
+        buttonPanel.add(connectButton);
+        panel.add(buttonPanel);
 
         saveButton.addActionListener(e -> {
             this.apiKey = apiKeyField.getText();
-            JOptionPane.showMessageDialog(this, "API Key Saved!");
+            this.serverUrl = serverUrlField.getText();
+            JOptionPane.showMessageDialog(this, "Settings Saved!");
         });
 
         return panel;
@@ -92,6 +103,14 @@ public class ConnectionPanel extends JPanel {
 
     public String getApiKey() {
         return apiKey;
+    }
+
+    public String getServerUrl() {
+        return serverUrl;
+    }
+
+    public JButton getConnectButton() {
+        return connectButton;
     }
 
     private BufferedImage generateQrCode(String connectionString) throws WriterException, IOException {
