@@ -19,13 +19,28 @@ public class TasksPanel extends JPanel {
         this.owner = owner;
         setLayout(new BorderLayout());
 
+        // Title and Instructions
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        JLabel titleLabel = new JLabel("Hashtopolis Tasks");
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        topPanel.add(titleLabel);
+
+        JLabel instructionsLabel = new JLabel("This panel displays the tasks from your Hashtopolis server.");
+        instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        topPanel.add(instructionsLabel);
+        add(topPanel, BorderLayout.NORTH);
+
         tableModel = new DefaultTableModel(new Object[]{"ID", "Name", "Type", "Priority"}, 0);
         tasksTable = new JTable(tableModel);
         add(new JScrollPane(tasksTable), BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton newTaskButton = new JButton("New Task");
+        newTaskButton.setToolTipText("Open a dialog to create a new task.");
         JButton refreshButton = new JButton("Refresh");
+        refreshButton.setToolTipText("Refresh the list of tasks from the server.");
         buttonPanel.add(newTaskButton);
         buttonPanel.add(refreshButton);
         add(buttonPanel, BorderLayout.SOUTH);

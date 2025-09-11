@@ -20,11 +20,19 @@ fun MaskTab() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("This tab is for creating and selecting masks for hash cracking attacks.")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = { /* TODO: Implement mask creator */ }) {
             Text("Create Mask")
         }
+        Text("Create a new mask for mask attacks.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Button(onClick = { /* TODO: Implement file picker */ }) {
             Text("Select Mask File")
         }
+        Text("Select a mask file from your device.", style = MaterialTheme.typography.bodySmall)
     }
 }

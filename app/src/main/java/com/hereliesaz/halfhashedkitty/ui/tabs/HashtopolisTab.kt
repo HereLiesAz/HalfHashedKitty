@@ -14,26 +14,35 @@ import com.hereliesaz.halfhashedkitty.HashtopolisViewModel
 fun HashtopolisTab(viewModel: HashtopolisViewModel) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text("This tab is for connecting to a Hashtopolis server to manage your hash cracking agents.")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = viewModel.serverUrl.value,
             onValueChange = { viewModel.serverUrl.value = it },
             label = { Text("Hashtopolis Server URL") },
             modifier = Modifier.fillMaxWidth()
         )
+        Text("The URL of your Hashtopolis server.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         OutlinedTextField(
             value = viewModel.apiKey.value,
             onValueChange = { viewModel.apiKey.value = it },
             label = { Text("API Key") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         )
+        Text("Your Hashtopolis API key.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Button(
-            onClick = { viewModel.getAgents() },
-            modifier = Modifier.padding(top = 8.dp)
+            onClick = { viewModel.getAgents() }
         ) {
             Text("Get Agents")
         }
+        Text("Fetch and display the list of agents from the server.", style = MaterialTheme.typography.bodySmall)
         viewModel.errorMessage.value?.let { errorMsg ->
             Text(
                 text = errorMsg,
