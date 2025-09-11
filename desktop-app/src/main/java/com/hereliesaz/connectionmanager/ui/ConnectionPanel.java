@@ -34,6 +34,8 @@ public class ConnectionPanel extends JPanel {
 
         add(Box.createRigidArea(new Dimension(0, 10)));
 
+        add(Box.createRigidArea(new Dimension(0, 10)));
+
         // QR Code
         gbc.gridy = 1;
         gbc.weighty = 1.0;
@@ -47,6 +49,23 @@ public class ConnectionPanel extends JPanel {
             add(new JLabel("Error generating QR code."), gbc);
         }
         gbc.weighty = 0.0;
+
+        add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Input Fields
+        add(createInputFieldsPanel());
+    }
+
+    private JPanel createInputFieldsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        // Server URL
+        JPanel serverUrlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        serverUrlPanel.add(new JLabel("Server URL:"));
+        serverUrlField = new JTextField(30);
+        serverUrlPanel.add(serverUrlField);
+        panel.add(serverUrlPanel);
 
         add(Box.createRigidArea(new Dimension(0, 10)));
 
