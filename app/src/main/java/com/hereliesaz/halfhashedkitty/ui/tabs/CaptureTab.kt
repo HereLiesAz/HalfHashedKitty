@@ -41,6 +41,10 @@ fun CaptureTab(viewModel: MainViewModel) {
         ) {
             Text(if (viewModel.isCapturing.value) "Stop Capture" else "Start Capture")
         }
+        Text(
+            "Start or stop capturing wireless network packets. The output will be displayed below.",
+            style = MaterialTheme.typography.bodySmall
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 

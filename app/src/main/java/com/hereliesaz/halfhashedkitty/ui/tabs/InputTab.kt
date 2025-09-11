@@ -40,24 +40,31 @@ fun InputTab(viewModel: MainViewModel) {
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("This tab is for providing the input for the hash cracking process. You can either enter the hash directly, or upload a ZIP or PCAPNG file to extract the hash from it.")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = viewModel.serverUrl.value,
             onValueChange = { viewModel.serverUrl.value = it },
             label = { Text("Server URL") },
             modifier = Modifier.fillMaxWidth()
         )
+        Text("The URL of your remote hashcat server.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         OutlinedTextField(
             value = viewModel.hashToCrack.value,
             onValueChange = { viewModel.hashToCrack.value = it },
             label = { Text("Enter hash") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         )
+        Text("The hash you want to crack.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedButton(
                 onClick = { viewModel.identifyHash() },
@@ -70,8 +77,7 @@ fun InputTab(viewModel: MainViewModel) {
             }
             OutlinedButton(
                 onClick = { zipLauncher.launch("application/zip") },
-                modifier = Modifier
-                    .weight(1f),
+                modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(0.dp)
             ) {
                 Text("Upload Zip")
@@ -86,9 +92,11 @@ fun InputTab(viewModel: MainViewModel) {
                 Text("Upload PCAPNG")
             }
         }
+        Text("Use these buttons to detect the hash type, or upload a file containing the hash.", style = MaterialTheme.typography.bodySmall)
 
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = viewModel.selectedHashMode.value?.name ?: "Select Hash Mode",
                 onValueChange = {},
@@ -119,5 +127,6 @@ fun InputTab(viewModel: MainViewModel) {
                 }
             }
         }
+        Text("Select the hash mode for the cracking session.", style = MaterialTheme.typography.bodySmall)
     }
 }

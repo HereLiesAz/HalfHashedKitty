@@ -66,7 +66,7 @@ fun MainScreen(
                     "Output" -> OutputTab(viewModel)
                     "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
                     "Pi Control" -> PiControlTab(piControlViewModel)
-                    "PC Connect" -> PCConnectionTab()
+                    "PC Connect" -> PCConnectionTab(viewModel)
                 }
                 if (showInstructions) {
                     InstructionsOverlay(selectedId) {

@@ -30,7 +30,7 @@ import java.util.concurrent.Executors
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
-fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
+fun ScannerScreen(instructionText: String, onQrCodeScanned: (String) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
@@ -56,8 +56,11 @@ fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text("Scan the QR code from the desktop application to connect.", modifier = Modifier.padding(16.dp))
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text("QR Code Scanner", style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(instructionText, style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.height(16.dp))
         if (hasCameraPermission) {
             AndroidView(
                 factory = { context ->

@@ -22,11 +22,15 @@ fun WordlistTab(viewModel: MainViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("This tab is for specifying the path to the wordlist file on the remote server.")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = viewModel.wordlistPath.value,
             onValueChange = { viewModel.wordlistPath.value = it },
             label = { Text("Remote Wordlist Path") },
             modifier = Modifier.fillMaxWidth()
         )
+        Text("The full path to the wordlist file on the remote server.", style = MaterialTheme.typography.bodySmall)
     }
 }

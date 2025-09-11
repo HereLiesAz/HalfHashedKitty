@@ -35,10 +35,13 @@ java -jar desktop-app/target/connection-manager-1.0-SNAPSHOT.jar
 
 ### Desktop Application UI
 
-The desktop application has a single screen with a QR code and an input field for an API key.
+The desktop application has a tabbed interface with one tab: "Connection".
 
--   **QR Code**: Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.
--   **API Key**: Enter the API key from the Hashtopolis web interface.
+-   **Connection Tab**: This tab contains all the elements for connecting the Android app and the Hashtopolis server.
+    -   **Instructions**: A label with instructions on how to use the QR code.
+    -   **QR Code**: Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.
+    -   **API Key**: A text field to enter the API key from the Hashtopolis web interface.
+    -   **Save Key Button**: A button to save the API key.
 
 ## Android Application
 
@@ -50,14 +53,37 @@ To build the Android application, you need to have Android Studio installed. Ope
 
 ### Android Application UI
 
-The Android application has a tabbed interface with the following tabs:
+The Android application has a tabbed interface. Here is a description of each tab and its UI elements:
 
--   **Input**: This tab is for providing the input for the hash cracking process. You can either enter the hash directly, or upload a ZIP or PCAPNG file to extract the hash from it.
--   **Attack**: This tab is for starting the hash cracking attack on the remote server.
+-   **Setup**: This tab provides a detailed guide on how to set up a remote hashcat server. This is a crucial first step to use the app.
+-   **PC Connect**: This tab is used to connect to the desktop application. It opens a camera preview to scan the QR code from the PC app.
+-   **Input**: This tab is for providing the input for the hash cracking process.
+    -   **Server URL**: A text field to enter the URL of your remote hashcat server.
+    -   **Enter hash**: A text field to enter the hash you want to crack.
+    -   **Detect Hash**: A button to automatically identify the hash type.
+    -   **Upload Zip**: A button to upload a ZIP file containing a hash.
+    -   **Upload PCAPNG**: A button to upload a PCAPNG file to extract a hash.
+    -   **Hash Mode**: A dropdown to select the hash mode.
+-   **Command Builder**: This tab is for configuring the attack command.
+    -   **Attack Mode**: A dropdown to select the attack mode.
+    -   **Rules File**: A text field for the rules file.
+    -   **Custom Mask**: A text field for a custom mask.
+    -   **Force**: A checkbox to force the attack.
 -   **Wordlist**: This tab is for specifying the path to the wordlist file on the remote server.
+    -   **Remote Wordlist Path**: A text field to enter the path to your wordlist file.
 -   **Mask**: This tab is for creating and selecting masks for hash cracking attacks.
+    -   **Create Mask**: A button to create a new mask.
+    -   **Select Mask File**: A button to select a mask file.
+-   **Attack**: This tab is for starting the hash cracking attack on the remote server.
+    -   **Start Remote Attack**: A button to start the attack.
 -   **Capture**: This tab is for capturing wireless network packets to get the handshake for hash cracking.
--   **Terminal**: This tab shows the raw output from the tools that are being run.
+    -   **Start/Stop Capture**: A button to start or stop the packet capture.
+    -   **Live Output**: A text area that shows the live output from the capture process.
+-   **Terminal**: This tab shows the raw output from the tools that are being run. It provides a terminal-like view of the process.
 -   **Output**: This tab will show the cracked password once it has been found.
 -   **Hashtopolis**: This tab is for connecting to a Hashtopolis server to manage your hash cracking agents.
--   **Pi Control**: This tab is for connecting to a Raspberry Pi that is running the necessary tools.
+    -   **Hashtopolis Server URL**: A text field for the server URL.
+    -   **API Key**: A text field for the API key.
+    -   **Get Agents**: A button to fetch and display the list of agents.
+    -   **Agent List**: A list of agents with their status and last activity.
+-   **Pi Control**: This tab is for connecting to a Raspberry Pi that is running the necessary tools. It opens a camera preview to scan a QR code.

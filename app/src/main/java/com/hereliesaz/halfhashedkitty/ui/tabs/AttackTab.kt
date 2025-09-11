@@ -24,5 +24,9 @@ fun AttackTab(viewModel: MainViewModel) {
         Button(onClick = { viewModel.startAttack() }) {
             Text("Start Remote Attack")
         }
+        Text(
+            "This will start the hash cracking attack on the remote server with the configured settings.",
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }
