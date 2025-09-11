@@ -26,22 +26,46 @@ public class ConnectionPanel extends JPanel {
         setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Instructions
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.CENTER;
         JLabel instructionsLabel = new JLabel("Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.");
-        instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        add(instructionsLabel);
+        add(instructionsLabel, gbc);
+
+        add(Box.createRigidArea(new Dimension(0, 10)));
 
         add(Box.createRigidArea(new Dimension(0, 10)));
 
         // QR Code
+        gbc.gridy = 1;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
         try {
             BufferedImage qrImage = generateQrCode(connectionString);
             JLabel qrLabel = new JLabel(new ImageIcon(qrImage));
-            qrLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            add(qrLabel);
+            add(qrLabel, gbc);
         } catch (WriterException | IOException e) {
             e.printStackTrace();
-            add(new JLabel("Error generating QR code."));
+            add(new JLabel("Error generating QR code."), gbc);
         }
+        gbc.weighty = 0.0;
+
+        add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Input Fields
+        add(createInputFieldsPanel());
+    }
+
+    private JPanel createInputFieldsPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        // Server URL
+        JPanel serverUrlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        serverUrlPanel.add(new JLabel("Server URL:"));
+        serverUrlField = new JTextField(30);
+        serverUrlPanel.add(serverUrlField);
+        panel.add(serverUrlPanel);
 
         add(Box.createRigidArea(new Dimension(0, 10)));
 
