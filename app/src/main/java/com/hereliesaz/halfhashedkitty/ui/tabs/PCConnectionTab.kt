@@ -7,11 +7,9 @@ import com.hereliesaz.halfhashedkitty.ui.screens.ScannerScreen
 @Composable
 fun PCConnectionTab(viewModel: MainViewModel) {
     ScannerScreen(
-        instructionText = "Scan the QR code from the desktop application to connect.",
+        instructionText = "To connect this Android app with the desktop application, please scan the QR code displayed on the 'Connection' tab of the desktop app.",
         onQrCodeScanned = { qrCodeValue ->
             viewModel.onQrCodeScanned(qrCodeValue)
         }
     )
 }
-
-private fun MainViewModel.onQrCodeScanned(qrCodeValue: String) {}

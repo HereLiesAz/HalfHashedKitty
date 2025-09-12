@@ -22,14 +22,17 @@ fun OutputTab(viewModel: MainViewModel) {
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text("This tab will show the cracked password once it has been found.", style = MaterialTheme.typography.titleMedium)
+        Text("Attack Results", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(16.dp))
         if (viewModel.crackedPassword.value != null) {
+            Text("Success!", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             Text("Password Found!", fontWeight = FontWeight.Bold)
             Text(viewModel.crackedPassword.value!!)
         } else {
-            Text("No password found yet. Check the Terminal tab for progress.")
+            Text("No password found yet.", style = MaterialTheme.typography.titleLarge)
+            Text("Please monitor the 'Terminal' tab for live progress of the attack.", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
