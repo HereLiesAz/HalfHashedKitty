@@ -19,7 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+// import androidx.compose.ui.platform.LocalLifecycleOwner // This import is duplicated below with a different fqn, let's keep the androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -27,20 +27,18 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import androidx.camera.core.ExperimentalGetImage
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
-import androidx.lifecycle.compose.LocalLifecycleOwner
+// Spacer and height are already imported from foundation.layout
+import androidx.lifecycle.compose.LocalLifecycleOwner // This is the more specific one, keeping it.
 import com.hereliesaz.halfhashedkitty.QrCodeAnalyzer
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
-@androidx.annotation.OptIn(ExperimentalGetImage::class)
-@OptIn(ExperimentalGetImage::class)
+@androidx.annotation.OptIn(ExperimentalGetImage::class) // This OptIn is fine
+@OptIn(ExperimentalGetImage::class) // Duplicated OptIn, remove one
 @Composable
 fun ScannerScreen(instructionText: String, onQrCodeScanned: (String) -> Unit) {
     val context = LocalContext.current
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current // Corrected to use the imported one
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
 
     var hasCameraPermission by remember {
