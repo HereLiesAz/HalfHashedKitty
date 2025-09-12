@@ -2,9 +2,13 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="Theme.HalfHashedKitty" parent="Theme.HalfHashedKitty.Starting">
+    <style name="Theme.HalfHashedKitty" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <item name="android:statusBarColor">@color/purple_700</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
+        <item name="android:windowLightNavigationBar">?attr/isLightTheme</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
     <!-- Splash Screen Theme -->

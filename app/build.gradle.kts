@@ -34,8 +34,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlinCompilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
     buildFeatures {
         compose = true
@@ -43,7 +43,7 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "2.0.0"
     }
-    fun Packaging.() {
+    packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -61,23 +61,23 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.3")
     implementation("androidx.activity:activity-compose:1.10.1")
-    implementation(platform("androidx.compose:compose-bom:2025.08.01"))
+    implementation(platform("androidx.compose:compose-bom:2025.09.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("io.ktor:ktor-client-core:3.2.3")
+    implementation("io.ktor:ktor-client-core:3.3.0")
     implementation("io.ktor:ktor-client-cio:3.2.3")
     implementation("io.ktor:ktor-client-content-negotiation:3.2.3")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.2.3")
-    implementation("io.ktor:ktor-client-logging:3.2.3")
+    implementation("io.ktor:ktor-client-logging:3.3.0")
     implementation("org.jsoup:jsoup:1.21.2")
-    implementation("com.github.HereLiesAz:AzNavRail:2.7")
+    implementation("com.github.HereLiesAz:AzNavRail:2.9")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
     implementation("androidx.compose.foundation:foundation-layout:1.9.1")
 
-    val cameraxVersion = "1.5.0-rc01"
+    val cameraxVersion = "1.5.0"
     implementation("androidx.camera:camera-core:${cameraxVersion}")
     implementation("androidx.camera:camera-camera2:${cameraxVersion}")
     implementation("androidx.camera:camera-lifecycle:${cameraxVersion}")
@@ -92,12 +92,12 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
-    testImplementation("org.robolectric:robolectric:4.12.1")
-    testImplementation(platform("androidx.compose:compose-bom:2025.08.00"))
+    testImplementation("org.robolectric:robolectric:4.16")
+    testImplementation(platform("androidx.compose:compose-bom:2025.09.00"))
     testImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2025.08.01"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.09.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

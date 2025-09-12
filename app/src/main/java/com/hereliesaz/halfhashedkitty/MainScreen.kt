@@ -1,15 +1,30 @@
 package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.hereliesaz.aznavrail.AzNavRail
-import com.hereliesaz.halfhashedkitty.ui.tabs.*
+import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.CaptureTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.InputTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.OutputTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.PCConnectionTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.PiControlTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,24 +34,8 @@ fun MainScreen(
     piControlViewModel: PiControlViewModel
 ) {
     var selectedId by remember { mutableStateOf("Input") }
-    var showInstructions by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { },
-                actions = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Show Instructions")
-                        Switch(
-                            checked = showInstructions,
-                            onCheckedChange = { showInstructions = it }
-                        )
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -68,11 +67,6 @@ fun MainScreen(
                     "Pi Control" -> PiControlTab(piControlViewModel)
                     "PC Connect" -> PCConnectionTab(viewModel)
                 }
-                if (showInstructions) {
-                    InstructionsOverlay(selectedId) {
-                        showInstructions = false
-                    }
-                }
             }
         }
     }
@@ -84,8 +78,6 @@ fun MainScreen(
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    // Also need to update the theme in the Preview if it uses it directly
-    // For now, MainScreen is called which now uses the correct theme
     MainScreen(
         MainViewModel(
             Application(),
