@@ -2,10 +2,17 @@ package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -55,7 +62,11 @@ fun SetupTab() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Server Script", style = MaterialTheme.typography.titleLarge)
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(
+            Modifier.padding(vertical = 8.dp),
+            DividerDefaults.Thickness,
+            DividerDefaults.color
+        )
         Text("Create a file named `server.py` with the following content:")
         Spacer(modifier = Modifier.height(8.dp))
         Text(

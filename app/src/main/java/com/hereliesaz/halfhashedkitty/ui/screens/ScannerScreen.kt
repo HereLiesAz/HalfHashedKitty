@@ -24,15 +24,20 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import androidx.camera.core.ExperimentalGetImage
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hereliesaz.halfhashedkitty.QrCodeAnalyzer
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 @OptIn(ExperimentalGetImage::class)
 @Composable
 fun ScannerScreen(instructionText: String, onQrCodeScanned: (String) -> Unit) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
 
     var hasCameraPermission by remember {

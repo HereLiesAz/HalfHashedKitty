@@ -13,3 +13,5 @@ fun PCConnectionTab(viewModel: MainViewModel) {
         }
     )
 }
+
+private fun MainViewModel.onQrCodeScanned(qrCodeValue: String) {}
