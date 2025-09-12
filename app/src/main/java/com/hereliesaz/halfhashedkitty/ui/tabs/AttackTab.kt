@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,5 +25,9 @@ fun AttackTab(viewModel: MainViewModel) {
         Button(onClick = { viewModel.startAttack() }) {
             Text("Start Remote Attack")
         }
+        Text(
+            "This will start the hash cracking attack on the remote server with the configured settings.",
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }

@@ -6,7 +6,10 @@ import com.hereliesaz.halfhashedkitty.ui.screens.ScannerScreen
 
 @Composable
 fun PiControlTab(piControlViewModel: PiControlViewModel) {
-    ScannerScreen(onQrCodeScanned = { qrCodeValue ->
-        piControlViewModel.onQrCodeScanned(qrCodeValue)
-    })
+    ScannerScreen(
+        instructionText = "Scan the QR code from your Raspberry Pi to connect.",
+        onQrCodeScanned = { qrCodeValue ->
+            piControlViewModel.onQrCodeScanned(qrCodeValue)
+        }
+    )
 }

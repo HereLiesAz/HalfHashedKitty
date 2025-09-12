@@ -10,8 +10,11 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -30,7 +33,7 @@ import java.util.concurrent.Executors
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
-fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
+fun ScannerScreen(instructionText: String, onQrCodeScanned: (String) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
@@ -56,8 +59,11 @@ fun ScannerScreen(onQrCodeScanned: (String) -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text("Scan the QR code from the desktop application to connect.", modifier = Modifier.padding(16.dp))
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text("QR Code Scanner", style = MaterialTheme.typography.headlineSmall)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(instructionText, style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.height(16.dp))
         if (hasCameraPermission) {
             AndroidView(
                 factory = { context ->

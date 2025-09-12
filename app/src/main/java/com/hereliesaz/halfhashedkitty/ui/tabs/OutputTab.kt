@@ -2,8 +2,11 @@ package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,12 +23,13 @@ fun OutputTab(viewModel: MainViewModel) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("This tab will show the cracked password once it has been found.")
+        Text("This tab will show the cracked password once it has been found.", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(16.dp))
         if (viewModel.crackedPassword.value != null) {
             Text("Password Found!", fontWeight = FontWeight.Bold)
             Text(viewModel.crackedPassword.value!!)
         } else {
-            Text("No password found yet.")
+            Text("No password found yet. Check the Terminal tab for progress.")
         }
     }
 }
