@@ -49,28 +49,32 @@ fun CommandBuilderTab(viewModel: MainViewModel) {
                 }
             }
         }
+        Text("Select the hashcat attack mode.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = viewModel.rulesFile.value,
             onValueChange = { viewModel.rulesFile.value = it },
             label = { Text("Rules File") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         )
+        Text("Specify a rules file for the attack.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = viewModel.customMask.value,
             onValueChange = { viewModel.customMask.value = it },
             label = { Text("Custom Mask") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
+            modifier = Modifier.fillMaxWidth()
         )
+        Text("Enter a custom mask for mask attacks.", style = MaterialTheme.typography.bodySmall)
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 8.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
                 checked = viewModel.force.value,
@@ -78,5 +82,6 @@ fun CommandBuilderTab(viewModel: MainViewModel) {
             )
             Text("Force")
         }
+        Text("Force the attack, ignoring any warnings.", style = MaterialTheme.typography.bodySmall)
     }
 }

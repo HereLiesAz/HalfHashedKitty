@@ -19,15 +19,38 @@ public class TasksPanel extends JPanel {
         this.owner = owner;
         setLayout(new BorderLayout());
 
+        // Title and Instructions
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        JLabel titleLabel = new JLabel("Hashtopolis Tasks");
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        topPanel.add(titleLabel);
+
+        JLabel instructionsLabel = new JLabel("This panel displays the tasks from your Hashtopolis server.");
+        instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        topPanel.add(instructionsLabel);
+        add(topPanel, BorderLayout.NORTH);
+
         tableModel = new DefaultTableModel(new Object[]{"ID", "Name", "Type", "Priority"}, 0);
         tasksTable = new JTable(tableModel);
         add(new JScrollPane(tasksTable), BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+
+        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JButton newTaskButton = new JButton("New Task");
         JButton refreshButton = new JButton("Refresh");
-        buttonPanel.add(newTaskButton);
-        buttonPanel.add(refreshButton);
+        buttonRow.add(newTaskButton);
+        buttonRow.add(refreshButton);
+        buttonPanel.add(buttonRow);
+
+        JLabel buttonInstructions = new JLabel("Use 'New Task' to create a new task, and 'Refresh' to update the list.");
+        buttonInstructions.setFont(buttonInstructions.getFont().deriveFont(10f));
+        buttonInstructions.setAlignmentX(Component.CENTER_ALIGNMENT);
+        buttonPanel.add(buttonInstructions);
+
         add(buttonPanel, BorderLayout.SOUTH);
 
         newTaskButton.addActionListener(e -> {

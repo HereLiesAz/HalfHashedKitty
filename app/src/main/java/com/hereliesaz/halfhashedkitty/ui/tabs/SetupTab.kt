@@ -2,16 +2,20 @@ package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -23,12 +27,25 @@ fun SetupTab() {
             .padding(16.dp)
             .verticalScroll(scrollState)
     ) {
-        Text("Remote Hashcat Server Setup Guide", fontWeight = FontWeight.Bold)
+        Text("Remote Hashcat Server Setup Guide", style = MaterialTheme.typography.headlineSmall)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Introduction", style = MaterialTheme.typography.titleLarge)
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             """
             To use this app, you need to set up a remote server with hashcat installed.
             This server will listen for requests from the app and run the hashcat commands.
+            """.trimIndent()
+        )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Server Requirements", style = MaterialTheme.typography.titleLarge)
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        Text(
+            """
             1. Install hashcat:
                Follow the official instructions to install hashcat on your server.
                https://hashcat.net/hashcat/
@@ -36,11 +53,15 @@ fun SetupTab() {
             2. Install Python and Flask:
                You will need Python 3 and the Flask web framework.
                pip install Flask
-
-            3. Create the server script:
-               Create a file named `server.py` with the following content:
             """.trimIndent()
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Server Script", style = MaterialTheme.typography.titleLarge)
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        Text("Create a file named `server.py` with the following content:")
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             """
             from flask import Flask, request, jsonify
@@ -77,13 +98,19 @@ fun SetupTab() {
             modifier = Modifier
                 .background(Color.LightGray)
                 .padding(8.dp)
+                .fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Running and Configuration", style = MaterialTheme.typography.titleLarge)
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             """
-            4. Run the server:
+            1. Run the server:
                python server.py
 
-            5. Configure the app:
+            2. Configure the app:
                Enter your server's URL in the "Input" tab of the app.
                Make sure your server is accessible from your phone (e.g., on the same Wi-Fi network, or port-forwarded).
             """.trimIndent()
