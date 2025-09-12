@@ -10,15 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -62,11 +59,7 @@ fun SetupTab() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Server Script", style = MaterialTheme.typography.titleLarge)
-        HorizontalDivider(
-            Modifier.padding(vertical = 8.dp),
-            DividerDefaults.Thickness,
-            DividerDefaults.color
-        )
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
         Text("Create a file named `server.py` with the following content:")
         Spacer(modifier = Modifier.height(8.dp))
         Text(

@@ -10,7 +10,7 @@ This project is under active development. If you spot any bugs, please submit an
 
 ## Desktop Application
 
-The desktop application is a Java application that acts as a connection manager for the Android application.
+The desktop application is a Java application that acts as a connection manager for the Android application and a client for a Hashtopolis server.
 
 ### Building the Desktop Application
 
@@ -37,13 +37,13 @@ java -jar desktop-app/target/connection-manager-1.0-SNAPSHOT.jar
 
 The desktop application acts as a client for a [Hashtopolis](https://hashtopolis.org/) server. You need to have a Hashtopolis server running to use the task management features of the desktop app.
 
-You can either install Hashtopolis manually on your local machine or a remote server, or use the provided (but now removed) Docker Compose file for a quick local setup.
+You can either install Hashtopolis manually on your local machine or a remote server.
 
 Once you have a running Hashtopolis server, you can connect the desktop application to it using the "Connection" tab.
 
 ### Desktop Application UI
 
-The desktop application has a tabbed interface.
+The desktop application has a tabbed interface and a dark theme.
 
 -   **Connection Tab**: This tab is for connecting to the Android app and the Hashtopolis server.
     -   **QR Code**: Scan this QR code with the Android app to connect it to this desktop application.
