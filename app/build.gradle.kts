@@ -89,6 +89,7 @@ dependencies {
     implementation("androidx.camera:camera-view:${cameraxVersion}")
     implementation("androidx.camera:camera-mlkit-vision:${cameraxVersion}")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.google.mlkit:text-recognition:16.0.0")
 
     // Added for Splash Screen API
     implementation("androidx.core:core-splashscreen:1.0.1")

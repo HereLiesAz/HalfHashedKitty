@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.MainViewModel
+import android.util.Log
 
 import kotlinx.serialization.InternalSerializationApi
 
@@ -35,6 +36,14 @@ fun InputTab(viewModel: MainViewModel) {
     ) { uri ->
         uri?.let {
             viewModel.uploadPcapngFile(context, it)
+        }
+    }
+
+    val evidenceLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.processEvidenceFile(context, uri)
         }
     }
 
@@ -94,7 +103,18 @@ fun InputTab(viewModel: MainViewModel) {
         }
         Text("Use these buttons to detect the hash type, or upload a file containing the hash.", style = MaterialTheme.typography.bodySmall)
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = { evidenceLauncher.launch(arrayOf("image/*", "audio/*", "video/*")) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Upload Evidence (Image/Audio/Video)")
+        }
+        Text("Select an image, audio, or video file to extract text from.", style = MaterialTheme.typography.bodySmall)
+
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(

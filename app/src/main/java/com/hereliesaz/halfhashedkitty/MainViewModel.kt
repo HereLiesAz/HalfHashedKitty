@@ -9,9 +9,14 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.serialization.InternalSerializationApi
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import android.content.Context
+import android.net.Uri
 
 @OptIn(InternalSerializationApi::class) // Added OptIn here
 class MainViewModel(
@@ -78,6 +83,50 @@ class MainViewModel(
                 }
             } catch (e: Exception) {
                 terminalOutput.add("Error loading hash modes: ${e.message}")
+            }
+        }
+    }
+
+    fun processEvidenceFile(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            val mimeType = context.contentResolver.getType(uri)
+            terminalOutput.add("Processing evidence file: $uri")
+            terminalOutput.add("MIME type: $mimeType")
+
+            when {
+                mimeType?.startsWith("image/") == true -> {
+                    try {
+                        val image = InputImage.fromFilePath(context, uri)
+                        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                        recognizer.process(image)
+                            .addOnSuccessListener { visionText ->
+                                val resultText = visionText.text
+                                if (resultText.isNotBlank()) {
+                                    terminalOutput.add("--- OCR Result ---")
+                                    terminalOutput.add(resultText)
+                                    terminalOutput.add("--------------------")
+                                } else {
+                                    terminalOutput.add("No text found in the image.")
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                terminalOutput.add("[ERROR] Text recognition failed: ${e.localizedMessage}")
+                            }
+                    } catch (e: java.io.IOException) {
+                        terminalOutput.add("[ERROR] Failed to load image: ${e.localizedMessage}")
+                    }
+                }
+                mimeType?.startsWith("audio/") == true -> {
+                    terminalOutput.add("Audio processing is not yet implemented.")
+                    // TODO: Implement audio to text transcription
+                }
+                mimeType?.startsWith("video/") == true -> {
+                    terminalOutput.add("Video processing is not yet implemented.")
+                    // TODO: Implement video to text (audio + OCR)
+                }
+                else -> {
+                    terminalOutput.add("Unsupported file type: $mimeType. File saved as is.")
+                }
             }
         }
     }
