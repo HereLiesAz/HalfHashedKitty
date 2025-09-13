@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Half-Hashed Kitty</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #000;
+            color: #EAEAEA;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 200px #000;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2;
+            width: 80%;
+        }
+
+        h1 {
+            font-family: 'Creepster', cursive;
+            font-size: 6em;
+            margin: 0;
+            color: #7CFC00;
+            text-shadow: 0 0 10px #7CFC00, 0 0 20px #FFF;
+            animation: text-flicker 3s infinite;
+        }
+
+        p {
+            font-size: 1.5em;
+            margin: 20px 0;
+            line-height: 1.6;
+            text-shadow: 0 0 5px #FFF;
+            animation: text-float 5s infinite ease-in-out;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            border: 2px solid #7CFC00;
+            color: #7CFC00;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: #000;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .button:hover {
+            background-color: #7CFC00;
+            color: #000;
+        }
+
+        #jumpscare {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30em;
+            color: #FFF;
+            display: none;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        @keyframes text-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes text-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="vignette"></div>
+    <div id="jumpscare"></div>
+    <div class="content">
+        <h1 id="title">Half-Hashed Kitty</h1>
+        <p>A cross-platform suite for WiFi security auditing and hash cracking.</p>
+        <a href="https://github.com/os-Copilot/half-hashed-kitty" class="button" id="github-button">View on GitHub</a>
+    </div>
+
+    <script>
+        const title = document.getElementById('title');
+        const originalTitle = title.innerText;
+        const button = document.getElementById('github-button');
+        const jumpscare = document.getElementById('jumpscare');
+
+        // Glitch effect for the title
+        setInterval(() => {
+            let newTitle = '';
+            for (let i = 0; i < originalTitle.length; i++) {
+                if (Math.random() > 0.85) {
+                    // Flip characters upside down
+                    const upsideDownChars = { 'a': 'ɐ', 'b': 'q', 'c': 'ɔ', 'd': 'p', 'e': 'ǝ', 'f': 'ɟ', 'g': 'ƃ', 'h': 'ɥ', 'i': 'ᴉ', 'j': 'ɾ', 'k': 'ʞ', 'l': 'l', 'm': 'ɯ', 'n': 'u', 'o': 'o', 'p': 'd', 'q': 'b', 'r': 'ɹ', 's': 's', 't': 'ʇ', 'u': 'n', 'v': 'ʌ', 'w': 'ʍ', 'y': 'ʎ', 'z': 'z' };
+                    const char = originalTitle[i].toLowerCase();
+                    newTitle += upsideDownChars[char] || originalTitle[i];
+                } else if (Math.random() > 0.9) {
+                    newTitle += String.fromCharCode(Math.random() * (126 - 33) + 33);
+                }
+                else {
+                    newTitle += originalTitle[i];
+                }
+            }
+            title.innerText = newTitle;
+        }, 100);
+
+        // Random body shaking
+        setInterval(() => {
+            const shakeIntensity = Math.random() * 10;
+            document.body.style.transform = `translate(${Math.random() * shakeIntensity - shakeIntensity / 2}px, ${Math.random() * shakeIntensity - shakeIntensity / 2}px)`;
+        }, 500);
+
+        // Jumpscare on button hover
+        button.addEventListener('mouseenter', () => {
+            document.body.style.transition = 'transform 0.1s';
+            document.body.style.transform = 'scale(1.1) rotate(5deg)';
+
+            // Flash a random character
+            jumpscare.innerText = '⸸'; // A suitably creepy character
+            jumpscare.style.display = 'block';
+            setTimeout(() => {
+                jumpscare.style.display = 'none';
+            }, 50); // Flash for 50ms
+        });
+
+        button.addEventListener('mouseleave', () => {
+            document.body.style.transform = 'scale(1) rotate(0deg)';
+        });
+    </script>
+</body>
+</html>

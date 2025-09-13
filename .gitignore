@@ -93,3 +93,6 @@ out/
 /.kotlin/
 /.gradle/
 /desktop-app/target/
+
+# Python Virtual Environment
+hashkitty-gui/venv/
