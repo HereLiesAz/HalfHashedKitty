@@ -19,8 +19,9 @@ public class MainCLI {
     }
 
     private static void printHelp() {
-        // TODO update this message when ready to release
-        System.out.println("Requires a hash as an argument:");
-        System.out.println("\n\tjava MainCLI <hash>");
+        System.out.println("Half-Hashed Kitty CLI");
+        System.out.println("A simple command-line interface for attacking a single hash.");
+        System.out.println("\nUsage:");
+        System.out.println("\tjava MainCLI <hash>");
     }
 }

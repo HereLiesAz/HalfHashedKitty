@@ -207,8 +207,11 @@ class MainViewModel(
             terminalOutput.add("Uploading ZIP file...")
             try {
                 val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                // TODO: Add the rest of the file upload logic, which would likely involve
-                // calling a method on `apiClient` similar to how `uploadPcapngFile` works.
+                // TODO: Implement ZIP file upload. This is currently blocked pending the
+                // addition of a `uploadZipFile(fileBytes)` method to the `HashcatApiClient`.
+                // Once that method is available, this function should call it and handle
+                // the response, likely updating the `hashToCrack` and `terminalOutput`
+                // states, similar to how `uploadPcapngFile` is handled.
                 terminalOutput.add("File upload functionality is not yet implemented.")
             } catch (e: java.io.IOException) {
                 terminalOutput.add("[ERROR] File I/O error while reading ZIP file: ${e.message}")

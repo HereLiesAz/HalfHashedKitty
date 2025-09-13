@@ -1,5 +1,8 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +19,16 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MaskTab() {
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            // For now, we'll just log the URI. In a real implementation,
+            // you would pass this to the ViewModel to handle the mask file.
+            Log.d("MaskTab", "Selected mask file URI: $uri")
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -26,14 +39,14 @@ fun MaskTab() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { /* TODO: Implement mask creator */ }) {
+        Button(onClick = { /* TODO: Implement mask creator UI/logic. Requires specification. */ }) {
             Text("Create Mask")
         }
         Text("Create a new mask for mask attacks.", style = MaterialTheme.typography.bodySmall)
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(onClick = { /* TODO: Implement file picker */ }) {
+        Button(onClick = { filePickerLauncher.launch("*/*") }) {
             Text("Select Mask File")
         }
         Text("Select a mask file from your device.", style = MaterialTheme.typography.bodySmall)
