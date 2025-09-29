@@ -8,11 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import java.io.IOException
-import java.util.UUID
 
 class MainViewModel(
     private val application: Application,
@@ -21,21 +17,17 @@ class MainViewModel(
     private val toolManager: ToolManager
 ) : ViewModel() {
 
-    private val RELAY_URL = "ws://10.0.2.2:5001" // Default for emulator. Change to your relay's public IP.
-    private var room_id: String? = null
-
-    // Use platform-independent default paths or leave empty for user selection
-    val hashToCrack = mutableStateOf("") // Placeholder, to be set by user
-    val wordlistPath = mutableStateOf("") // Placeholder, to be set by user
+    val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for emulator
+    // File paths should be set by the user for portability; leave empty by default
+    val hashToCrack = mutableStateOf("")
+    val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
-    val crackedPasswords = mutableStateListOf<String>()
+    val crackedPasswords = mutableStateListOf<String>() // Keep for potential future use
     val hashModes = mutableStateListOf<HashModeInfo>()
     val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
     val attackModes = mutableStateListOf<AttackMode>()
     val selectedAttackMode = mutableStateOf(AttackMode(0, "Straight"))
     val rulesFile = mutableStateOf("")
-    val customMask = mutableStateOf("")
-    val force = mutableStateOf(false)
     val isConnected = mutableStateOf(false)
 
     init {
@@ -118,27 +110,17 @@ class MainViewModel(
     }
 
     fun onQrCodeScanned(qrCodeValue: String) {
-        terminalOutput.add("QR Code scanned. Room ID: $qrCodeValue")
-        this.room_id = qrCodeValue
-        viewModelScope.launch {
-            try {
-                // First, connect to the relay server
-                apiClient.connect(RELAY_URL)
-                // Then, join the specific room for this desktop client
-                apiClient.joinRoom(qrCodeValue)
-
-                isConnected.value = true
-                terminalOutput.add("Connected to desktop client via relay!")
-            } catch (e: Exception) {
-                terminalOutput.add("[ERROR] Failed to connect to relay: ${e.message}")
-                isConnected.value = false
-            }
+        if (qrCodeValue.startsWith("http://") || qrCodeValue.startsWith("https://")) {
+            serverUrl.value = qrCodeValue
+            isConnected.value = true
+            terminalOutput.add("Connected to desktop client at: $qrCodeValue")
+        } else {
+            terminalOutput.add("[ERROR] Invalid QR code. Expected a URL.")
         }
     }
 
     fun startAttack() {
-        val currentRoomId = room_id
-        if (currentRoomId == null) {
+        if (!isConnected.value) {
             terminalOutput.add("Not connected to a desktop client. Please scan the QR code first.")
             return
         }
@@ -149,23 +131,46 @@ class MainViewModel(
 
         terminalOutput.clear()
         crackedPasswords.clear()
-        terminalOutput.add("Sending attack command...")
+        terminalOutput.add("Sending attack command to ${serverUrl.value}...")
 
         viewModelScope.launch {
             try {
-                val jobId = UUID.randomUUID().toString()
-                val payload = mapOf(
-                    "jobId" to jobId,
+                val params = mapOf(
                     "file" to hashToCrack.value,
                     "mode" to selectedHashMode.value!!.mode,
+                    "attack_mode" to selectedAttackMode.value.id.toString(),
                     "wordlist" to wordlistPath.value,
                     "rules" to rulesFile.value
                 )
 
-                apiClient.sendMessageToDesktop(currentRoomId, payload)
-                terminalOutput.add("Attack command sent for job ID: $jobId")
+                val initialJob = apiClient.startAttack(serverUrl.value, params)
+                terminalOutput.add("Attack started with job ID: ${initialJob.id}")
+                pollForStatus(initialJob.id)
+
             } catch (e: Exception) {
-                terminalOutput.add("[ERROR] Failed to send attack command: ${e.message}")
+                terminalOutput.add("[ERROR] Failed to start attack: ${e.message}")
+            }
+        }
+    }
+
+    private fun pollForStatus(jobId: String) {
+        viewModelScope.launch {
+            while (true) {
+                try {
+                    val job = apiClient.getAttackStatus(serverUrl.value, jobId)
+                    terminalOutput.add("Job ${job.id} status: ${job.status}")
+
+                    if (job.status == "completed" || job.status == "failed") {
+                        terminalOutput.add("--- Job Finished ---")
+                        job.output?.let { terminalOutput.addAll(it.lines()) }
+                        job.error?.let { terminalOutput.add("[ERROR] ${it}") }
+                        break
+                    }
+                } catch (e: Exception) {
+                    terminalOutput.add("[ERROR] Failed to get job status: ${e.message}")
+                    break
+                }
+                delay(5000) // Poll every 5 seconds
             }
         }
     }
