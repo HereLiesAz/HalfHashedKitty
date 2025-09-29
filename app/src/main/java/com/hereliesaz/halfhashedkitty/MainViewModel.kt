@@ -86,7 +86,11 @@ class MainViewModel(
                     lines.forEach { line ->
                         val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
-                            hashModes.add(HashModeInfo(parts[0], parts[1]))
+                            if (parts[0].all { it.isDigit() }) {
+                                hashModes.add(HashModeInfo(parts[0], parts[1]))
+                            } else {
+                                android.util.Log.w("MainViewModel", "Mode string is not numeric: '${parts[0]}' in line: '$line'")
+                            }
                         }
                     }
                 }
