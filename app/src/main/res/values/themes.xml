@@ -16,9 +16,7 @@
         <!-- Set the splash screen background -->
         <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
         <!-- Set your custom icon as the animated icon -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/halfhashedkitty2</item>
-        <!-- Optional: set the duration of the splash screen icon animation -->
-        <item name="windowSplashScreenAnimationDuration">500</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/half_hashed_kitty_banner</item>
         <!-- Post-splash screen theme -->
         <item name="postSplashScreenTheme">@style/Theme.HalfHashedKitty</item>
     </style>
