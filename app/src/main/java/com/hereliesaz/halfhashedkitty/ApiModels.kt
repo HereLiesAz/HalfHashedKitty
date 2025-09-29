@@ -1,41 +1,42 @@
 package com.hereliesaz.halfhashedkitty
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-@InternalSerializationApi @Serializable
+@Serializable
 data class HashModeInfo(
-    val id: Int,
+    val mode: String,
     val name: String
 )
 
-@InternalSerializationApi @Serializable
+@Serializable
 data class HashIdentificationResponse(
-    val hashModes: List<HashModeInfo>
+    val modes: List<HashModeInfo>
 )
 
-@InternalSerializationApi @Serializable
+@Serializable
 data class AttackRequest(
     val hash: String,
-    val hashType: Int,
+    val hashType: String, // Changed to String to match the server's expectation
     val wordlist: String,
     val rules: String? = null,
     val mask: String? = null
 )
 
-@InternalSerializationApi @Serializable
+@Serializable
 data class AttackResponse(
     val jobId: String,
     val status: String,
-    val crackedPassword: String? = null
+    val cracked: List<String>? = null,
+    val output: String? = null,
+    val error: String? = null
 )
 
-@InternalSerializationApi @Serializable
+@Serializable
 data class UploadResponse(
     val hash: String
 )
 
-@InternalSerializationApi @Serializable
+@Serializable
 data class AttackMode(
     val id: Int,
     val name: String
