@@ -4,7 +4,9 @@ import android.util.Log
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
+import io.ktor.websocket.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -25,14 +27,13 @@ class HashcatApiClient {
 
     suspend fun connect(relayUrl: String, roomId: String, scope: CoroutineScope) {
         try {
-            session?.close()
+            session?.cancel()
             val urlWithRoom = "$relayUrl?room=$roomId"
             session = client.webSocketSession(urlWithRoom)
 
             scope.launch {
                 try {
-                    while (isActive) {
-                        val frame = session?.incoming?.receive()
+                    for (frame in session!!.incoming) {
                         if (frame is Frame.Text) {
                             _incomingMessages.emit(frame.readText())
                         }
@@ -58,7 +59,7 @@ class HashcatApiClient {
             if (it.isActive) {
                 try {
                     val jsonString = Json.encodeToString(message)
-                    it.send(jsonString)
+                    it.send(Frame.Text(jsonString))
                 } catch (e: Exception) {
                     Log.e("HashcatApiClient", "Error sending message", e)
                 }

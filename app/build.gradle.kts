@@ -32,9 +32,13 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            buildConfigField("String", "RELAY_URL", "\"wss://relay.hashkitty.com/ws\"")
+        }
+        getByName("debug") {
+            buildConfigField("String", "RELAY_URL", "\"ws://10.0.2.2:5001/ws\"")
         }
     }
     compileOptions {
@@ -43,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "2.0.0"
