@@ -53,7 +53,7 @@ class HashcatApiClient {
                 val jsonString = Json.encodeToString(message)
                 it.send(jsonString)
             } else {
-                println("Cannot send message, session is not active.")
+                android.util.Log.w("HashcatApiClient", "Cannot send message, session is not active.")
             }
         }
     }
