@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -33,6 +32,51 @@ class MainViewModel(
     init {
         loadHashModes()
         loadAttackModes()
+        listenForMessages()
+    }
+
+    private fun listenForMessages() {
+        viewModelScope.launch {
+            apiClient.incomingMessages.collect { jsonString ->
+                // The python-socketio library sends messages in a specific format.
+                // We need to parse it to get to our payload.
+                // Example: 42["message_to_mobile",{"jobId":"...","status":"..."}]
+                // We will do a simple string manipulation to extract the JSON part.
+                val jsonPart = jsonString.substringAfter(",").dropLast(1)
+                terminalOutput.add("Received: $jsonPart")
+
+                try {
+                    val json = Json.parseToJsonElement(jsonPart).jsonObject
+                    val status = json["status"]?.jsonPrimitive?.content
+                    val jobId = json["jobId"]?.jsonPrimitive?.content ?: "unknown"
+
+                    when (status) {
+                        "running" -> terminalOutput.add("Job $jobId is now running on desktop.")
+                        "completed" -> {
+                            terminalOutput.add("Job $jobId completed.")
+                            val cracked = json["cracked"]?.jsonObject?.values?.map { it.jsonPrimitive.content }
+                            if (cracked != null && cracked.isNotEmpty()) {
+                                crackedPasswords.addAll(cracked)
+                                terminalOutput.add("--- Cracked Passwords ---")
+                                cracked.forEach { terminalOutput.add(it) }
+                            } else {
+                                terminalOutput.add("No new passwords were cracked for job $jobId.")
+                            }
+                            json["output"]?.jsonPrimitive?.content?.let {
+                                terminalOutput.add("--- Full Output ---")
+                                terminalOutput.addAll(it.lines())
+                            }
+                        }
+                        "failed" -> {
+                            terminalOutput.add("[ERROR] Job $jobId failed.")
+                            json["error"]?.jsonPrimitive?.content?.let { terminalOutput.add(it) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    terminalOutput.add("[ERROR] Failed to parse message from server: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun loadAttackModes() {

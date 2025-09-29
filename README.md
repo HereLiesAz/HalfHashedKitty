@@ -1,4 +1,4 @@
-# Half-Hashed Kitty
+# Half-Hashed Kitty: Anywhere Access
 
 ![Alt text](app/src/main/res/drawable/half_hashed_kitty_banner.png?raw=true "Half-Hashed Kitty")
 
@@ -75,3 +75,4 @@ Open the project in Android Studio and build it onto your Android device.
 3.  Navigate to the **Input** tab to specify the hash file path and other parameters. **Note:** The file paths must be valid on the desktop computer where the server is running.
 4.  Go to the **Attack** tab and press "Start Remote Attack".
 5.  You can monitor the progress and see the final results in the **Terminal** tab.
+
