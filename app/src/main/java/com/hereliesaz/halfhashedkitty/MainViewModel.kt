@@ -118,6 +118,7 @@ class MainViewModel(
         val currentRoomId = roomID
         if (currentRoomId == null) {
             terminalOutput.add("Not connected. Please scan the QR code from the desktop client.")
+
             return
         }
         if (selectedHashMode.value == null) {
