@@ -1,4 +1,4 @@
-# Half-Hashed Kitty
+# Half-Hashed Kitty: Anywhere Access
 
 ![Alt text](app/src/main/res/drawable/half_hashed_kitty_banner.png?raw=true "Half-Hashed Kitty")
 
