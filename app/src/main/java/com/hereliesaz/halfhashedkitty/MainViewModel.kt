@@ -18,8 +18,9 @@ class MainViewModel(
 ) : ViewModel() {
 
     val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for emulator
-    val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder
-    val wordlistPath = mutableStateOf("C:\\Users\\user\\Desktop\\wordlist.txt") // Placeholder
+    // File paths should be set by the user for portability; leave empty by default
+    val hashToCrack = mutableStateOf("")
+    val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
     val crackedPasswords = mutableStateListOf<String>() // Keep for potential future use
     val hashModes = mutableStateListOf<HashModeInfo>()
