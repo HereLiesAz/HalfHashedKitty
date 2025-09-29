@@ -138,6 +138,7 @@ class MainViewModel(
                 val params = mapOf(
                     "file" to hashToCrack.value,
                     "mode" to selectedHashMode.value!!.mode,
+                    "attack_mode" to selectedAttackMode.value.id.toString(),
                     "wordlist" to wordlistPath.value,
                     "rules" to rulesFile.value
                 )
