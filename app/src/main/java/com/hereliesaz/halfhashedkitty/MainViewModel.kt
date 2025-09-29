@@ -106,7 +106,7 @@ class MainViewModel(
         this.roomID = qrCodeValue
         viewModelScope.launch {
             try {
-                apiClient.connect(RELAY_URL, qrCodeValue)
+                apiClient.connect(RELAY_URL)
             } catch (e: Exception) {
                 terminalOutput.add("[ERROR] Failed to connect to relay: ${e.message}")
                 isConnected.value = false
