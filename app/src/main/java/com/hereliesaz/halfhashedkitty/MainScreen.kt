@@ -2,7 +2,8 @@ package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,7 +20,7 @@ import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.CaptureTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.InputTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.InstructionsOverlay // Assuming this import might be needed or is already present
+import com.hereliesaz.halfhashedkitty.ui.tabs.InstructionsOverlay
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.OutputTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.PCConnectionTab
@@ -38,7 +39,7 @@ fun MainScreen(
     var showInstructions by remember { mutableStateOf(false) }
 
     Scaffold { paddingValues ->
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -54,10 +55,10 @@ fun MainScreen(
                 azRailItem(id = "Hashtopolis", text = "Hashtopolis") { selectedId = "Hashtopolis"; if (showInstructions) showInstructions = false }
                 azRailItem(id = "Pi Control", text = "Pi Control") { selectedId = "Pi Control"; if (showInstructions) showInstructions = false }
                 azRailItem(id = "PC Connect", text = "PC Connect") { selectedId = "PC Connect"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Instructions", text = "Instructions") { showInstructions = !showInstructions }
+                azRailItem(id = "Instructions", text = "ⓘ") { showInstructions = !showInstructions }
             }
 
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.weight(1f)) {
                 if (!showInstructions) {
                     when (selectedId) {
                         "Input" -> InputTab(viewModel)
@@ -70,13 +71,11 @@ fun MainScreen(
                         "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
                         "Pi Control" -> PiControlTab(piControlViewModel)
                         "PC Connect" -> PCConnectionTab(viewModel)
-                        // Note: The "Instructions" item in AzNavRail only toggles the overlay
-                        // It doesn't show a dedicated tab content here.
                     }
                 }
                 if (showInstructions) {
                     InstructionsOverlay(selectedId) {
-                        showInstructions = false // This allows the overlay to close itself
+                        showInstructions = false
                     }
                 }
             }

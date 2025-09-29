@@ -26,7 +26,9 @@ public class ConnectionPanel extends JPanel {
         setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Instructions
-        JLabel instructionsLabel = new JLabel("Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.");
+        ImageIcon infoIcon = new ImageIcon(getClass().getResource("/info_icon.png"));
+        JLabel instructionsLabel = new JLabel(infoIcon);
+        instructionsLabel.setToolTipText("Scan this QR code with the Half-Hashed Kitty Android app to connect to this desktop application.");
         instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         add(instructionsLabel);
 
@@ -60,8 +62,9 @@ public class ConnectionPanel extends JPanel {
         serverUrlPanel.add(serverUrlField);
         panel.add(serverUrlPanel);
 
-        JLabel serverUrlInstruction = new JLabel("The URL of your Hashtopolis server.");
-        serverUrlInstruction.setFont(serverUrlInstruction.getFont().deriveFont(10f));
+        ImageIcon infoIcon = new ImageIcon(getClass().getResource("/info_icon.png"));
+        JLabel serverUrlInstruction = new JLabel(infoIcon);
+        serverUrlInstruction.setToolTipText("The URL of your Hashtopolis server.");
         serverUrlInstruction.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(serverUrlInstruction);
 
@@ -72,8 +75,9 @@ public class ConnectionPanel extends JPanel {
         apiKeyPanel.add(apiKeyField);
         panel.add(apiKeyPanel);
 
-        JLabel apiKeyInstruction = new JLabel("Enter the API key from your Hashtopolis web interface.");
-        apiKeyInstruction.setFont(apiKeyInstruction.getFont().deriveFont(10f));
+        ImageIcon infoIcon = new ImageIcon(getClass().getResource("/info_icon.png"));
+        JLabel apiKeyInstruction = new JLabel(infoIcon);
+        apiKeyInstruction.setToolTipText("Enter the API key from your Hashtopolis web interface.");
         apiKeyInstruction.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(apiKeyInstruction);
 

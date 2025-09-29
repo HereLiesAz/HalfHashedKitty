@@ -187,6 +187,11 @@ class MainViewModel(
         }
     }
 
+    fun onQrCodeScanned(qrCodeValue: String) {
+        serverUrl.value = qrCodeValue
+        terminalOutput.add("Server URL set to: $qrCodeValue")
+    }
+
     fun identifyHash() {
         viewModelScope.launch {
             try {
