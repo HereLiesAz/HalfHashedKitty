@@ -6,14 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.InternalSerializationApi
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.UUID
 
-@OptIn(InternalSerializationApi::class) // Added OptIn here
 class MainViewModel(
     private val application: Application,
     private val apiClient: HashcatApiClient,
@@ -21,55 +18,77 @@ class MainViewModel(
     private val toolManager: ToolManager
 ) : ViewModel() {
 
-    val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
-    val hashToCrack = mutableStateOf("")
-    val wordlistPath = mutableStateOf("")
+    private val RELAY_URL = "ws://10.0.2.2:5001/ws" // Default for emulator. Change to your relay's public IP.
+    private var roomID: String? = null
+
+    val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder
+    val wordlistPath = mutableStateOf("C:\\Users\\user\\Desktop\\wordlist.txt") // Placeholder
     val terminalOutput = mutableStateListOf<String>()
-    val crackedPassword = mutableStateOf<String?>(null)
+    val crackedPasswords = mutableStateListOf<String>()
     val hashModes = mutableStateListOf<HashModeInfo>()
     val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
     val attackModes = mutableStateListOf<AttackMode>()
     val selectedAttackMode = mutableStateOf(AttackMode(0, "Straight"))
     val rulesFile = mutableStateOf("")
-    val customMask = mutableStateOf("")
-    val force = mutableStateOf(false)
-
-    // State for packet capturing
-    val isCapturing = mutableStateOf(false)
-    val captureOutput = mutableStateListOf<String>()
+    val isConnected = mutableStateOf(false)
 
     init {
-        loadHashModes()
-        loadAttackModes()
+        loadLocalData()
+        listenForServerMessages()
     }
 
-    private fun loadAttackModes() {
-        // Mock data for now
+    private fun listenForServerMessages() {
+        viewModelScope.launch {
+            apiClient.incomingMessages.collect { jsonString ->
+                try {
+                    // First, try to parse as a RoomInfo message
+                    try {
+                        val roomInfo = Json.decodeFromString(RoomInfo.serializer(), jsonString)
+                        if (roomInfo.type == "room_id") {
+                            terminalOutput.add("Successfully connected to relay and joined room: ${roomInfo.id}")
+                            isConnected.value = true
+                            return@collect
+                        }
+                    } catch (e: Exception) {
+                        // Not a RoomInfo message, proceed to next type
+                    }
+
+                    // Next, try to parse as a StatusUpdate message
+                    val statusUpdate = Json.decodeFromString(StatusUpdatePayload.serializer(), jsonString)
+                    terminalOutput.add("Status for job ${statusUpdate.jobId}: ${statusUpdate.status}")
+                    statusUpdate.output?.let {
+                        terminalOutput.add("--- Output ---")
+                        terminalOutput.addAll(it.lines())
+                    }
+                    statusUpdate.error?.let {
+                        terminalOutput.add("[ERROR] ${it}")
+                    }
+                    if (statusUpdate.status == "completed" || statusUpdate.status == "failed") {
+                        terminalOutput.add("--- Job Finished ---")
+                    }
+
+                } catch (e: Exception) {
+                    terminalOutput.add("[ERROR] Failed to parse message from server: $jsonString")
+                }
+            }
+        }
+    }
+
+    private fun loadLocalData() {
+        // Load static data that doesn't require network
         attackModes.addAll(
             listOf(
                 AttackMode(0, "Straight"),
-                AttackMode(1, "Combination"),
-                AttackMode(3, "Brute-force"),
-                AttackMode(6, "Hybrid Wordlist + Mask"),
-                AttackMode(7, "Hybrid Mask + Wordlist")
+                AttackMode(3, "Brute-force")
             )
         )
-    }
-
-    private fun loadHashModes() {
         viewModelScope.launch {
             try {
                 application.resources.openRawResource(R.raw.modes).bufferedReader().useLines { lines ->
                     lines.forEach { line ->
                         val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
-                            try {
-                                hashModes.add(HashModeInfo(parts[0].toInt(), parts[1]))
-                            } catch (e: NumberFormatException) {
-                                android.util.Log.e("MainViewModel", "Failed to parse hash mode id: '${parts[0]}' in line: '$line'", e)
-                            }
-                        } else {
-                            android.util.Log.w("MainViewModel", "Line does not match expected format: '$line'")
+                            hashModes.add(HashModeInfo(parts[0], parts[1]))
                         }
                     }
                 }
@@ -82,190 +101,55 @@ class MainViewModel(
         }
     }
 
-    // Placeholder functions for capture logic
-    fun startCapture() {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                isCapturing.value = true
-                captureOutput.clear()
-
-                captureOutput.add("Checking for root access...")
-                val rootCheck = RootUtils.executeAsRoot("id")
-                if (rootCheck.exitCode != 0) {
-                    captureOutput.add("[ERROR] Root access check failed.")
-                    if(rootCheck.stderr.isNotBlank()) {
-                        captureOutput.add("[STDERR] ${rootCheck.stderr}")
-                    }
-                    isCapturing.value = false
-                    return@launch
-                }
-                captureOutput.add("Root access granted.")
-
-                captureOutput.add("Preparing tools...")
-                if (!toolManager.installTools()) {
-                    captureOutput.add("[ERROR] Failed to install tools. Check logs for details.")
-                    isCapturing.value = false
-                    return@launch
-                }
-                captureOutput.add("Tools are ready.")
-
-                captureOutput.add("Finding wireless interface...")
-                val wifiInterface = findWirelessInterface()
-                if (wifiInterface == null) {
-                    captureOutput.add("[ERROR] No wireless interface (wlanX) found.")
-                    isCapturing.value = false
-                    return@launch
-                }
-                captureOutput.add("Found wireless interface: $wifiInterface")
-
-                captureOutput.add("Starting monitor mode on $wifiInterface...")
-                val airmonResult = RootUtils.executeAsRoot(toolManager.getToolPath("airmon-ng") + " start " + wifiInterface)
-                val airmonStdoutLines = airmonResult.stdout.lines()
-                airmonStdoutLines.forEach { if(it.isNotBlank()) captureOutput.add(it) }
-                airmonResult.stderr.lines().forEach { if(it.isNotBlank()) captureOutput.add("[STDERR] $it") }
-
-                val monitorInterface = airmonResult.stdout.let {
-                    val regex = """monitor mode enabled on\s+(\w+)""".toRegex()
-                    regex.find(it)?.groups?.get(1)?.value
-                }
-
-                if (monitorInterface == null) {
-                    captureOutput.add("[ERROR] Failed to start monitor mode. Check dmesg or logcat for driver errors.")
-                    isCapturing.value = false
-                    return@launch
-                }
-
-                captureOutput.add("Monitor mode enabled on $monitorInterface. Starting capture...")
-                captureOutput.add("... (airodump-ng execution logic to be implemented) ...")
-
-            } catch (e: java.io.IOException) {
-                captureOutput.add("[FATAL] An I/O error occurred: ${e.message}")
-                isCapturing.value = false
-            } catch (e: Exception) {
-                captureOutput.add("[FATAL] An unexpected error occurred: ${e.message}")
-                isCapturing.value = false
-            }
-        }
-    }
-
-    private fun findWirelessInterface(): String? {
-        val result = RootUtils.executeAsRoot("ls /sys/class/net")
-        return result.stdout.lines().find { it.startsWith("wlan") }
-    }
-
-    fun stopCapture() {
-        isCapturing.value = false
-        captureOutput.add("Stopping capture... (Not implemented yet)")
-        // In the next step, this will:
-        // 1. Kill the airodump-ng process
-        // 2. Stop monitor mode
-        // 3. Process the capture file
-    }
-
-    fun uploadPcapngFile(context: android.content.Context, uri: android.net.Uri): Job {
-        return viewModelScope.launch {
-            terminalOutput.add("Uploading PCAPNG file to cap2hashcat...")
-            try {
-                val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                if (fileBytes != null) {
-                    val hash = cap2hashcatApiClient.uploadPcapngFile(fileBytes)
-                    if (hash.isNotEmpty()) {
-                        hashToCrack.value = hash
-                        terminalOutput.add("Extracted hash: $hash")
-                        identifyHash() // Automatically identify the hash type
-                    } else {
-                        terminalOutput.add("[ERROR] Failed to extract hash from file. The service might be down or the file is invalid.")
-                    }
-                } else {
-                    terminalOutput.add("[ERROR] Error reading file.")
-                }
-            } catch (e: java.io.IOException) {
-                terminalOutput.add("[ERROR] File I/O error: ${e.message}")
-            } catch (e: Exception) {
-                terminalOutput.add("[ERROR] An unexpected error occurred during upload: ${e.message}")
-            }
-        }
-    }
-
     fun onQrCodeScanned(qrCodeValue: String) {
-        serverUrl.value = qrCodeValue
-        terminalOutput.add("Server URL set to: $qrCodeValue")
-    }
-
-    fun identifyHash() {
+        terminalOutput.add("QR Code scanned. Room ID: $qrCodeValue")
+        this.roomID = qrCodeValue
         viewModelScope.launch {
             try {
-                val response = apiClient.identifyHash(serverUrl.value, hashToCrack.value)
-                hashModes.clear()
-                hashModes.addAll(response.hashModes)
-                if (hashModes.isNotEmpty()) {
-                    selectedHashMode.value = hashModes.first()
-                }
+                apiClient.connect(RELAY_URL, qrCodeValue)
             } catch (e: Exception) {
-                terminalOutput.add("[ERROR] Error identifying hash: ${e.message}")
-            }
-        }
-    }
-
-    fun uploadZipFile(context: android.content.Context, uri: android.net.Uri) {
-        viewModelScope.launch {
-            terminalOutput.add("Uploading ZIP file...")
-            try {
-                val fileBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                // TODO: Add the rest of the file upload logic, which would likely involve
-                // calling a method on `apiClient` similar to how `uploadPcapngFile` works.
-                terminalOutput.add("File upload functionality is not yet implemented.")
-            } catch (e: java.io.IOException) {
-                terminalOutput.add("[ERROR] File I/O error while reading ZIP file: ${e.message}")
-            } catch (e: Exception) {
-                terminalOutput.add("[ERROR] An unexpected error occurred during ZIP upload: ${e.message}")
+                terminalOutput.add("[ERROR] Failed to connect to relay: ${e.message}")
+                isConnected.value = false
             }
         }
     }
 
     fun startAttack() {
+        val currentRoomId = roomID
+        if (currentRoomId == null) {
+            terminalOutput.add("Not connected. Please scan the QR code from the desktop client.")
+            return
+        }
         if (selectedHashMode.value == null) {
             terminalOutput.add("Please select a hash mode.")
             return
         }
+
         terminalOutput.clear()
-        crackedPassword.value = null
-        terminalOutput.add("Starting remote attack...")
+        crackedPasswords.clear()
+        terminalOutput.add("Sending attack command...")
+
         viewModelScope.launch {
             try {
-                val request = AttackRequest(
-                    hash = hashToCrack.value,
-                    hashType = selectedHashMode.value!!.id,
-                    wordlist = wordlistPath.value
+                val attackParams = AttackParams(
+                    jobId = UUID.randomUUID().toString(),
+                    file = hashToCrack.value,
+                    mode = selectedHashMode.value!!.mode,
+                    wordlist = wordlistPath.value,
+                    rules = rulesFile.value
                 )
-                val response = apiClient.startAttack(serverUrl.value, request)
-                terminalOutput.add("Attack started with job ID: ${response.jobId}")
-                pollForStatus(response.jobId)
-            } catch (e: Exception) {
-                terminalOutput.add("[ERROR] Error starting attack: ${e.message}")
-            }
-        }
-    }
 
-    private fun pollForStatus(jobId: String) {
-        viewModelScope.launch {
-            while (true) {
-                try {
-                    val response = apiClient.getAttackStatus(serverUrl.value, jobId)
-                    terminalOutput.add("Job ${response.jobId}: ${response.status}")
-                    if (response.status == "Cracked") {
-                        crackedPassword.value = response.crackedPassword
-                        terminalOutput.add("Password found: ${response.crackedPassword}")
-                        break
-                    } else if (response.status == "Exhausted" || response.status == "Aborted") {
-                        terminalOutput.add("Attack finished. Password not found.")
-                        break
-                    }
-                } catch (e: Exception) {
-                    terminalOutput.add("Error getting status: ${e.message}")
-                    break
-                }
-                delay(5000) // Poll every 5 seconds
+                val payloadJson = Json.encodeToString(attackParams)
+                val message = WebSocketMessage(
+                    type = "attack",
+                    payload = payloadJson,
+                    room_id = currentRoomId
+                )
+
+                apiClient.sendMessage(message)
+                terminalOutput.add("Attack command sent for job ID: ${attackParams.jobId}")
+            } catch (e: Exception) {
+                terminalOutput.add("[ERROR] Failed to send attack command: ${e.message}")
             }
         }
     }

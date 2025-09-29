@@ -77,6 +77,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:3.3.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.0")
     implementation("io.ktor:ktor-client-logging:3.3.0")
+    implementation("io.ktor:ktor-client-websockets:3.3.0")
     implementation("org.jsoup:jsoup:1.21.2")
     implementation("com.github.HereLiesAz:AzNavRail:3.10")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")

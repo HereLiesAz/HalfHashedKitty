@@ -1,64 +1,64 @@
 package com.hereliesaz.halfhashedkitty
 
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.MultiPartFormDataContent
-import io.ktor.client.request.forms.formData
-import io.ktor.http.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.InternalSerializationApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-@OptIn(InternalSerializationApi::class)
 class HashcatApiClient {
 
     private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
+        install(WebSockets) {
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
+        }
+    }
+
+    private var session: DefaultClientWebSocketSession? = null
+    private val _incomingMessages = MutableSharedFlow<String>()
+    val incomingMessages = _incomingMessages.asSharedFlow()
+
+    suspend fun connect(relayUrl: String) {
+        try {
+            session?.close()
+            session = client.webSocketSession(relayUrl)
+
+            session?.launch {
+                while (isActive) {
+                    try {
+                        val frame = incoming.receive()
+                        if (frame is Frame.Text) {
+                            _incomingMessages.emit(frame.readText())
+                        }
+                    } catch (e: Exception) {
+                        println("Error receiving message: ${e.message}")
+                        break
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            println("Error connecting to relay: ${e.message}")
+            throw e
+        }
+    }
+
+    suspend fun sendMessage(message: WebSocketMessage) {
+        session?.let {
+            if (it.isActive) {
+                val jsonString = Json.encodeToString(message)
+                it.send(jsonString)
+            } else {
+                println("Cannot send message, session is not active.")
+            }
         }
     }
 
     fun close() {
         client.close()
-    }
-
-    suspend fun startAttack(serverUrl: String, request: AttackRequest): AttackResponse {
-        return client.post("$serverUrl/attack") {
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.body()
-    }
-
-    suspend fun getAttackStatus(serverUrl: String, jobId: String): AttackResponse {
-        return client.get("$serverUrl/attack/$jobId").body()
-    }
-
-    suspend fun identifyHash(serverUrl: String, hash: String): HashIdentificationResponse {
-        return client.post("$serverUrl/identify") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("hash" to hash))
-        }.body()
-    }
-
-    suspend fun uploadZipFile(serverUrl: String, file: ByteArray): UploadResponse {
-        return client.post("$serverUrl/upload") {
-            setBody(
-                MultiPartFormDataContent(
-                    formData {
-                        append("file", file, Headers.build {
-                            append(HttpHeaders.ContentType, "application/zip")
-                            append(HttpHeaders.ContentDisposition, "filename=\"hash.zip\"")
-                        })
-                    }
-                )
-            )
-        }.body<UploadResponse>()
     }
 }
