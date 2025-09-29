@@ -1,6 +1,8 @@
 package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -19,8 +21,16 @@ class MainViewModel(
     private val toolManager: ToolManager
 ) : ViewModel() {
 
-    private val RELAY_URL = "ws://10.0.2.2:5001/ws" // Default for emulator. Change to your relay's public IP.
+    private val RELAY_URL = BuildConfig.RELAY_URL
     private var roomID: String? = null
+
+    // Restored properties
+    val captureOutput = mutableStateListOf<String>()
+    val isCapturing = mutableStateOf(false)
+    val customMask = mutableStateOf("")
+    val force = mutableStateOf(false)
+    val serverUrl = mutableStateOf("")
+    val crackedPassword = mutableStateOf("")
 
     val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder for the file path on the desktop
     val wordlistPath = mutableStateOf("C:\\Users\\user\\Desktop\\wordlist.txt") // Placeholder
@@ -137,6 +147,7 @@ class MainViewModel(
                     jobId = UUID.randomUUID().toString(),
                     file = hashToCrack.value,
                     mode = selectedHashMode.value!!.mode,
+                    attackMode = selectedAttackMode.value.id.toString(),
                     wordlist = wordlistPath.value,
                     rules = rulesFile.value
                 )
@@ -155,6 +166,13 @@ class MainViewModel(
             }
         }
     }
+
+    // Restored functions
+    fun stopCapture() {}
+    fun startCapture() {}
+    fun uploadZipFile(context: Context, uri: Uri) {}
+    fun uploadPcapngFile(context: Context, uri: Uri) {}
+    fun identifyHash() {}
 
     class MainViewModelFactory(
         private val application: Application,

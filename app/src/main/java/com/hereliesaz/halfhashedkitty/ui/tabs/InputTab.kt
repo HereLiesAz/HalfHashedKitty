@@ -118,7 +118,7 @@ fun InputTab(viewModel: MainViewModel) {
             ) {
                 viewModel.hashModes.forEach { hashMode ->
                     DropdownMenuItem(
-                        text = { Text(text = "${hashMode.id} - ${hashMode.name}") },
+                        text = { Text(text = "${hashMode.mode} - ${hashMode.name}") },
                         onClick = {
                             viewModel.selectedHashMode.value = hashMode
                             expanded = false
