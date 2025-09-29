@@ -1,184 +1,142 @@
-import flask
-from flask import request, jsonify
+import socketio
 import qrcode
-import socket
 import io
 import os
-import subprocess
-import uuid
 import threading
 import sys
-import platform
-import tempfile
 import argparse
 from contextlib import redirect_stdout
+import time
 
 # Add HashKitty to the Python path
-# This assumes the server is run from the hashkitty-gui directory
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'HashKitty')))
 from HashKitty import main as hashkitty_main
 
-app = flask.Flask(__name__)
+# --- Configuration ---
+RELAY_SERVER_URL = os.environ.get('RELAY_URL', 'http://localhost:5001')
 
-# In-memory job store
-jobs = {}
+# --- Globals ---
+sio = socketio.Client()
+room_id = None
 
-# Run prereq setup on startup to ensure hashcat and wordlists are ready
-hashkitty_main.prereq_setup()
+@sio.event
+def connect():
+    print("[*] Connected to relay server.")
+    print("[*] Registering as a desktop client...")
+    sio.emit('register_desktop')
 
-def get_ip_address():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
+@sio.event
+def connect_error(data):
+    print(f"[!] Connection to relay failed: {data}")
 
-@app.route('/')
-def index():
-    return "HashKitty Server is running!"
+@sio.event
+def disconnect():
+    print("[*] Disconnected from relay server.")
 
-@app.route('/upload', methods=['POST'])
-def upload_file_route():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    if file:
-        # Use a relative path for the uploads folder
-        upload_folder = os.path.join(os.path.dirname(__file__), 'uploads')
-        os.makedirs(upload_folder, exist_ok=True)
-        filepath = os.path.join(upload_folder, file.filename)
-        file.save(filepath)
-        return jsonify({"message": "File uploaded successfully", "filepath": filepath}), 200
+@sio.on('desktop_registered')
+def on_desktop_registered(data):
+    global room_id
+    room_id = data['room_id']
+    print("\n" + "="*40)
+    print(f"      DESKTOP CLIENT REGISTERED      ")
+    print(f"      Your unique ID is: {room_id}")
+    print("="*40 + "\n")
 
-@app.route('/identify', methods=['POST'])
-def identify_hash_route():
-    data = request.get_json()
-    if not data or 'hash' not in data:
-        return jsonify({"error": "Missing hash in request"}), 400
-
-    hash_string = data['hash']
-
-    # Create a temporary file to store the hash
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".txt") as tmp:
-        tmp.write(hash_string)
-        tmp_path = tmp.name
-
-    try:
-        # Ensure the empty file exists for hashcat to run
-        _, hashcat_results_folder = hashkitty_main.prereq_setup()
-        empty_file_path = os.path.join(hashcat_results_folder, "empty.txt")
-        if not os.path.exists(empty_file_path):
-             with open(empty_file_path, "w") as f:
-                pass
-
-        # Call the non-interactive detect_mode function
-        modes = hashkitty_main.detect_mode(tmp_path, users_true=False, empty_file=empty_file_path, interactive=False)
-
-        # Format the response into the structure the app expects
-        formatted_modes = [{"mode": mode[0].strip(), "name": " | ".join(mode[1:]).strip()} for mode in modes]
-
-        return jsonify({"modes": formatted_modes})
-
-    finally:
-        # Clean up the temporary file
-        os.remove(tmp_path)
-
-def run_attack_in_background(job_id, attack_args):
-    """This function runs the hashcat attack in a background thread."""
-    try:
-        jobs[job_id]['status'] = 'running'
-
-        # Create a namespace object to hold the arguments for do_the_thing
-        args = argparse.Namespace(
-            file=attack_args.get('file'),
-            mode=attack_args.get('mode'),
-            wordlist=attack_args.get('wordlist'),
-            rules=attack_args.get('rules'),
-            user=attack_args.get('user', False),
-            quiet=attack_args.get('quiet', False),
-            disable=attack_args.get('disable', False),
-            analysis=attack_args.get('analysis', False),
-            show=False  # We handle showing results separately
-        )
-
-        # Capture stdout to return to the user
-        output_io = io.StringIO()
-        with redirect_stdout(output_io):
-            hashkitty_main.do_the_thing(args)
-
-        jobs[job_id]['status'] = 'completed'
-
-        # The results are in the potfile. A more robust solution would be for
-        # main.py to output results to a structured file for easier parsing.
-        hashcat_folder, hashcat_results_folder = hashkitty_main.prereq_setup()
-        potfile_path = os.path.join(hashcat_folder, "hashcat.potfile")
-        if platform.system() != "Windows":
-             potfile_path = os.path.join(hashcat_results_folder, "hashcat.potfile")
-
-        cracked = []
-        if os.path.exists(potfile_path):
-            with open(potfile_path, 'r') as f:
-                cracked = [line.strip() for line in f.readlines()]
-        jobs[job_id]['result'] = cracked
-        jobs[job_id]['output'] = output_io.getvalue()
-
-    except Exception as e:
-        jobs[job_id]['status'] = 'failed'
-        jobs[job_id]['error'] = str(e)
-
-
-@app.route('/attack', methods=['POST'])
-def start_attack_route():
-    data = request.get_json()
-    if not data or 'file' not in data or 'mode' not in data:
-        return jsonify({"error": "Missing 'file' or 'mode' in request"}), 400
-
-    job_id = str(uuid.uuid4())
-    jobs[job_id] = {'status': 'queued'}
-
-    thread = threading.Thread(target=run_attack_in_background, args=(job_id, data))
-    thread.daemon = True
-    thread.start()
-
-    return jsonify({"jobId": job_id, "status": "started"}), 202
-
-@app.route('/attack/<jobId>', methods=['GET'])
-def get_attack_status_route(jobId):
-    job = jobs.get(jobId)
-    if not job:
-        return jsonify({"error": "Job not found"}), 404
-
-    response = {"jobId": jobId, "status": job.get('status')}
-
-    if job.get('status') == 'completed':
-        response['cracked'] = job.get('result', [])
-        response['output'] = job.get('output')
-    elif job.get('status') == 'failed':
-        response['error'] = job.get('error')
-
-    return jsonify(response)
-
-
-if __name__ == '__main__':
-    ip_address = get_ip_address()
-
+    # Generate and print the QR code for the mobile app
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
-    qr.add_data(f'http://{ip_address}:5000')
+    qr.add_data(room_id)
     qr.make(fit=True)
 
     f = io.StringIO()
     qr.print_ascii(out=f)
     f.seek(0)
     print(f.read())
+    print(f"[*] Scan this QR code with the mobile app to connect.")
+    print("[*] Waiting for commands from the mobile app...\n")
 
-    print(f"[*] Server running on http://{ip_address}:5000")
-    print("[*] Scan the QR code with the Android app to connect.")
+@sio.on('message_to_desktop')
+def on_message_to_desktop(data):
+    """Handles commands received from the mobile app via the relay."""
+    print(f"[*] Received command from mobile: {data}")
 
-    app.run(host='0.0.0.0', port=5000)
+    # Assuming the payload is for an attack
+    job_id = data.get('jobId', 'unknown_job')
+    attack_args = data.get('payload')
+
+    if not attack_args:
+        print("[!] Invalid command payload received.")
+        return
+
+    thread = threading.Thread(target=run_attack_in_background, args=(job_id, attack_args))
+    thread.daemon = True
+    thread.start()
+
+def run_attack_in_background(job_id, attack_args):
+    """Runs the hashcat attack and sends status updates back to the mobile app."""
+    try:
+        sio.emit('message_from_desktop', {'room_id': room_id, 'payload': {'jobId': job_id, 'status': 'running'}})
+
+        args = argparse.Namespace(
+            file=attack_args.get('file'),
+            mode=attack_args.get('mode'),
+            wordlist=attack_args.get('wordlist'),
+            rules=attack_args.get('rules'),
+            user=attack_args.get('user', False),
+            quiet=attack_args.get('quiet', True), # For non-interactive use
+            disable=attack_args.get('disable', False),
+            analysis=attack_args.get('analysis', True), # Enable analysis by default
+            show=False
+        )
+
+        output_io = io.StringIO()
+        with redirect_stdout(output_io):
+            hashkitty_main.do_the_thing(args)
+
+        # Retrieve results from the potfile
+        hashcat_folder, hashcat_results_folder = hashkitty_main.prereq_setup()
+        potfile_path = os.path.join(hashcat_folder, "hashcat.potfile")
+        if sys.platform != "win32":
+             potfile_path = os.path.join(hashcat_results_folder, "hashcat.potfile")
+
+        cracked = []
+        if os.path.exists(potfile_path):
+            with open(potfile_path, 'r') as f:
+                cracked = [line.strip() for line in f.readlines()]
+
+        result_payload = {
+            'jobId': job_id,
+            'status': 'completed',
+            'cracked': cracked,
+            'output': output_io.getvalue()
+        }
+        sio.emit('message_from_desktop', {'room_id': room_id, 'payload': result_payload})
+        print(f"[*] Attack for job {job_id} completed. Results sent.")
+
+    except Exception as e:
+        print(f"[!] Error during attack for job {job_id}: {e}")
+        error_payload = {
+            'jobId': job_id,
+            'status': 'failed',
+            'error': str(e)
+        }
+        sio.emit('message_from_desktop', {'room_id': room_id, 'payload': error_payload})
+
+if __name__ == '__main__':
+    print("[*] Starting HashKitty Desktop Client...")
+
+    # Run prerequisite setup on startup
+    try:
+        hashkitty_main.prereq_setup()
+    except Exception as e:
+        print(f"[!] Prerequisite setup failed: {e}")
+        sys.exit(1)
+
+    # Connect to the relay server
+    while not sio.connected:
+        try:
+            sio.connect(RELAY_SERVER_URL)
+        except socketio.exceptions.ConnectionError as e:
+            print(f"[!] Could not connect to relay server at {RELAY_SERVER_URL}. Retrying in 10 seconds...")
+            time.sleep(10)
+
+    sio.wait()
