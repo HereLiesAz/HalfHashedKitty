@@ -21,7 +21,7 @@ data class AttackMode(
 @Serializable
 data class WebSocketMessage(
     val type: String,
-    val payload: String, // Payload is always a JSON string
+    val payload: kotlinx.serialization.json.JsonElement, // Can be a JSON object or string
     val room_id: String
 )
 
