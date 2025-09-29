@@ -131,7 +131,14 @@ func main() {
 	log.Println("[*] Ensuring prerequisites are met (Hashcat, wordlists)...")
 	cmd := exec.Command("python", "-c", "from HashKitty import main; main.prereq_setup()")
 	if err := cmd.Run(); err != nil {
-		log.Printf("Warning: Failed to run Python prerequisite setup. Please ensure Hashcat is installed manually. Error: %v", err)
+		log.Printf("[!] Failed to run Python prerequisite setup. Please ensure Hashcat and required wordlists are installed manually. Error: %v", err)
+		fmt.Println("=====================================================================")
+		fmt.Println("ERROR: Prerequisite setup failed.")
+		fmt.Println("Please ensure that Hashcat and the required wordlists are installed.")
+		fmt.Println("Refer to the documentation for manual setup instructions.")
+		fmt.Println("The application may not function correctly until prerequisites are met.")
+		fmt.Println("Press ENTER to continue anyway, or Ctrl+C to exit.")
+		fmt.Scanln()
 	}
 
 	ip := getLocalIP()
