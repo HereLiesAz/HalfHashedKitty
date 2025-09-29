@@ -28,12 +28,12 @@ class HashcatApiClient {
     suspend fun connect(relayUrl: String, roomId: String, scope: CoroutineScope) {
         try {
             session?.cancel()
-            val urlWithRoom = "$relayUrl?room=$roomId"
-            session = client.webSocketSession(urlWithRoom)
+            val newSession = client.webSocketSession("$relayUrl?room=$roomId")
+            session = newSession
 
             scope.launch {
                 try {
-                    for (frame in session!!.incoming) {
+                    for (frame in newSession.incoming) {
                         if (frame is Frame.Text) {
                             _incomingMessages.emit(frame.readText())
                         }
