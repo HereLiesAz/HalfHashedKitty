@@ -1,7 +1,7 @@
 package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +14,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
@@ -39,43 +42,53 @@ fun MainScreen(
     var showInstructions by remember { mutableStateOf(false) }
 
     Scaffold { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            AzNavRail {
-                azRailItem(id = "Input", text = "Input") { selectedId = "Input"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Attack", text = "Attack") { selectedId = "Attack"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Wordlist", text = "Wordlist") { selectedId = "Wordlist"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Mask", text = "Mask") { selectedId = "Mask"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Capture", text = "Capture") { selectedId = "Capture"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Terminal", text = "Terminal") { selectedId = "Terminal"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Output", text = "Output") { selectedId = "Output"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Hashtopolis", text = "Hashtopolis") { selectedId = "Hashtopolis"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Pi Control", text = "Pi Control") { selectedId = "Pi Control"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "PC Connect", text = "PC Connect") { selectedId = "PC Connect"; if (showInstructions) showInstructions = false }
-                azRailItem(id = "Instructions", text = "ⓘ") { showInstructions = !showInstructions }
-            }
-
-            Box(modifier = Modifier.weight(1f)) {
-                if (!showInstructions) {
-                    when (selectedId) {
-                        "Input" -> InputTab(viewModel)
-                        "Attack" -> AttackTab(viewModel)
-                        "Wordlist" -> WordlistTab(viewModel)
-                        "Mask" -> MaskTab()
-                        "Capture" -> CaptureTab(viewModel)
-                        "Terminal" -> TerminalTab(viewModel)
-                        "Output" -> OutputTab(viewModel)
-                        "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
-                        "Pi Control" -> PiControlTab(piControlViewModel)
-                        "PC Connect" -> PCConnectionTab(viewModel)
-                    }
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(id = R.drawable.half_hashed_kitty_banner),
+                contentDescription = "background",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(0.1f),
+                contentScale = ContentScale.Crop
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                AzNavRail {
+                    azRailItem(id = "Input", text = "Input") { selectedId = "Input"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Attack", text = "Attack") { selectedId = "Attack"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Wordlist", text = "Wordlist") { selectedId = "Wordlist"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Mask", text = "Mask") { selectedId = "Mask"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Capture", text = "Capture") { selectedId = "Capture"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Terminal", text = "Terminal") { selectedId = "Terminal"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Output", text = "Output") { selectedId = "Output"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Hashtopolis", text = "Hashtopolis") { selectedId = "Hashtopolis"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Pi Control", text = "Pi Control") { selectedId = "Pi Control"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "PC Connect", text = "PC Connect") { selectedId = "PC Connect"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Instructions", text = "ⓘ") { showInstructions = !showInstructions }
                 }
-                if (showInstructions) {
-                    InstructionsOverlay(selectedId) {
-                        showInstructions = false
+
+                Box(modifier = Modifier.weight(1f)) {
+                    if (!showInstructions) {
+                        when (selectedId) {
+                            "Input" -> InputTab(viewModel)
+                            "Attack" -> AttackTab(viewModel)
+                            "Wordlist" -> WordlistTab(viewModel)
+                            "Mask" -> MaskTab()
+                            "Capture" -> CaptureTab(viewModel)
+                            "Terminal" -> TerminalTab(viewModel)
+                            "Output" -> OutputTab(viewModel)
+                            "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
+                            "Pi Control" -> PiControlTab(piControlViewModel)
+                            "PC Connect" -> PCConnectionTab(viewModel)
+                        }
+                    }
+                    if (showInstructions) {
+                        InstructionsOverlay(selectedId) {
+                            showInstructions = false
+                        }
                     }
                 }
             }
