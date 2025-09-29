@@ -2,22 +2,20 @@ package com.hereliesaz.halfhashedkitty
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class HashcatApiClient {
 
     private val client = HttpClient(CIO) {
-        install(WebSockets)
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
+        install(WebSockets) {
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
         }
     }
 
@@ -25,16 +23,11 @@ class HashcatApiClient {
     private val _incomingMessages = MutableSharedFlow<String>()
     val incomingMessages = _incomingMessages.asSharedFlow()
 
-    // A wrapper to match the expected Socket.IO message structure
-    @Serializable
-    data class SocketIOMessage(val event: String, val data: Map<String, String>)
-
     suspend fun connect(relayUrl: String) {
         try {
             session?.close()
-            session = client.webSocketSession(relayUrl.replace("http", "ws"))
+            session = client.webSocketSession(relayUrl)
 
-            // Launch a coroutine to listen for incoming messages
             session?.launch {
                 while (isActive) {
                     try {
@@ -49,17 +42,23 @@ class HashcatApiClient {
                 }
             }
         } catch (e: Exception) {
-            println("Error connecting to relay: ${e.message}")
+            android.util.Log.e("HashcatApiClient", "Error connecting to relay", e)
+            throw e
         }
     }
-    suspend fun startAttack(serverUrl: String, params: Map<String, String>): Job {
-        return client.post("$serverUrl/attack") {
-            contentType(ContentType.Application.Json)
-            setBody(params)
-        }.body()
+
+    suspend fun sendMessage(message: WebSocketMessage) {
+        session?.let {
+            if (it.isActive) {
+                val jsonString = Json.encodeToString(message)
+                it.send(jsonString)
+            } else {
+                android.util.Log.w("HashcatApiClient", "Cannot send message, session is not active.")
+            }
+        }
     }
 
-    suspend fun getAttackStatus(serverUrl: String, jobId: String): Job {
-        return client.get("$serverUrl/attack/$jobId").body()
+    fun close() {
+        client.close()
     }
 }

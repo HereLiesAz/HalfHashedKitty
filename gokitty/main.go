@@ -2,158 +2,323 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
+	"regexp"
+	"strings"
 	"sync"
 
+	"github.com/bodgit/sevenzip"
+	"github.com/gorilla/websocket"
 	qrcode "github.com/skip2/go-qrcode"
 	"github.com/teris-io/shortid"
 )
 
-// --- Job Management ---
+// --- Shared Data Structures ---
 
-type Job struct {
-	ID      string `json:"id"`
-	Status  string `json:"status"`
-	Output  string `json:"output,omitempty"`
-	Error   string `json:"error,omitempty"`
+type Message struct {
+	Type    string      `json:"type"`
+	Payload interface{} `json:"payload,omitempty"`
+	RoomID  string      `json:"room_id,omitempty"`
+	Sender  *Client     `json:"-"`
 }
 
-var (
-	jobs  = make(map[string]*Job)
-	mutex = &sync.Mutex{}
-)
+type AttackParams struct {
+	JobID    string `json:"jobId"`
+	File     string `json:"file"`
+	Mode     string `json:"mode"`
+	Wordlist string `json:"wordlist"`
+	Rules    string `json:"rules,omitempty"`
+}
 
-// --- HTTP Handlers ---
+// --- Relay Server Logic (Hub & Client) ---
 
-func handleAttack(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+type Client struct {
+	hub  *Hub
+	conn *websocket.Conn
+	send chan []byte
+	room string
+}
+
+type Hub struct {
+	rooms      map[string]map[*Client]bool
+	broadcast  chan Message
+	register   chan *Client
+	unregister chan *Client
+	mutex      sync.Mutex
+}
+
+func newHub() *Hub { return &Hub{broadcast: make(chan Message), register: make(chan *Client), unregister: make(chan *Client), rooms: make(map[string]map[*Client]bool)} }
+
+func (h *Hub) run() {
+	for {
+		select {
+		case client := <-h.register:
+			h.mutex.Lock()
+			if h.rooms[client.room] == nil {
+				h.rooms[client.room] = make(map[*Client]bool)
+			}
+			h.rooms[client.room][client] = true
+			h.mutex.Unlock()
+		case client := <-h.unregister:
+			h.mutex.Lock()
+			if _, ok := h.rooms[client.room]; ok {
+				delete(h.rooms[client.room], client)
+				if len(h.rooms[client.room]) == 0 {
+					delete(h.rooms, client.room)
+				}
+			}
+			h.mutex.Unlock()
+			close(client.send)
+		case message := <-h.broadcast:
+			h.mutex.Lock()
+			if clients, ok := h.rooms[message.RoomID]; ok {
+				for client := range clients {
+					if client != message.Sender {
+						select {
+						case client.send <- message.Payload.([]byte):
+						default:
+							close(client.send)
+							delete(clients, client)
+						}
+					}
+				}
+			}
+			h.mutex.Unlock()
+		}
+	}
+}
+
+func (c *Client) readPump() {
+	defer func() { c.hub.unregister <- c; c.conn.Close() }()
+	for {
+		_, rawMessage, err := c.conn.ReadMessage()
+		if err != nil {
+			break
+		}
+		var msg Message
+		if err := json.Unmarshal(rawMessage, &msg); err != nil {
+			continue
+		}
+		msg.Sender = c
+		c.room = msg.RoomID // Assign client to room based on message
+		c.hub.register <- c
+		c.hub.broadcast <- msg
+	}
+}
+
+func (c *Client) writePump() {
+	defer c.conn.Close()
+	for message := range c.send {
+		c.conn.WriteMessage(websocket.TextMessage, message)
+	}
+}
+
+func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	go client.writePump()
+	go client.readPump()
+}
+
+func runRelayServer() {
+	hub := newHub()
+	go hub.run()
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { serveWs(hub, w, r) })
+	log.Println("[*] Relay server starting on :5001")
+	if err := http.ListenAndServe(":5001", nil); err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
+}
+
+// --- Desktop Client Logic ---
+
+func prereqSetup() (string, error) {
+	hashcatBaseDir := filepath.Join(os.Getenv("APPDATA"), "gokitty")
+	if runtime.GOOS != "windows" {
+		hashcatBaseDir = filepath.Join(os.Getenv("HOME"), ".gokitty")
+	}
+	if err := os.MkdirAll(hashcatBaseDir, 0755); err != nil {
+		return "", err
+	}
+
+	// For simplicity, we assume hashcat is present if the dir exists.
+	// A real app would check version and update.
+	if _, err := os.Stat(filepath.Join(hashcatBaseDir, "hashcat-7.1.2")); err == nil {
+		log.Println("[*] Hashcat directory already exists.")
+		return filepath.Join(hashcatBaseDir, "hashcat-7.1.2"), nil
+	}
+
+	log.Println("[*] Downloading Hashcat v7.1.2...")
+	url := "https://hashcat.net/files/hashcat-7.1.2.7z"
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("failed to download hashcat: %w", err)
+	}
+	defer resp.Body.Close()
+
+	archivePath := filepath.Join(hashcatBaseDir, "hashcat.7z")
+	out, err := os.Create(archivePath)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+	io.Copy(out, resp.Body)
+
+	log.Println("[*] Extracting Hashcat...")
+	r, err := sevenzip.OpenReader(archivePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open archive: %w", err)
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		dstPath := filepath.Join(hashcatBaseDir, f.Name)
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(dstPath, f.Mode())
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+			return "", err
+		}
+		dst, err := os.Create(dstPath)
+		if err != nil {
+			return "", err
+		}
+		src, err := f.Open()
+		if err != nil {
+			dst.Close()
+			return "", err
+		}
+		if _, err := io.Copy(dst, src); err != nil {
+			src.Close()
+			dst.Close()
+			return "", err
+		}
+		src.Close()
+		dst.Close()
+	}
+
+	log.Println("[*] Hashcat setup complete.")
+	os.Remove(archivePath)
+	return filepath.Join(hashcatBaseDir, "hashcat-7.1.2"), nil
+}
+
+func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string) {
+	log.Printf("Starting attack for job %s...", params.JobID)
+
+	sendUpdate := func(status, data string, isError bool) {
+		res := map[string]interface{}{"jobId": params.JobID, "status": status}
+		if isError {
+			res["error"] = data
+		} else {
+			res["output"] = data
+		}
+		msg, _ := json.Marshal(Message{Type: "status_update", RoomID: params.RoomID, Payload: res})
+		conn.WriteMessage(websocket.TextMessage, msg)
+	}
+
+	// Basic Input Validation
+	if matched, _ := regexp.MatchString(`^[0-9]+$`, params.Mode); !matched {
+		sendUpdate("failed", "Invalid hash mode specified.", true)
+		return
+	}
+	if _, err := os.Stat(params.File); os.IsNotExist(err) {
+		sendUpdate("failed", "Hash file not found.", true)
 		return
 	}
 
-	var req map[string]string
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	jobID, _ := shortid.Generate()
-	job := &Job{ID: jobID, Status: "queued"}
-	mutex.Lock()
-	jobs[jobID] = job
-	mutex.Unlock()
-
-	go runAttack(job, req)
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
-}
-
-func handleStatus(w http.ResponseWriter, r *http.Request) {
-	jobID := r.URL.Path[len("/attack/"):]
-	mutex.Lock()
-	job, ok := jobs[jobID]
-	mutex.Unlock()
-
-	if !ok {
-		http.NotFound(w, r)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
-}
-
-// --- Helper Functions ---
-
-func runAttack(job *Job, params map[string]string) {
-	job.Status = "running"
-	log.Printf("Starting job %s...", job.ID)
-
-	executable := "hashcat"
+	executable := filepath.Join(hashcatPath, "hashcat")
 	if runtime.GOOS == "windows" {
-		executable = "hashcat.exe"
+		executable = filepath.Join(hashcatPath, "hashcat.exe")
 	}
 
-	args := []string{
-		"-m", params["mode"],
-		"-a", "0",
-		params["file"],
-		params["wordlist"],
-	}
-	if rules, ok := params["rules"]; ok && rules != "" {
-		args = append(args, "-r", rules)
+	args := []string{"-m", params.Mode, "-a", "0", params.File}
+	if params.Wordlist != "" {
+		args = append(args, params.Wordlist)
 	}
 
 	cmd := exec.Command(executable, args...)
 	output, err := cmd.CombinedOutput()
-
-	mutex.Lock()
 	if err != nil {
-		job.Status = "failed"
-		job.Error = err.Error()
-		job.Output = string(output)
-		log.Printf("Job %s failed: %v", job.ID, err)
-	} else {
-		job.Status = "completed"
-		job.Output = string(output)
-		log.Printf("Job %s completed.", job.ID)
+		sendUpdate("failed", fmt.Sprintf("Hashcat failed: %s\nOutput: %s", err, string(output)), true)
+		return
 	}
-	mutex.Unlock()
+	sendUpdate("completed", string(output), false)
 }
 
-func getLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
+func runDesktopClient(relayURL string) {
+	hashcatPath, err := prereqSetup()
 	if err != nil {
-		return "127.0.0.1"
+		log.Fatalf("Failed prerequisite setup: %v", err)
 	}
-	for _, address := range addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
+
+	conn, _, err := websocket.DefaultDialer.Dial(relayURL, nil)
+	if err != nil {
+		log.Fatalf("Failed to connect to relay: %v", err)
+	}
+	defer conn.Close()
+	log.Println("[*] Connected to relay server.")
+
+	roomID, _ := shortid.Generate()
+	joinMsg, _ := json.Marshal(Message{Type: "join", RoomID: roomID})
+	conn.WriteMessage(websocket.TextMessage, joinMsg)
+
+	qr, err := qrcode.New(roomID, qrcode.Medium)
+	if err != nil {
+		log.Fatalf("Failed to generate QR code: %v", err)
+	}
+	fmt.Println(qr.ToString(true))
+	log.Printf("[*] Scan QR code with the mobile app. Room ID: %s", roomID)
+
+	for {
+		_, rawMessage, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("Read error:", err)
+			break
+		}
+		var msg Message
+		if err := json.Unmarshal(rawMessage, &msg); err != nil {
+			continue
+		}
+		if msg.Type == "attack" {
+			var params AttackParams
+			payloadBytes, _ := json.Marshal(msg.Payload)
+			json.Unmarshal(payloadBytes, &params)
+			params.RoomID = roomID // Ensure room ID is set for response
+			go runAttack(params, conn, hashcatPath)
 		}
 	}
-	return "127.0.0.1"
 }
 
-// --- Main Application ---
+// --- Main ---
 
 func main() {
-	// This is a placeholder for the prerequisite setup.
-	// In a real application, this would be ported to Go.
-	log.Println("[*] Ensuring prerequisites are met (Hashcat, wordlists)...")
-	cmd := exec.Command("python", "-c", "from HashKitty import main; main.prereq_setup()")
-	if err := cmd.Run(); err != nil {
-		log.Printf("[!] Failed to run Python prerequisite setup. Please ensure Hashcat and required wordlists are installed manually. Error: %v", err)
-		fmt.Println("=====================================================================")
-		fmt.Println("ERROR: Prerequisite setup failed.")
-		fmt.Println("Please ensure that Hashcat and the required wordlists are installed.")
-		fmt.Println("Refer to the documentation for manual setup instructions.")
-		fmt.Println("The application may not function correctly until prerequisites are met.")
-		fmt.Println("Press ENTER to continue anyway, or Ctrl+C to exit.")
-		fmt.Scanln()
-	}
+	mode := flag.String("mode", "client", "Run in 'relay' or 'client' mode")
+	relayURL := flag.String("relay", "ws://localhost:5001/ws", "URL of the relay server")
+	flag.Parse()
 
-	ip := getLocalIP()
-	port := "8080"
-	serverURL := fmt.Sprintf("http://%s:%s", ip, port)
-
-	qr, _ := qrcode.New(serverURL, qrcode.Medium)
-	fmt.Println(qr.ToString(true))
-	log.Printf("[*] Server starting on %s", serverURL)
-	log.Println("[*] Scan the QR code with the mobile app to connect.")
-
-	http.HandleFunc("/attack", handleAttack)
-	http.HandleFunc("/attack/", handleStatus)
-
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	if *mode == "relay" {
+		runRelayServer()
+	} else if *mode == "client" {
+		runDesktopClient(*relayURL)
+	} else {
+		log.Fatalf("Invalid mode: %s. Choose 'relay' or 'client'.", *mode)
 	}
 }

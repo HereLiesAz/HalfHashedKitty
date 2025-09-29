@@ -31,7 +31,8 @@ The desktop server is a single, self-contained executable.
 **Instructions (for any OS):**
 ```bash
 # Navigate to the Go application directory
-cd app/gokitty
+cd gokitty
+
 
 # Tidy dependencies
 go mod tidy

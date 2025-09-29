@@ -6,9 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.io.IOException
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.UUID
 
 class MainViewModel(
     private val application: Application,
@@ -17,12 +18,13 @@ class MainViewModel(
     private val toolManager: ToolManager
 ) : ViewModel() {
 
-    val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for emulator
-    // File paths should be set by the user for portability; leave empty by default
+    private val RELAY_URL = "ws://10.0.2.2:5001/ws" // Default for emulator. Change to your relay's public IP.
+    private var roomID: String? = null
+
     val hashToCrack = mutableStateOf("")
     val wordlistPath = mutableStateOf("")
     val terminalOutput = mutableStateListOf<String>()
-    val crackedPasswords = mutableStateListOf<String>() // Keep for potential future use
+    val crackedPasswords = mutableStateListOf<String>()
     val hashModes = mutableStateListOf<HashModeInfo>()
     val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
     val attackModes = mutableStateListOf<AttackMode>()
@@ -31,65 +33,55 @@ class MainViewModel(
     val isConnected = mutableStateOf(false)
 
     init {
-        loadHashModes()
-        loadAttackModes()
-        listenForMessages()
+        loadLocalData()
+        listenForServerMessages()
     }
 
-    private fun listenForMessages() {
+    private fun listenForServerMessages() {
         viewModelScope.launch {
             apiClient.incomingMessages.collect { jsonString ->
-                // The python-socketio library sends messages in a specific format.
-                // We need to parse it to get to our payload.
-                // Example: 42["message_to_mobile",{"jobId":"...","status":"..."}]
-                // We will do a simple string manipulation to extract the JSON part.
-                val jsonPart = jsonString.substringAfter(",").dropLast(1)
-                terminalOutput.add("Received: $jsonPart")
-
                 try {
-                    val json = Json.parseToJsonElement(jsonPart).jsonObject
-                    val status = json["status"]?.jsonPrimitive?.content
-                    val jobId = json["jobId"]?.jsonPrimitive?.content ?: "unknown"
-
-                    when (status) {
-                        "running" -> terminalOutput.add("Job $jobId is now running on desktop.")
-                        "completed" -> {
-                            terminalOutput.add("Job $jobId completed.")
-                            val cracked = json["cracked"]?.jsonObject?.values?.map { it.jsonPrimitive.content }
-                            if (cracked != null && cracked.isNotEmpty()) {
-                                crackedPasswords.addAll(cracked)
-                                terminalOutput.add("--- Cracked Passwords ---")
-                                cracked.forEach { terminalOutput.add(it) }
-                            } else {
-                                terminalOutput.add("No new passwords were cracked for job $jobId.")
-                            }
-                            json["output"]?.jsonPrimitive?.content?.let {
-                                terminalOutput.add("--- Full Output ---")
-                                terminalOutput.addAll(it.lines())
-                            }
+                    // First, try to parse as a RoomInfo message
+                    try {
+                        val roomInfo = Json.decodeFromString(RoomInfo.serializer(), jsonString)
+                        if (roomInfo.type == "room_id") {
+                            terminalOutput.add("Successfully connected to relay and joined room: ${roomInfo.id}")
+                            isConnected.value = true
+                            return@collect
                         }
-                        "failed" -> {
-                            terminalOutput.add("[ERROR] Job $jobId failed.")
-                            json["error"]?.jsonPrimitive?.content?.let { terminalOutput.add(it) }
-                        }
+                    } catch (e: Exception) {
+                        // Not a RoomInfo message, proceed to next type
                     }
+
+                    // Next, try to parse as a StatusUpdate message
+                    val statusUpdate = Json.decodeFromString(StatusUpdatePayload.serializer(), jsonString)
+                    terminalOutput.add("Status for job ${statusUpdate.jobId}: ${statusUpdate.status}")
+                    statusUpdate.output?.let {
+                        terminalOutput.add("--- Output ---")
+                        terminalOutput.addAll(it.lines())
+                    }
+                    statusUpdate.error?.let {
+                        terminalOutput.add("[ERROR] ${it}")
+                    }
+                    if (statusUpdate.status == "completed" || statusUpdate.status == "failed") {
+                        terminalOutput.add("--- Job Finished ---")
+                    }
+
                 } catch (e: Exception) {
-                    terminalOutput.add("[ERROR] Failed to parse message from server: ${e.message}")
+                    terminalOutput.add("[ERROR] Failed to parse message from server: $jsonString")
                 }
             }
         }
     }
 
-    private fun loadAttackModes() {
+    private fun loadLocalData() {
+        // Load static data that doesn't require network
         attackModes.addAll(
             listOf(
                 AttackMode(0, "Straight"),
                 AttackMode(3, "Brute-force")
             )
         )
-    }
-
-    private fun loadHashModes() {
         viewModelScope.launch {
             try {
                 application.resources.openRawResource(R.raw.modes).bufferedReader().useLines { lines ->
@@ -110,18 +102,23 @@ class MainViewModel(
     }
 
     fun onQrCodeScanned(qrCodeValue: String) {
-        if (qrCodeValue.startsWith("http://") || qrCodeValue.startsWith("https://")) {
-            serverUrl.value = qrCodeValue
-            isConnected.value = true
-            terminalOutput.add("Connected to desktop client at: $qrCodeValue")
-        } else {
-            terminalOutput.add("[ERROR] Invalid QR code. Expected a URL.")
+        terminalOutput.add("QR Code scanned. Room ID: $qrCodeValue")
+        this.roomID = qrCodeValue
+        viewModelScope.launch {
+            try {
+                apiClient.connect(RELAY_URL)
+            } catch (e: Exception) {
+                terminalOutput.add("[ERROR] Failed to connect to relay: ${e.message}")
+                isConnected.value = false
+            }
         }
     }
 
     fun startAttack() {
-        if (!isConnected.value) {
-            terminalOutput.add("Not connected to a desktop client. Please scan the QR code first.")
+        val currentRoomId = roomID
+        if (currentRoomId == null) {
+            terminalOutput.add("Not connected. Please scan the QR code from the desktop client.")
+
             return
         }
         if (selectedHashMode.value == null) {
@@ -131,46 +128,29 @@ class MainViewModel(
 
         terminalOutput.clear()
         crackedPasswords.clear()
-        terminalOutput.add("Sending attack command to ${serverUrl.value}...")
+        terminalOutput.add("Sending attack command...")
 
         viewModelScope.launch {
             try {
-                val params = mapOf(
-                    "file" to hashToCrack.value,
-                    "mode" to selectedHashMode.value!!.mode,
-                    "attack_mode" to selectedAttackMode.value.id.toString(),
-                    "wordlist" to wordlistPath.value,
-                    "rules" to rulesFile.value
+                val attackParams = AttackParams(
+                    jobId = UUID.randomUUID().toString(),
+                    file = hashToCrack.value,
+                    mode = selectedHashMode.value!!.mode,
+                    wordlist = wordlistPath.value,
+                    rules = rulesFile.value
                 )
 
-                val initialJob = apiClient.startAttack(serverUrl.value, params)
-                terminalOutput.add("Attack started with job ID: ${initialJob.id}")
-                pollForStatus(initialJob.id)
+                val payloadJson = Json.encodeToString(attackParams)
+                val message = WebSocketMessage(
+                    type = "attack",
+                    payload = payloadJson,
+                    room_id = currentRoomId
+                )
 
+                apiClient.sendMessage(message)
+                terminalOutput.add("Attack command sent for job ID: ${attackParams.jobId}")
             } catch (e: Exception) {
-                terminalOutput.add("[ERROR] Failed to start attack: ${e.message}")
-            }
-        }
-    }
-
-    private fun pollForStatus(jobId: String) {
-        viewModelScope.launch {
-            while (true) {
-                try {
-                    val job = apiClient.getAttackStatus(serverUrl.value, jobId)
-                    terminalOutput.add("Job ${job.id} status: ${job.status}")
-
-                    if (job.status == "completed" || job.status == "failed") {
-                        terminalOutput.add("--- Job Finished ---")
-                        job.output?.let { terminalOutput.addAll(it.lines()) }
-                        job.error?.let { terminalOutput.add("[ERROR] ${it}") }
-                        break
-                    }
-                } catch (e: Exception) {
-                    terminalOutput.add("[ERROR] Failed to get job status: ${e.message}")
-                    break
-                }
-                delay(5000) // Poll every 5 seconds
+                terminalOutput.add("[ERROR] Failed to send attack command: ${e.message}")
             }
         }
     }
