@@ -24,8 +24,9 @@ class MainViewModel(
     private val RELAY_URL = "ws://10.0.2.2:5001" // Default for emulator. Change to your relay's public IP.
     private var room_id: String? = null
 
-    val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder
-    val wordlistPath = mutableStateOf("C:\\Users\\user\\Desktop\\wordlist.txt") // Placeholder
+    // Use platform-independent default paths or leave empty for user selection
+    val hashToCrack = mutableStateOf("") // Placeholder, to be set by user
+    val wordlistPath = mutableStateOf("") // Placeholder, to be set by user
     val terminalOutput = mutableStateListOf<String>()
     val crackedPasswords = mutableStateListOf<String>()
     val hashModes = mutableStateListOf<HashModeInfo>()
