@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -18,7 +17,7 @@ import java.io.InputStreamReader
 import android.content.Context
 import android.net.Uri
 
-@OptIn(InternalSerializationApi::class) // Added OptIn here
+
 class MainViewModel(
     private val application: Application,
     private val apiClient: HashcatApiClient,
@@ -26,11 +25,13 @@ class MainViewModel(
     private val toolManager: ToolManager
 ) : ViewModel() {
 
-    val serverUrl = mutableStateOf("http://10.0.2.2:8080") // Default for Android emulator
-    val hashToCrack = mutableStateOf("")
-    val wordlistPath = mutableStateOf("")
+    private val RELAY_URL = "ws://10.0.2.2:5001" // Default for emulator. Change to your relay's public IP.
+    private var room_id: String? = null
+
+    val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder
+    val wordlistPath = mutableStateOf("C:\\Users\\user\\Desktop\\wordlist.txt") // Placeholder
     val terminalOutput = mutableStateListOf<String>()
-    val crackedPassword = mutableStateOf<String?>(null)
+    val crackedPasswords = mutableStateListOf<String>()
     val hashModes = mutableStateListOf<HashModeInfo>()
     val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
     val attackModes = mutableStateListOf<AttackMode>()
@@ -38,25 +39,63 @@ class MainViewModel(
     val rulesFile = mutableStateOf("")
     val customMask = mutableStateOf("")
     val force = mutableStateOf(false)
-
-    // State for packet capturing
-    val isCapturing = mutableStateOf(false)
-    val captureOutput = mutableStateListOf<String>()
+    val isConnected = mutableStateOf(false)
 
     init {
         loadHashModes()
         loadAttackModes()
+        listenForMessages()
+    }
+
+    private fun listenForMessages() {
+        viewModelScope.launch {
+            apiClient.incomingMessages.collect { jsonString ->
+                // The python-socketio library sends messages in a specific format.
+                // We need to parse it to get to our payload.
+                // Example: 42["message_to_mobile",{"jobId":"...","status":"..."}]
+                // We will do a simple string manipulation to extract the JSON part.
+                val jsonPart = jsonString.substringAfter(",").dropLast(1)
+                terminalOutput.add("Received: $jsonPart")
+
+                try {
+                    val json = Json.parseToJsonElement(jsonPart).jsonObject
+                    val status = json["status"]?.jsonPrimitive?.content
+                    val jobId = json["jobId"]?.jsonPrimitive?.content ?: "unknown"
+
+                    when (status) {
+                        "running" -> terminalOutput.add("Job $jobId is now running on desktop.")
+                        "completed" -> {
+                            terminalOutput.add("Job $jobId completed.")
+                            val cracked = json["cracked"]?.jsonObject?.values?.map { it.jsonPrimitive.content }
+                            if (cracked != null && cracked.isNotEmpty()) {
+                                crackedPasswords.addAll(cracked)
+                                terminalOutput.add("--- Cracked Passwords ---")
+                                cracked.forEach { terminalOutput.add(it) }
+                            } else {
+                                terminalOutput.add("No new passwords were cracked for job $jobId.")
+                            }
+                            json["output"]?.jsonPrimitive?.content?.let {
+                                terminalOutput.add("--- Full Output ---")
+                                terminalOutput.addAll(it.lines())
+                            }
+                        }
+                        "failed" -> {
+                            terminalOutput.add("[ERROR] Job $jobId failed.")
+                            json["error"]?.jsonPrimitive?.content?.let { terminalOutput.add(it) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    terminalOutput.add("[ERROR] Failed to parse message from server: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun loadAttackModes() {
-        // Mock data for now
         attackModes.addAll(
             listOf(
                 AttackMode(0, "Straight"),
-                AttackMode(1, "Combination"),
-                AttackMode(3, "Brute-force"),
-                AttackMode(6, "Hybrid Wordlist + Mask"),
-                AttackMode(7, "Hybrid Mask + Wordlist")
+                AttackMode(3, "Brute-force")
             )
         )
     }
@@ -68,13 +107,7 @@ class MainViewModel(
                     lines.forEach { line ->
                         val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
-                            try {
-                                hashModes.add(HashModeInfo(parts[0].toInt(), parts[1]))
-                            } catch (e: NumberFormatException) {
-                                android.util.Log.e("MainViewModel", "Failed to parse hash mode id: '${parts[0]}' in line: '$line'", e)
-                            }
-                        } else {
-                            android.util.Log.w("MainViewModel", "Line does not match expected format: '$line'")
+                            hashModes.add(HashModeInfo(parts[0], parts[1]))
                         }
                     }
                 }
@@ -237,19 +270,15 @@ class MainViewModel(
     }
 
     fun identifyHash() {
+    fun onQrCodeScanned(qrCodeValue: String) {
+        terminalOutput.add("QR Code scanned. Room ID: $qrCodeValue")
+        this.room_id = qrCodeValue
         viewModelScope.launch {
             try {
-                val response = apiClient.identifyHash(serverUrl.value, hashToCrack.value)
-                hashModes.clear()
-                hashModes.addAll(response.hashModes)
-                if (hashModes.isNotEmpty()) {
-                    selectedHashMode.value = hashModes.first()
-                }
-            } catch (e: Exception) {
-                terminalOutput.add("[ERROR] Error identifying hash: ${e.message}")
-            }
-        }
-    }
+                // First, connect to the relay server
+                apiClient.connect(RELAY_URL)
+                // Then, join the specific room for this desktop client
+                apiClient.joinRoom(qrCodeValue)
 
     fun uploadZipFile(context: android.content.Context, uri: android.net.Uri) {
         viewModelScope.launch {
@@ -264,55 +293,45 @@ class MainViewModel(
                 terminalOutput.add("File upload functionality is not yet implemented.")
             } catch (e: java.io.IOException) {
                 terminalOutput.add("[ERROR] File I/O error while reading ZIP file: ${e.message}")
+                isConnected.value = true
+                terminalOutput.add("Connected to desktop client via relay!")
             } catch (e: Exception) {
-                terminalOutput.add("[ERROR] An unexpected error occurred during ZIP upload: ${e.message}")
+                terminalOutput.add("[ERROR] Failed to connect to relay: ${e.message}")
+                isConnected.value = false
             }
         }
     }
 
     fun startAttack() {
+        val currentRoomId = room_id
+        if (currentRoomId == null) {
+            terminalOutput.add("Not connected to a desktop client. Please scan the QR code first.")
+            return
+        }
         if (selectedHashMode.value == null) {
             terminalOutput.add("Please select a hash mode.")
             return
         }
+
         terminalOutput.clear()
-        crackedPassword.value = null
-        terminalOutput.add("Starting remote attack...")
+        crackedPasswords.clear()
+        terminalOutput.add("Sending attack command...")
+
         viewModelScope.launch {
             try {
-                val request = AttackRequest(
-                    hash = hashToCrack.value,
-                    hashType = selectedHashMode.value!!.id,
-                    wordlist = wordlistPath.value
+                val jobId = UUID.randomUUID().toString()
+                val payload = mapOf(
+                    "jobId" to jobId,
+                    "file" to hashToCrack.value,
+                    "mode" to selectedHashMode.value!!.mode,
+                    "wordlist" to wordlistPath.value,
+                    "rules" to rulesFile.value
                 )
-                val response = apiClient.startAttack(serverUrl.value, request)
-                terminalOutput.add("Attack started with job ID: ${response.jobId}")
-                pollForStatus(response.jobId)
-            } catch (e: Exception) {
-                terminalOutput.add("[ERROR] Error starting attack: ${e.message}")
-            }
-        }
-    }
 
-    private fun pollForStatus(jobId: String) {
-        viewModelScope.launch {
-            while (true) {
-                try {
-                    val response = apiClient.getAttackStatus(serverUrl.value, jobId)
-                    terminalOutput.add("Job ${response.jobId}: ${response.status}")
-                    if (response.status == "Cracked") {
-                        crackedPassword.value = response.crackedPassword
-                        terminalOutput.add("Password found: ${response.crackedPassword}")
-                        break
-                    } else if (response.status == "Exhausted" || response.status == "Aborted") {
-                        terminalOutput.add("Attack finished. Password not found.")
-                        break
-                    }
-                } catch (e: Exception) {
-                    terminalOutput.add("Error getting status: ${e.message}")
-                    break
-                }
-                delay(5000) // Poll every 5 seconds
+                apiClient.sendMessageToDesktop(currentRoomId, payload)
+                terminalOutput.add("Attack command sent for job ID: $jobId")
+            } catch (e: Exception) {
+                terminalOutput.add("[ERROR] Failed to send attack command: ${e.message}")
             }
         }
     }
