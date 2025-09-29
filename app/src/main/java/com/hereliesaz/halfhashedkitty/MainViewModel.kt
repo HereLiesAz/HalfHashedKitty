@@ -1,8 +1,6 @@
 package com.hereliesaz.halfhashedkitty
 
 import android.app.Application
-import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -17,20 +15,11 @@ import java.util.UUID
 class MainViewModel(
     private val application: Application,
     private val apiClient: HashcatApiClient,
-    private val cap2hashcatApiClient: Cap2HashcatApiClient,
-    private val toolManager: ToolManager
+    private val cap2hashcatApiClient: Cap2HashcatApiClient
 ) : ViewModel() {
 
     private val RELAY_URL = BuildConfig.RELAY_URL
     private var roomID: String? = null
-
-    // Restored properties
-    val captureOutput = mutableStateListOf<String>()
-    val isCapturing = mutableStateOf(false)
-    val customMask = mutableStateOf("")
-    val force = mutableStateOf(false)
-    val serverUrl = mutableStateOf("")
-    val crackedPassword = mutableStateOf("")
 
     val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder for the file path on the desktop
     val wordlistPath = mutableStateOf("C:\\Users\\user\\Desktop\\wordlist.txt") // Placeholder
@@ -167,23 +156,15 @@ class MainViewModel(
         }
     }
 
-    // Restored functions
-    fun stopCapture() {}
-    fun startCapture() {}
-    fun uploadZipFile(context: Context, uri: Uri) {}
-    fun uploadPcapngFile(context: Context, uri: Uri) {}
-    fun identifyHash() {}
-
     class MainViewModelFactory(
         private val application: Application,
         private val apiClient: HashcatApiClient,
-        private val cap2hashcatApiClient: Cap2HashcatApiClient,
-        private val toolManager: ToolManager
+        private val cap2hashcatApiClient: Cap2HashcatApiClient
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(application, apiClient, cap2hashcatApiClient, toolManager) as T
+                return MainViewModel(application, apiClient, cap2hashcatApiClient) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
