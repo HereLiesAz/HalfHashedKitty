@@ -42,7 +42,7 @@ class HashcatApiClient {
                 }
             }
         } catch (e: Exception) {
-            println("Error connecting to relay: ${e.message}")
+            android.util.Log.e("HashcatApiClient", "Error connecting to relay", e)
             throw e
         }
     }
