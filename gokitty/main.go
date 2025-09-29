@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,9 +12,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"regexp"
-	"strings"
+	"runtime"
 	"sync"
 
 	"github.com/bodgit/sevenzip"
@@ -26,8 +26,8 @@ import (
 
 type Message struct {
 	Type    string      `json:"type"`
-	Payload interface{} `json:"payload,omitempty"`
-	RoomID  string      `json:"room_id,omitempty"`
+	Payload interface{} `json:"payload"`
+	RoomID  string      `json:"room_id"`
 	Sender  *Client     `json:"-"`
 }
 
@@ -39,7 +39,7 @@ type AttackParams struct {
 	Rules    string `json:"rules,omitempty"`
 }
 
-// --- Relay Server Logic (Hub & Client) ---
+// --- Relay Server Logic ---
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
@@ -60,7 +60,14 @@ type Hub struct {
 	mutex      sync.Mutex
 }
 
-func newHub() *Hub { return &Hub{broadcast: make(chan Message), register: make(chan *Client), unregister: make(chan *Client), rooms: make(map[string]map[*Client]bool)} }
+func newHub() *Hub {
+	return &Hub{
+		broadcast:  make(chan Message),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		rooms:      make(map[string]map[*Client]bool),
+	}
+}
 
 func (h *Hub) run() {
 	for {
@@ -74,9 +81,9 @@ func (h *Hub) run() {
 			h.mutex.Unlock()
 		case client := <-h.unregister:
 			h.mutex.Lock()
-			if _, ok := h.rooms[client.room]; ok {
-				delete(h.rooms[client.room], client)
-				if len(h.rooms[client.room]) == 0 {
+			if clients, ok := h.rooms[client.room]; ok {
+				delete(clients, client)
+				if len(clients) == 0 {
 					delete(h.rooms, client.room)
 				}
 			}
@@ -113,8 +120,11 @@ func (c *Client) readPump() {
 			continue
 		}
 		msg.Sender = c
-		c.room = msg.RoomID // Assign client to room based on message
-		c.hub.register <- c
+		c.room = msg.RoomID
+		if msg.Type == "join" {
+			c.hub.register <- c
+		}
+		msg.Payload = rawMessage
 		c.hub.broadcast <- msg
 	}
 }
@@ -150,19 +160,19 @@ func runRelayServer() {
 // --- Desktop Client Logic ---
 
 func prereqSetup() (string, error) {
-	hashcatBaseDir := filepath.Join(os.Getenv("APPDATA"), "gokitty")
-	if runtime.GOOS != "windows" {
-		hashcatBaseDir = filepath.Join(os.Getenv("HOME"), ".gokitty")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
 	}
-	if err := os.MkdirAll(hashcatBaseDir, 0755); err != nil {
+	gokittyDir := filepath.Join(homeDir, ".gokitty")
+	if err := os.MkdirAll(gokittyDir, 0755); err != nil {
 		return "", err
 	}
 
-	// For simplicity, we assume hashcat is present if the dir exists.
-	// A real app would check version and update.
-	if _, err := os.Stat(filepath.Join(hashcatBaseDir, "hashcat-7.1.2")); err == nil {
+	hashcatDir := filepath.Join(gokittyDir, "hashcat-7.1.2")
+	if _, err := os.Stat(hashcatDir); err == nil {
 		log.Println("[*] Hashcat directory already exists.")
-		return filepath.Join(hashcatBaseDir, "hashcat-7.1.2"), nil
+		return hashcatDir, nil
 	}
 
 	log.Println("[*] Downloading Hashcat v7.1.2...")
@@ -173,7 +183,7 @@ func prereqSetup() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	archivePath := filepath.Join(hashcatBaseDir, "hashcat.7z")
+	archivePath := filepath.Join(gokittyDir, "hashcat.7z")
 	out, err := os.Create(archivePath)
 	if err != nil {
 		return "", err
@@ -189,7 +199,7 @@ func prereqSetup() (string, error) {
 	defer r.Close()
 
 	for _, f := range r.File {
-		dstPath := filepath.Join(hashcatBaseDir, f.Name)
+		dstPath := filepath.Join(gokittyDir, f.Name)
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(dstPath, f.Mode())
 			continue
@@ -217,7 +227,7 @@ func prereqSetup() (string, error) {
 
 	log.Println("[*] Hashcat setup complete.")
 	os.Remove(archivePath)
-	return filepath.Join(hashcatBaseDir, "hashcat-7.1.2"), nil
+	return hashcatDir, nil
 }
 
 func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string) {
@@ -230,37 +240,52 @@ func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string) {
 		} else {
 			res["output"] = data
 		}
-		msg, _ := json.Marshal(Message{Type: "status_update", RoomID: params.RoomID, Payload: res})
+		payloadBytes, _ := json.Marshal(res)
+		msg, _ := json.Marshal(Message{Type: "status_update", RoomID: params.RoomID, Payload: string(payloadBytes)})
 		conn.WriteMessage(websocket.TextMessage, msg)
 	}
 
-	// Basic Input Validation
+	// Input Validation
 	if matched, _ := regexp.MatchString(`^[0-9]+$`, params.Mode); !matched {
 		sendUpdate("failed", "Invalid hash mode specified.", true)
 		return
 	}
-	if _, err := os.Stat(params.File); os.IsNotExist(err) {
-		sendUpdate("failed", "Hash file not found.", true)
+	cleanFile := filepath.Clean(params.File)
+	if _, err := os.Stat(cleanFile); os.IsNotExist(err) {
+		sendUpdate("failed", fmt.Sprintf("Hash file not found: %s", cleanFile), true)
 		return
 	}
 
 	executable := filepath.Join(hashcatPath, "hashcat")
 	if runtime.GOOS == "windows" {
-		executable = filepath.Join(hashcatPath, "hashcat.exe")
+		executable += ".exe"
 	}
 
-	args := []string{"-m", params.Mode, "-a", "0", params.File}
+	args := []string{"-m", params.Mode, "-a", "0", cleanFile}
 	if params.Wordlist != "" {
-		args = append(args, params.Wordlist)
+		args = append(args, filepath.Clean(params.Wordlist))
 	}
 
 	cmd := exec.Command(executable, args...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		sendUpdate("failed", fmt.Sprintf("Hashcat failed: %s\nOutput: %s", err, string(output)), true)
+	stdout, _ := cmd.StdoutPipe()
+	cmd.Stderr = cmd.Stdout
+
+	if err := cmd.Start(); err != nil {
+		sendUpdate("failed", fmt.Sprintf("Failed to start hashcat: %v", err), true)
 		return
 	}
-	sendUpdate("completed", string(output), false)
+
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		sendUpdate("running", line, false)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		sendUpdate("failed", fmt.Sprintf("Hashcat process failed: %v", err), true)
+	} else {
+		sendUpdate("completed", "Hashcat process finished.", false)
+	}
 }
 
 func runDesktopClient(relayURL string) {
@@ -276,9 +301,16 @@ func runDesktopClient(relayURL string) {
 	defer conn.Close()
 	log.Println("[*] Connected to relay server.")
 
-	roomID, _ := shortid.Generate()
-	joinMsg, _ := json.Marshal(Message{Type: "join", RoomID: roomID})
-	conn.WriteMessage(websocket.TextMessage, joinMsg)
+	roomID, err := shortid.Generate()
+	if err != nil {
+		log.Fatalf("Failed to generate room ID: %v", err)
+	}
+
+	joinMsgBytes, err := json.Marshal(Message{Type: "join", RoomID: roomID})
+	if err != nil {
+		log.Fatalf("Failed to create join message: %v", err)
+	}
+	conn.WriteMessage(websocket.TextMessage, joinMsgBytes)
 
 	qr, err := qrcode.New(roomID, qrcode.Medium)
 	if err != nil {
@@ -299,9 +331,12 @@ func runDesktopClient(relayURL string) {
 		}
 		if msg.Type == "attack" {
 			var params AttackParams
-			payloadBytes, _ := json.Marshal(msg.Payload)
-			json.Unmarshal(payloadBytes, &params)
-			params.RoomID = roomID // Ensure room ID is set for response
+			payloadStr, ok := msg.Payload.(string)
+			if !ok { continue }
+			if err := json.Unmarshal([]byte(payloadStr), &params); err != nil {
+				continue
+			}
+			params.RoomID = roomID
 			go runAttack(params, conn, hashcatPath)
 		}
 	}

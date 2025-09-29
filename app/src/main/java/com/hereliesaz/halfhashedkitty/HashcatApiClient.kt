@@ -1,9 +1,11 @@
 package com.hereliesaz.halfhashedkitty
 
+import android.util.Log
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
-import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
@@ -14,35 +16,39 @@ import kotlinx.serialization.json.Json
 class HashcatApiClient {
 
     private val client = HttpClient(CIO) {
-        install(WebSockets) {
-            contentConverter = KotlinxWebsocketSerializationConverter(Json)
-        }
+        install(WebSockets)
     }
 
     private var session: DefaultClientWebSocketSession? = null
     private val _incomingMessages = MutableSharedFlow<String>()
     val incomingMessages = _incomingMessages.asSharedFlow()
 
-    suspend fun connect(relayUrl: String) {
+    suspend fun connect(relayUrl: String, roomId: String, scope: CoroutineScope) {
         try {
             session?.close()
-            session = client.webSocketSession(relayUrl)
+            val urlWithRoom = "$relayUrl?room=$roomId"
+            session = client.webSocketSession(urlWithRoom)
 
-            session?.launch {
-                while (isActive) {
-                    try {
-                        val frame = incoming.receive()
+            scope.launch {
+                try {
+                    while (isActive) {
+                        val frame = session?.incoming?.receive()
                         if (frame is Frame.Text) {
                             _incomingMessages.emit(frame.readText())
                         }
-                    } catch (e: Exception) {
-                        println("Error receiving message: ${e.message}")
-                        break
                     }
+                } catch (e: ClosedReceiveChannelException) {
+                    Log.d("HashcatApiClient", "WebSocket session closed.")
+                } catch (e: Exception) {
+                    Log.e("HashcatApiClient", "Error receiving message", e)
                 }
             }
+            // Send the initial join message
+            val joinMessage = WebSocketMessage(type = "join", payload = "", room_id = roomId)
+            sendMessage(joinMessage)
+
         } catch (e: Exception) {
-            android.util.Log.e("HashcatApiClient", "Error connecting to relay", e)
+            Log.e("HashcatApiClient", "Error connecting to relay", e)
             throw e
         }
     }
@@ -50,15 +56,20 @@ class HashcatApiClient {
     suspend fun sendMessage(message: WebSocketMessage) {
         session?.let {
             if (it.isActive) {
-                val jsonString = Json.encodeToString(message)
-                it.send(jsonString)
+                try {
+                    val jsonString = Json.encodeToString(message)
+                    it.send(jsonString)
+                } catch (e: Exception) {
+                    Log.e("HashcatApiClient", "Error sending message", e)
+                }
             } else {
-                android.util.Log.w("HashcatApiClient", "Cannot send message, session is not active.")
+                Log.w("HashcatApiClient", "Cannot send message, session is not active.")
             }
         }
     }
 
     fun close() {
+        session?.cancel()
         client.close()
     }
 }
