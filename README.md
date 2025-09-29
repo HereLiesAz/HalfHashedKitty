@@ -1,20 +1,17 @@
-# Half-Hashed Kitty: Anywhere Access
+# Half-Hashed Kitty
 
 ![Alt text](app/src/main/res/drawable/half_hashed_kitty_banner.png?raw=true "Half-Hashed Kitty")
 
 ## Intro
 
-Half-Hashed Kitty is a project that consists of an Android application and a desktop application for WiFi security auditing. This version has been completely redesigned to allow you to run and monitor Hashcat jobs on your desktop computer from your Android phone, anywhere in the world.
+Half-Hashed Kitty is a project that consists of an Android application and a desktop application for WiFi security auditing. This new version features a simple, robust, and self-contained desktop application written in Go that allows you to run and monitor Hashcat jobs from your Android phone on your local network.
 
-The system uses a secure, three-part architecture to provide a seamless and persistent connection that is not limited to your local network.
+## The Local Network Architecture
 
-## The "Anywhere Access" Architecture
+The system uses a simple and reliable two-part architecture for local network communication:
 
-The system is composed of three components that work together:
-
-1.  **The Relay Server:** A lightweight Python server that acts as a secure middleman. It lives on a public server and its only job is to relay messages between your phone and your desktop. It does not store any sensitive data.
-2.  **The Desktop Client:** A smart Python client that runs on your desktop computer. It connects to the relay server, gets a unique ID, and listens for commands from your phone.
-3.  **The Android App:** The mobile app that allows you to control the desktop client. You connect it to your desktop by simply scanning a QR code, and from then on, you can start and monitor jobs from anywhere with an internet connection.
+1.  **The Go Desktop Server:** A single, self-contained executable that runs on your desktop computer. It requires no external dependencies like Python. When you run it, it starts a local web server and displays a QR code containing its local IP address.
+2.  **The Android App:** The mobile app that allows you to control the desktop server. You connect it to your desktop by simply scanning the QR code, which establishes a direct connection on your local network.
 
 ---
 
@@ -24,102 +21,57 @@ The system is composed of three components that work together:
 
 Before you begin, make sure you have the following software installed on your computer:
 
--   **Python 3:** [Download Python](https://www.python.org/downloads/)
--   **Git:** [Download Git](https://git-scm.com/downloads)
+-   **Go:** [Download Go](https://go.dev/dl/) (for building the server)
+-   **Android Studio:** [Download Android Studio](https://developer.android.com/studio) (for building the app)
 
-### Step 1: Get the Code
+### Step 1: Build the Go Desktop Server
 
-First, clone the repository to your local machine using Git:
-```bash
-git clone <repository_url>
-cd <repository_directory>
-```
-*Note: Replace `<repository_url>` and `<repository_directory>` with the actual URL and folder name.*
-
-### Step 2: Set up the Relay Server
-
-The relay server must be run on a machine with a public IP address (like a cloud server) so that both the desktop client and the mobile app can connect to it.
+The desktop server is a single, self-contained executable.
 
 **Instructions (for any OS):**
 ```bash
-# Navigate to the relay server directory
-cd /app/relay-server
+# Navigate to the Go application directory
+cd /app/gokitty
 
-# Install the required Python packages
-pip install -r requirements.txt
+# Tidy dependencies
+go mod tidy
 
-# Run the server
-python server.py
+# Build the executable
+go build .
 ```
-The server will now be running and listening for connections on port 5001.
+This will create a `gokitty` (or `gokitty.exe` on Windows) executable in the current directory.
 
-### Step 3: Set up the Desktop Client
+### Step 2: Run the Desktop Server
 
-The desktop client runs on the computer where you want to execute the Hashcat jobs. The setup is slightly different for Windows and macOS/Linux.
+To run the server, simply execute the file you just built:
 
----
-
-#### **For Windows Users:**
-
-Open **Command Prompt (cmd.exe)** and run the following commands:
-
+**On Windows:**
 ```cmd
-:: Navigate to the desktop client directory
-cd app\hashkitty-gui
-
-:: Create a Python virtual environment
-python -m venv venv
-
-:: Activate the virtual environment
-venv\Scripts\activate
-
-:: Install the required Python packages
-pip install -r requirements.txt
-
-:: Run the client
-python server.py
+gokitty.exe
 ```
 
----
-
-#### **For macOS & Linux Users:**
-
-Open your **Terminal** and run the following commands:
-
+**On macOS & Linux:**
 ```bash
-# Navigate to the desktop client directory
-cd /app/hashkitty-gui
-
-# Create a Python virtual environment
-python3 -m venv venv
-
-# Activate the virtual environment
-source venv/bin/activate
-
-# Install the required Python packages
-pip install -r requirements.txt
-
-# Run the client
-python server.py
+./gokitty
 ```
----
 
-Upon starting, the desktop client will connect to the relay server and display a **QR code** in the terminal. You will scan this QR code with the Android app to pair the devices.
+Upon starting, the server will display a **QR code** in the terminal. You will scan this QR code with the Android app to pair the devices.
 
-### Step 4: Set up the Android Application
+### Step 3: Set up the Android Application
 
 **Building the App:**
-To build the Android application, you need to have Android Studio installed. Open the project in Android Studio and build it.
+Open the project in Android Studio and build it onto your Android device.
 
 **Connecting the App:**
-1.  Open the app and navigate to the **PC Connect** tab.
-2.  Scan the QR code displayed in the terminal by the desktop client.
-3.  The app will now be securely connected to your desktop client via the relay server.
+1.  Ensure your Android device is on the **same WiFi network** as your desktop computer.
+2.  Open the app and navigate to the **PC Connect** tab.
+3.  Scan the QR code displayed in the terminal by the desktop server.
+4.  The app will now be connected to your desktop.
 
 ## How to Use
 
-1.  Ensure the Relay Server and Desktop Client are running.
+1.  Ensure the Go Desktop Server is running.
 2.  Connect the Android app by scanning the QR code.
-3.  Navigate to the **Input** tab to specify the hash file and other parameters.
+3.  Navigate to the **Input** tab to specify the hash file path and other parameters. **Note:** The file paths must be valid on the desktop computer where the server is running.
 4.  Go to the **Attack** tab and press "Start Remote Attack".
-5.  You can monitor the progress and see the results in the **Terminal** and **Output** tabs. The connection will persist even if you close and reopen the app, or if your network changes.
+5.  You can monitor the progress and see the final results in the **Terminal** tab.
