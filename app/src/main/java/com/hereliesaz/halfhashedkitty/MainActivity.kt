@@ -15,8 +15,7 @@ class MainActivity : ComponentActivity() {
         MainViewModel.MainViewModelFactory(
             application,
             HashcatApiClient(),
-            Cap2HashcatApiClient(),
-            ToolManager(applicationContext)
+            Cap2HashcatApiClient()
         )
     }
     private val hashtopolisViewModel: HashtopolisViewModel by viewModels()

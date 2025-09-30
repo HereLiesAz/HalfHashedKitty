@@ -15,11 +15,10 @@ import java.util.UUID
 class MainViewModel(
     private val application: Application,
     private val apiClient: HashcatApiClient,
-    private val cap2hashcatApiClient: Cap2HashcatApiClient,
-    private val toolManager: ToolManager
+    private val cap2hashcatApiClient: Cap2HashcatApiClient
 ) : ViewModel() {
 
-    private val RELAY_URL = "ws://10.0.2.2:5001/ws" // Default for emulator. Change to your relay's public IP.
+    private val RELAY_URL = BuildConfig.RELAY_URL
     private var roomID: String? = null
 
     val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder for the file path on the desktop
@@ -137,6 +136,7 @@ class MainViewModel(
                     jobId = UUID.randomUUID().toString(),
                     file = hashToCrack.value,
                     mode = selectedHashMode.value!!.mode,
+                    attackMode = selectedAttackMode.value.id.toString(),
                     wordlist = wordlistPath.value,
                     rules = rulesFile.value
                 )
@@ -159,13 +159,12 @@ class MainViewModel(
     class MainViewModelFactory(
         private val application: Application,
         private val apiClient: HashcatApiClient,
-        private val cap2hashcatApiClient: Cap2HashcatApiClient,
-        private val toolManager: ToolManager
+        private val cap2hashcatApiClient: Cap2HashcatApiClient
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(application, apiClient, cap2hashcatApiClient, toolManager) as T
+                return MainViewModel(application, apiClient, cap2hashcatApiClient) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

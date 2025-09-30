@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/bodgit/sevenzip"
@@ -32,11 +32,12 @@ type Message struct {
 }
 
 type AttackParams struct {
-	JobID    string `json:"jobId"`
-	File     string `json:"file"`
-	Mode     string `json:"mode"`
-	Wordlist string `json:"wordlist"`
-	Rules    string `json:"rules,omitempty"`
+	JobID      string `json:"jobId"`
+	File       string `json:"file"`
+	Mode       string `json:"mode"`
+	AttackMode string `json:"attackMode"`
+	Wordlist   string `json:"wordlist"`
+	Rules      string `json:"rules,omitempty"`
 }
 
 // --- Relay Server Logic ---
@@ -117,6 +118,7 @@ func (c *Client) readPump() {
 		}
 		var msg Message
 		if err := json.Unmarshal(rawMessage, &msg); err != nil {
+			log.Printf("Failed to unmarshal message: %v", err)
 			continue
 		}
 		msg.Sender = c
@@ -230,7 +232,7 @@ func prereqSetup() (string, error) {
 	return hashcatDir, nil
 }
 
-func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string) {
+func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string, roomID string) {
 	log.Printf("Starting attack for job %s...", params.JobID)
 
 	sendUpdate := func(status, data string, isError bool) {
@@ -241,7 +243,7 @@ func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string) {
 			res["output"] = data
 		}
 		payloadBytes, _ := json.Marshal(res)
-		msg, _ := json.Marshal(Message{Type: "status_update", RoomID: params.RoomID, Payload: string(payloadBytes)})
+		msg, _ := json.Marshal(Message{Type: "status_update", RoomID: roomID, Payload: string(payloadBytes)})
 		conn.WriteMessage(websocket.TextMessage, msg)
 	}
 
@@ -250,7 +252,16 @@ func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string) {
 		sendUpdate("failed", "Invalid hash mode specified.", true)
 		return
 	}
+	if matched, _ := regexp.MatchString(`^[0-9]+$`, params.AttackMode); !matched {
+		sendUpdate("failed", "Invalid attack mode specified.", true)
+		return
+	}
+
 	cleanFile := filepath.Clean(params.File)
+	if strings.Contains(cleanFile, "..") {
+		sendUpdate("failed", "Invalid file path: path traversal is not allowed.", true)
+		return
+	}
 	if _, err := os.Stat(cleanFile); os.IsNotExist(err) {
 		sendUpdate("failed", fmt.Sprintf("Hash file not found: %s", cleanFile), true)
 		return
@@ -261,9 +272,30 @@ func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string) {
 		executable += ".exe"
 	}
 
-	args := []string{"-m", params.Mode, "-a", "0", cleanFile}
+	args := []string{"-m", params.Mode, "-a", params.AttackMode, cleanFile}
 	if params.Wordlist != "" {
-		args = append(args, filepath.Clean(params.Wordlist))
+		cleanWordlist := filepath.Clean(params.Wordlist)
+		if strings.Contains(cleanWordlist, "..") {
+			sendUpdate("failed", "Invalid wordlist path: path traversal is not allowed.", true)
+			return
+		}
+		if _, err := os.Stat(cleanWordlist); os.IsNotExist(err) {
+			sendUpdate("failed", fmt.Sprintf("Wordlist not found: %s", cleanWordlist), true)
+			return
+		}
+		args = append(args, cleanWordlist)
+	}
+	if params.Rules != "" {
+		cleanRules := filepath.Clean(params.Rules)
+		if strings.Contains(cleanRules, "..") {
+			sendUpdate("failed", "Invalid rules path: path traversal is not allowed.", true)
+			return
+		}
+		if _, err := os.Stat(cleanRules); os.IsNotExist(err) {
+			sendUpdate("failed", fmt.Sprintf("Rules file not found: %s", cleanRules), true)
+			return
+		}
+		args = append(args, "-r", cleanRules)
 	}
 
 	cmd := exec.Command(executable, args...)
@@ -327,17 +359,21 @@ func runDesktopClient(relayURL string) {
 		}
 		var msg Message
 		if err := json.Unmarshal(rawMessage, &msg); err != nil {
+			log.Printf("Failed to unmarshal message: %v", err)
 			continue
 		}
 		if msg.Type == "attack" {
 			var params AttackParams
 			payloadStr, ok := msg.Payload.(string)
-			if !ok { continue }
-			if err := json.Unmarshal([]byte(payloadStr), &params); err != nil {
+			if !ok {
+				log.Printf("Payload is not a string for attack message")
 				continue
 			}
-			params.RoomID = roomID
-			go runAttack(params, conn, hashcatPath)
+			if err := json.Unmarshal([]byte(payloadStr), &params); err != nil {
+				log.Printf("Failed to unmarshal attack params: %v", err)
+				continue
+			}
+			go runAttack(params, conn, hashcatPath, roomID)
 		}
 	}
 }
