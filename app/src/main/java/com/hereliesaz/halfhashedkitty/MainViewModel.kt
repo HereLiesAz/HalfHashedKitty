@@ -26,6 +26,7 @@ class MainViewModel(
     val terminalOutput = mutableStateListOf<String>()
     val crackedPasswords = mutableStateListOf<String>()
     val hashModes = mutableStateListOf<HashModeInfo>()
+    private val validHashModes = mutableSetOf<String>()
     val selectedHashMode = mutableStateOf<HashModeInfo?>(null)
     val attackModes = mutableStateListOf<AttackMode>()
     val selectedAttackMode = mutableStateOf(AttackMode(0, "Straight"))
@@ -85,10 +86,12 @@ class MainViewModel(
                     lines.forEach { line ->
                         val parts = line.split(" ".toRegex(), 2)
                         if (parts.size == 2) {
-                            if (parts[0].all { it.isDigit() }) {
-                                hashModes.add(HashModeInfo(parts[0], parts[1]))
+                            val mode = parts[0]
+                            if (mode.all { it.isDigit() }) {
+                                hashModes.add(HashModeInfo(mode, parts[1]))
+                                validHashModes.add(mode)
                             } else {
-                                android.util.Log.w("MainViewModel", "Mode string is not numeric: '${parts[0]}' in line: '$line'")
+                                android.util.Log.w("MainViewModel", "Mode string is not numeric: '$mode' in line: '$line'")
                             }
                         }
                     }
@@ -121,8 +124,14 @@ class MainViewModel(
             terminalOutput.add("Not connected. Please scan the QR code from the desktop client.")
             return
         }
-        if (selectedHashMode.value == null) {
+        val currentHashMode = selectedHashMode.value
+        if (currentHashMode == null) {
             terminalOutput.add("Please select a hash mode.")
+            return
+        }
+
+        if (!validHashModes.contains(currentHashMode.mode)) {
+            terminalOutput.add("Invalid hash mode selected. Please select a valid mode from the list.")
             return
         }
 
@@ -135,7 +144,7 @@ class MainViewModel(
                 val attackParams = AttackParams(
                     jobId = UUID.randomUUID().toString(),
                     file = hashToCrack.value,
-                    mode = selectedHashMode.value!!.mode,
+                    mode = currentHashMode.mode,
                     attackMode = selectedAttackMode.value.id.toString(),
                     wordlist = wordlistPath.value,
                     rules = rulesFile.value

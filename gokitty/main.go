@@ -232,6 +232,21 @@ func prereqSetup() (string, error) {
 	return hashcatDir, nil
 }
 
+// validatePath cleans and validates a file path.
+func validatePath(path, fileType string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("%s path is empty", fileType)
+	}
+	cleanedPath := filepath.Clean(path)
+	if strings.Contains(cleanedPath, "..") {
+		return "", fmt.Errorf("invalid %s path: path traversal is not allowed", fileType)
+	}
+	if _, err := os.Stat(cleanedPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("%s not found: %s", fileType, cleanedPath)
+	}
+	return cleanedPath, nil
+}
+
 func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string, roomID string) {
 	log.Printf("Starting attack for job %s...", params.JobID)
 
@@ -257,13 +272,9 @@ func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string, ro
 		return
 	}
 
-	cleanFile := filepath.Clean(params.File)
-	if strings.Contains(cleanFile, "..") {
-		sendUpdate("failed", "Invalid file path: path traversal is not allowed.", true)
-		return
-	}
-	if _, err := os.Stat(cleanFile); os.IsNotExist(err) {
-		sendUpdate("failed", fmt.Sprintf("Hash file not found: %s", cleanFile), true)
+	cleanFile, err := validatePath(params.File, "Hash file")
+	if err != nil {
+		sendUpdate("failed", err.Error(), true)
 		return
 	}
 
@@ -274,25 +285,17 @@ func runAttack(params AttackParams, conn *websocket.Conn, hashcatPath string, ro
 
 	args := []string{"-m", params.Mode, "-a", params.AttackMode, cleanFile}
 	if params.Wordlist != "" {
-		cleanWordlist := filepath.Clean(params.Wordlist)
-		if strings.Contains(cleanWordlist, "..") {
-			sendUpdate("failed", "Invalid wordlist path: path traversal is not allowed.", true)
-			return
-		}
-		if _, err := os.Stat(cleanWordlist); os.IsNotExist(err) {
-			sendUpdate("failed", fmt.Sprintf("Wordlist not found: %s", cleanWordlist), true)
+		cleanWordlist, err := validatePath(params.Wordlist, "Wordlist")
+		if err != nil {
+			sendUpdate("failed", err.Error(), true)
 			return
 		}
 		args = append(args, cleanWordlist)
 	}
 	if params.Rules != "" {
-		cleanRules := filepath.Clean(params.Rules)
-		if strings.Contains(cleanRules, "..") {
-			sendUpdate("failed", "Invalid rules path: path traversal is not allowed.", true)
-			return
-		}
-		if _, err := os.Stat(cleanRules); os.IsNotExist(err) {
-			sendUpdate("failed", fmt.Sprintf("Rules file not found: %s", cleanRules), true)
+		cleanRules, err := validatePath(params.Rules, "Rules file")
+		if err != nil {
+			sendUpdate("failed", err.Error(), true)
 			return
 		}
 		args = append(args, "-r", cleanRules)
