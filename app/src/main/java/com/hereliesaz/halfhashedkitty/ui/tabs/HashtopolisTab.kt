@@ -12,12 +12,11 @@ import com.hereliesaz.halfhashedkitty.HashtopolisViewModel
 import com.hereliesaz.halfhashedkitty.ui.theme.TransparentButton
 
 @Composable
-fun HashtopolisTab(viewModel: HashtopolisViewModel, onShowInstructions: () -> Unit) {
+fun HashtopolisTab(viewModel: HashtopolisViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        ScreenTitle("Hashtopolis", onShowInstructions)
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Text("This tab is for connecting to a Hashtopolis server to manage your hash cracking agents.")
 

@@ -20,12 +20,11 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @Composable
-fun TerminalTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
+fun TerminalTab(viewModel: MainViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        ScreenTitle("Terminal", onShowInstructions)
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Text("This tab shows the raw output from the tools that are being run. It is useful for monitoring the progress of the attack.")
             Spacer(modifier = Modifier.height(16.dp))

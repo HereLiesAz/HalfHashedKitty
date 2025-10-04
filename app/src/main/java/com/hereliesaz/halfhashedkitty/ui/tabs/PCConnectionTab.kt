@@ -8,12 +8,11 @@ import com.hereliesaz.halfhashedkitty.MainViewModel
 import com.hereliesaz.halfhashedkitty.ui.screens.ScannerScreen
 
 @Composable
-fun PCConnectionTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
+fun PCConnectionTab(viewModel: MainViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        ScreenTitle("PC Connect", onShowInstructions)
         ScannerScreen(
             instructionText = "To connect this Android app with the desktop application, please scan the QR code displayed on the 'Connection' tab of the desktop app.",
             onQrCodeScanned = { qrCodeValue ->

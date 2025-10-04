@@ -16,12 +16,11 @@ import com.hereliesaz.halfhashedkitty.MainViewModel
 import com.hereliesaz.halfhashedkitty.ui.theme.TransparentButton
 
 @Composable
-fun AttackTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
+fun AttackTab(viewModel: MainViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        ScreenTitle("Attack", onShowInstructions)
         Column(
             modifier = Modifier
                 .padding(16.dp)

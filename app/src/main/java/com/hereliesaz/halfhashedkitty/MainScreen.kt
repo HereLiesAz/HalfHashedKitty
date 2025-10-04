@@ -28,6 +28,7 @@ import com.hereliesaz.halfhashedkitty.ui.tabs.InstructionsOverlay
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.PCConnectionTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.PiControlTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.ScreenTitle
 import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
 
@@ -56,8 +57,8 @@ fun MainScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                Column() {
-                    AzNavRail() {
+                Column {
+                    AzNavRail {
                         azRailItem(
                             id = "Attack",
                             color = Color.White,
@@ -108,24 +109,19 @@ fun MainScreen(
                 }
 
                 Column(modifier = Modifier.fillMaxSize()) {
-                    Box() {
+                    ScreenTitle(title = selectedId) {
+                        showInstructions = true
+                    }
+                    Box(modifier = Modifier.fillMaxSize()) {
                         if (!showInstructions) {
                             when (selectedId) {
-                                "Attack" -> AttackTab(viewModel) { showInstructions = true }
-                                "Wordlist" -> WordlistTab(viewModel) { showInstructions = true }
-                                "Mask" -> MaskTab { showInstructions = true }
-                                "Terminal" -> TerminalTab(viewModel) { showInstructions = true }
-                                "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel) {
-                                    showInstructions = true
-                                }
-
-                                "Pi Control" -> PiControlTab(piControlViewModel) {
-                                    showInstructions = true
-                                }
-
-                                "PC Connect" -> PCConnectionTab(viewModel) {
-                                    showInstructions = true
-                                }
+                                "Attack" -> AttackTab(viewModel)
+                                "Wordlist" -> WordlistTab(viewModel)
+                                "Mask" -> MaskTab()
+                                "Terminal" -> TerminalTab(viewModel)
+                                "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
+                                "Pi Control" -> PiControlTab(piControlViewModel)
+                                "PC Connect" -> PCConnectionTab(viewModel)
                             }
                         }
                         if (showInstructions) {

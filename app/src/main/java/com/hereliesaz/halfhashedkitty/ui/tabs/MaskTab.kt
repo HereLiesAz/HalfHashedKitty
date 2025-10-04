@@ -15,12 +15,11 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.ui.theme.TransparentButton
 
 @Composable
-fun MaskTab(onShowInstructions: () -> Unit) {
+fun MaskTab() {
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        ScreenTitle("Mask", onShowInstructions)
         Column(
             modifier = Modifier
                 .padding(16.dp)
