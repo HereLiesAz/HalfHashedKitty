@@ -1,6 +1,7 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -21,13 +22,12 @@ fun ScreenTitle(title: String, onInfoClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        horizontalAlignment = Alignment.End
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineLarge,
-            textAlign = TextAlign.End,
-            modifier = Modifier.fillMaxWidth()
+            textAlign = TextAlign.Right,
+            modifier = Modifier.weight(1f)
         )
         IconButton(onClick = onInfoClick) {
             Icon(

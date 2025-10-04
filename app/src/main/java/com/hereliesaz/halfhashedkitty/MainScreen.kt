@@ -3,11 +3,13 @@ package com.hereliesaz.halfhashedkitty
 import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,46 +41,97 @@ fun MainScreen(
     var selectedId by remember { mutableStateOf("Attack") }
     var showInstructions by remember { mutableStateOf(false) }
 
-    Scaffold {
-        paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            Image(
-                painter = painterResource(id = R.drawable.half_hashed_kitty_banner),
-                contentDescription = "background",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(0.5f),
-                contentScale = ContentScale.Crop
-            )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.half_hashed_kitty_banner),
+            contentDescription = "background",
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.5f),
+            contentScale = ContentScale.Crop
+        )
+        Scaffold(containerColor = Color.Transparent) { paddingValues ->
             Row(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
             ) {
-                AzNavRail() {
-                    azRailItem(id = "Attack", color = Color.White, text = "Attack") { selectedId = "Attack"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Wordlist", color = Color.White, text = "Wordlist") { selectedId = "Wordlist"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Mask", color = Color.White, text = "Mask") { selectedId = "Mask"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Terminal", color = Color.White, text = "Terminal") { selectedId = "Terminal"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Hashtopolis", color = Color.White, text = "Hashtopolis") { selectedId = "Hashtopolis"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Pi Control", color = Color.White, text = "Pi Control") { selectedId = "Pi Control"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "PC Connect", color = Color.White, text = "PC Connect") { selectedId = "PC Connect"; if (showInstructions) showInstructions = false }
-                }
-
-                Box(modifier = Modifier.weight(1f)) {
-                    if (!showInstructions) {
-                        when (selectedId) {
-                            "Attack" -> AttackTab(viewModel) { showInstructions = true }
-                            "Wordlist" -> WordlistTab(viewModel) { showInstructions = true }
-                            "Mask" -> MaskTab { showInstructions = true }
-                            "Terminal" -> TerminalTab(viewModel) { showInstructions = true }
-                            "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel) { showInstructions = true }
-                            "Pi Control" -> PiControlTab(piControlViewModel) { showInstructions = true }
-                            "PC Connect" -> PCConnectionTab(viewModel) { showInstructions = true }
+                Column() {
+                    AzNavRail() {
+                        azRailItem(
+                            id = "Attack",
+                            color = Color.White,
+                            text = "Attack"
+                        ) { selectedId = "Attack"; if (showInstructions) showInstructions = false }
+                        azRailItem(
+                            id = "Wordlist",
+                            color = Color.White,
+                            text = "Wordlist"
+                        ) {
+                            selectedId = "Wordlist"; if (showInstructions) showInstructions = false
+                        }
+                        azRailItem(id = "Mask", color = Color.White, text = "Mask") {
+                            selectedId = "Mask"; if (showInstructions) showInstructions = false
+                        }
+                        azRailItem(
+                            id = "Terminal",
+                            color = Color.White,
+                            text = "Terminal"
+                        ) {
+                            selectedId = "Terminal"; if (showInstructions) showInstructions = false
+                        }
+                        azRailItem(
+                            id = "Hashtopolis",
+                            color = Color.White,
+                            text = "Hashtopolis"
+                        ) {
+                            selectedId = "Hashtopolis"; if (showInstructions) showInstructions =
+                            false
+                        }
+                        azRailItem(
+                            id = "Pi Control",
+                            color = Color.White,
+                            text = "Pi Control"
+                        ) {
+                            selectedId = "Pi Control"; if (showInstructions) showInstructions =
+                            false
+                        }
+                        azRailItem(
+                            id = "PC Connect",
+                            color = Color.White,
+                            text = "PC Connect"
+                        ) {
+                            selectedId = "PC Connect"; if (showInstructions) showInstructions =
+                            false
                         }
                     }
-                    if (showInstructions) {
-                        InstructionsOverlay(selectedId) {
-                            showInstructions = false
+                }
+
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Box() {
+                        if (!showInstructions) {
+                            when (selectedId) {
+                                "Attack" -> AttackTab(viewModel) { showInstructions = true }
+                                "Wordlist" -> WordlistTab(viewModel) { showInstructions = true }
+                                "Mask" -> MaskTab { showInstructions = true }
+                                "Terminal" -> TerminalTab(viewModel) { showInstructions = true }
+                                "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel) {
+                                    showInstructions = true
+                                }
+
+                                "Pi Control" -> PiControlTab(piControlViewModel) {
+                                    showInstructions = true
+                                }
+
+                                "PC Connect" -> PCConnectionTab(viewModel) {
+                                    showInstructions = true
+                                }
+                            }
+                        }
+                        if (showInstructions) {
+                            InstructionsOverlay(selectedId) {
+                                showInstructions = false
+                            }
                         }
                     }
                 }
@@ -86,10 +139,8 @@ fun MainScreen(
         }
     }
 }
-
 // Preview for MainScreen
-// Suppressed for preview mode, where it's acceptable to construct ViewModels directly.
-@Suppress("ViewModelConstructorInComposable")
+@Suppress("UnusedMaterial3ScaffoldPaddingParameter")
 @Preview()
 @Composable
 fun DefaultPreview() {

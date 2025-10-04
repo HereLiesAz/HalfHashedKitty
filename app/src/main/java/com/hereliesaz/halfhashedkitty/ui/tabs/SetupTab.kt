@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,18 +32,18 @@ fun SetupTab() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Introduction", style = MaterialTheme.typography.titleLarge)
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             """
             To use this app, you need to set up a remote server with hashcat installed.
             This server will listen for requests from the app and run the hashcat commands.
-            """.trimIndent()
+            """ .trimIndent()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Server Requirements", style = MaterialTheme.typography.titleLarge)
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             """
             1. Install hashcat:
@@ -59,7 +59,7 @@ fun SetupTab() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Server Script", style = MaterialTheme.typography.titleLarge)
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text("Create a file named `server.py` with the following content:")
         Spacer(modifier = Modifier.height(8.dp))
         Text(
@@ -93,7 +93,7 @@ fun SetupTab() {
 
             if __name__ == '__main__':
                 app.run(host='0.0.0.0', port=8080)
-            """.trimIndent(),
+            """ .trimIndent(),
             fontFamily = FontFamily.Monospace,
             modifier = Modifier
                 .background(Color.LightGray)
@@ -104,7 +104,7 @@ fun SetupTab() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("Running and Configuration", style = MaterialTheme.typography.titleLarge)
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             """
             1. Run the server:

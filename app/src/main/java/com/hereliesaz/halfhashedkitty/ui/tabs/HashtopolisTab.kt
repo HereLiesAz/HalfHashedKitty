@@ -41,7 +41,7 @@ fun HashtopolisTab(viewModel: HashtopolisViewModel, onShowInstructions: () -> Un
             )
             Text("Your Hashtopolis API key.", style = MaterialTheme.typography.bodySmall)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             TransparentButton(
                 onClick = { viewModel.getAgents() },
