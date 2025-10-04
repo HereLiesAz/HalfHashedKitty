@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,21 +47,21 @@ fun MainScreen(
                 contentDescription = "background",
                 modifier = Modifier
                     .fillMaxSize()
-                    .alpha(0.05f),
+                    .alpha(0.5f),
                 contentScale = ContentScale.Crop
             )
             Row(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                AzNavRail {
-                    azRailItem(id = "Attack", text = "Attack") { selectedId = "Attack"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Wordlist", text = "Wordlist") { selectedId = "Wordlist"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Mask", text = "Mask") { selectedId = "Mask"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Terminal", text = "Terminal") { selectedId = "Terminal"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Hashtopolis", text = "Hashtopolis") { selectedId = "Hashtopolis"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "Pi Control", text = "Pi Control") { selectedId = "Pi Control"; if (showInstructions) showInstructions = false }
-                    azRailItem(id = "PC Connect", text = "PC Connect") { selectedId = "PC Connect"; if (showInstructions) showInstructions = false }
+                AzNavRail() {
+                    azRailItem(id = "Attack", color = Color.White, text = "Attack") { selectedId = "Attack"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Wordlist", color = Color.White, text = "Wordlist") { selectedId = "Wordlist"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Mask", color = Color.White, text = "Mask") { selectedId = "Mask"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Terminal", color = Color.White, text = "Terminal") { selectedId = "Terminal"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Hashtopolis", color = Color.White, text = "Hashtopolis") { selectedId = "Hashtopolis"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "Pi Control", color = Color.White, text = "Pi Control") { selectedId = "Pi Control"; if (showInstructions) showInstructions = false }
+                    azRailItem(id = "PC Connect", color = Color.White, text = "PC Connect") { selectedId = "PC Connect"; if (showInstructions) showInstructions = false }
                 }
 
                 Box(modifier = Modifier.weight(1f)) {
