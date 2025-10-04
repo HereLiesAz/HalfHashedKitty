@@ -1,6 +1,5 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,27 +14,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MaskTab() {
+fun MaskTab(onShowInstructions: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("This tab is for creating and selecting masks for hash cracking attacks.")
+        ScreenTitle("Mask", onShowInstructions)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("This tab is for creating and selecting masks for hash cracking attacks.")
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { /* TODO: Implement mask creator */ }) {
-            Text("Create Mask")
+            Button(onClick = { /* TODO: Implement mask creator */ }) {
+                Text("Create Mask")
+            }
+            Text("Create a new mask for mask attacks.", style = MaterialTheme.typography.bodySmall)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(onClick = { /* TODO: Implement file picker */ }) {
+                Text("Select Mask File")
+            }
+            Text("Select a mask file from your device.", style = MaterialTheme.typography.bodySmall)
         }
-        Text("Create a new mask for mask attacks.", style = MaterialTheme.typography.bodySmall)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(onClick = { /* TODO: Implement file picker */ }) {
-            Text("Select Mask File")
-        }
-        Text("Select a mask file from your device.", style = MaterialTheme.typography.bodySmall)
     }
 }
