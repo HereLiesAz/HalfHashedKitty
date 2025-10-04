@@ -16,12 +16,11 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @Composable
-fun WordlistTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
+fun WordlistTab(viewModel: MainViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        ScreenTitle("Wordlist", onShowInstructions)
         Column(
             modifier = Modifier
                 .padding(16.dp)

@@ -23,7 +23,7 @@ class MainScreenTest {
         // Start the app
         composeTestRule.setContent {
             MainScreen(
-                viewModel = MainViewModel(context, HashcatApiClient(), Cap2HashcatApiClient(), ToolManager(context)),
+                viewModel = MainViewModel(context, HashcatApiClient(), Cap2HashcatApiClient()),
                 hashtopolisViewModel = HashtopolisViewModel(),
                 piControlViewModel = PiControlViewModel()
             )
