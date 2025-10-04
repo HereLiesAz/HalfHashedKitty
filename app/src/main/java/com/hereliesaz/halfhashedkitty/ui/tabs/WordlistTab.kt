@@ -24,8 +24,8 @@ fun WordlistTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
         ScreenTitle("Wordlist", onShowInstructions)
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("This tab is for specifying the path to the wordlist file on the remote server.")

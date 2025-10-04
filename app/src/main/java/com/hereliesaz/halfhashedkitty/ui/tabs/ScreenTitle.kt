@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +31,7 @@ fun ScreenTitle(title: String, onInfoClick: () -> Unit) {
         )
         IconButton(onClick = onInfoClick) {
             Icon(
-                imageVector = Icons.Default.Info,
+                imageVector = Icons.Outlined.Info,
                 contentDescription = "Instructions"
             )
         }

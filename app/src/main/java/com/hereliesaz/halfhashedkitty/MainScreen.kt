@@ -4,9 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,10 +41,9 @@ fun MainScreen(
             painter = painterResource(id = R.drawable.half_hashed_kitty_banner),
             contentDescription = "background",
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .fillMaxHeight(0.5f)
+                .fillMaxSize()
                 .alpha(0.05f),
-            contentScale = ContentScale.Fit
+            contentScale = ContentScale.Crop
         )
         Row(
             modifier = Modifier

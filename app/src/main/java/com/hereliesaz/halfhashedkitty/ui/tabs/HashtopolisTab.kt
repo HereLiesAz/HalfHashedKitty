@@ -17,7 +17,7 @@ fun HashtopolisTab(viewModel: HashtopolisViewModel, onShowInstructions: () -> Un
             .fillMaxSize()
     ) {
         ScreenTitle("Hashtopolis", onShowInstructions)
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Text("This tab is for connecting to a Hashtopolis server to manage your hash cracking agents.")
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -2,6 +2,7 @@ package com.hereliesaz.halfhashedkitty.ui.tabs
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -21,8 +22,8 @@ fun AttackTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
         ScreenTitle("Attack", onShowInstructions)
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("This tab is for starting the hash cracking attack on the remote server.")

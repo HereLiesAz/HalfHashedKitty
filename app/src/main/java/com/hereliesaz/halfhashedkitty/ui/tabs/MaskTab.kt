@@ -3,6 +3,7 @@ package com.hereliesaz.halfhashedkitty.ui.tabs
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -22,8 +23,8 @@ fun MaskTab(onShowInstructions: () -> Unit) {
         ScreenTitle("Mask", onShowInstructions)
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("This tab is for creating and selecting masks for hash cracking attacks.")

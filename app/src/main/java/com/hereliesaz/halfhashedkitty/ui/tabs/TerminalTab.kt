@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,12 +26,13 @@ fun TerminalTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
             .fillMaxSize()
     ) {
         ScreenTitle("Terminal", onShowInstructions)
-        Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Text("This tab shows the raw output from the tools that are being run. It is useful for monitoring the progress of the attack.")
             Spacer(modifier = Modifier.height(16.dp))
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
                     .background(Color.Black)
                     .padding(16.dp)
             ) {
