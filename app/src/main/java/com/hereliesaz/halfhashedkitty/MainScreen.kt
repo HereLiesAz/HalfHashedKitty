@@ -23,11 +23,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.ConnectTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.InstructionsOverlay
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.PCConnectionTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.PiControlTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.ScreenTitle
 import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
@@ -90,19 +89,11 @@ fun MainScreen(
                             false
                         }
                         azRailItem(
-                            id = "Pi Control",
+                            id = "Connect",
                             color = Color.White,
-                            text = "Pi Control"
+                            text = "Connect"
                         ) {
-                            selectedId = "Pi Control"; if (showInstructions) showInstructions =
-                            false
-                        }
-                        azRailItem(
-                            id = "PC Connect",
-                            color = Color.White,
-                            text = "PC Connect"
-                        ) {
-                            selectedId = "PC Connect"; if (showInstructions) showInstructions =
+                            selectedId = "Connect"; if (showInstructions) showInstructions =
                             false
                         }
                     }
@@ -120,8 +111,7 @@ fun MainScreen(
                                 "Mask" -> MaskTab()
                                 "Terminal" -> TerminalTab(viewModel)
                                 "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
-                                "Pi Control" -> PiControlTab(piControlViewModel)
-                                "PC Connect" -> PCConnectionTab(viewModel)
+                                "Connect" -> ConnectTab(viewModel)
                             }
                         }
                         if (showInstructions) {

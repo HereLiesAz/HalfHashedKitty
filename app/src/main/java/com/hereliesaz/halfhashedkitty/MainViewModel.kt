@@ -18,9 +18,16 @@ class MainViewModel(
     private val cap2hashcatApiClient: Cap2HashcatApiClient
 ) : ViewModel() {
 
+    enum class ConnectionType {
+        RELAY,
+        DIRECT
+    }
+
     private val RELAY_URL = BuildConfig.RELAY_URL
     private var roomID: String? = null
 
+    val manualInput = mutableStateOf("")
+    val connectionType = mutableStateOf(ConnectionType.RELAY)
     val hashToCrack = mutableStateOf("C:\\Users\\user\\Desktop\\hashes.txt") // Placeholder for the file path on the desktop
     val wordlistPath = mutableStateOf("C:\\Users\\user\\Desktop\\wordlist.txt") // Placeholder
     val terminalOutput = mutableStateListOf<String>()
@@ -32,6 +39,7 @@ class MainViewModel(
     val selectedAttackMode = mutableStateOf(AttackMode(0, "Straight"))
     val rulesFile = mutableStateOf("")
     val isConnected = mutableStateOf(false)
+    val isAttackRunning = mutableStateOf(false)
 
     init {
         loadLocalData()
@@ -63,11 +71,45 @@ class MainViewModel(
 
                             if (statusUpdate.status == "completed" || statusUpdate.status == "failed") {
                                 terminalOutput.add("--- Job Finished ---")
+                                isAttackRunning.value = false
                             }
                         }
                     }
                 } catch (e: Exception) {
                     Log.e("MainViewModel", "Failed to parse message from server: $jsonString", e)
+                }
+            }
+        }
+    }
+
+    fun connectManually() {
+        val input = manualInput.value
+        if (input.isBlank()) {
+            terminalOutput.add("Please enter an IP address or a Room ID.")
+            return
+        }
+
+        when (connectionType.value) {
+            ConnectionType.RELAY -> {
+                terminalOutput.add("Attempting to connect to relay with Room ID: $input")
+                onQrCodeScanned(input) // Re-use existing logic
+            }
+            ConnectionType.DIRECT -> {
+                val url = if (input.startsWith("ws://") || input.startsWith("wss://")) {
+                    input
+                } else {
+                    "ws://$input"
+                }
+                terminalOutput.add("Attempting direct connection to: $url")
+                this.roomID = "direct_connection" // Use a consistent, non-null room ID for direct connections
+                viewModelScope.launch {
+                    try {
+                        apiClient.connect(url, roomID!!, viewModelScope)
+                    } catch (e: Exception) {
+                        Log.e("MainViewModel", "Failed to connect directly", e)
+                        isConnected.value = false
+                        terminalOutput.add("Error connecting directly: ${e.message}")
+                    }
                 }
             }
         }
@@ -138,6 +180,7 @@ class MainViewModel(
         terminalOutput.clear()
         crackedPasswords.clear()
         terminalOutput.add("Sending attack command...")
+        isAttackRunning.value = true
 
         viewModelScope.launch {
             try {

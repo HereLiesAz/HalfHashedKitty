@@ -30,13 +30,17 @@ fun MaskTab() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TransparentButton(onClick = { /* TODO: Implement mask creator */ }, text = "Create Mask")
+            TransparentButton(onClick = { /* TODO: Implement mask creator */ }) {
+                Text("Create Mask")
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text("Create a new mask for mask attacks.", style = MaterialTheme.typography.bodySmall)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TransparentButton(onClick = { /* TODO: Implement file picker */ }, text = "Select Mask File")
+            TransparentButton(onClick = { /* TODO: Implement file picker */ }) {
+                Text("Select Mask File")
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text("Select a mask file from your device.", style = MaterialTheme.typography.bodySmall)
         }

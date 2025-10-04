@@ -43,9 +43,10 @@ fun HashtopolisTab(viewModel: HashtopolisViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
 
             TransparentButton(
-                onClick = { viewModel.getAgents() },
-                text = "Get Agents"
-            )
+                onClick = { viewModel.getAgents() }
+            ) {
+                Text("Get Agents")
+            }
             Text(
                 "Fetch and display the list of agents from the server.",
                 style = MaterialTheme.typography.bodySmall
