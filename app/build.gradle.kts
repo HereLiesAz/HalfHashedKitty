@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -50,7 +50,7 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "2.0.0"
+        kotlinCompilerExtensionVersion = "2.1.0"
     }
     packaging {
         resources {
