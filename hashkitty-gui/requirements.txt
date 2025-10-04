@@ -1,6 +1,0 @@
-Flask
-Flask-SocketIO
-python-socketio[client]
-requests
-qrcode
-Pillow
