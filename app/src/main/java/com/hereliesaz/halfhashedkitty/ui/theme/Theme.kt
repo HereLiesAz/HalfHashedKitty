@@ -3,6 +3,7 @@ package com.hereliesaz.halfhashedkitty.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,17 +57,25 @@ fun HalfHashedKittyTheme(
 }
 
 @Composable
-fun TransparentButton(onClick: () -> Unit, text: String) {
+fun TransparentButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
     Button(
         onClick = onClick,
-        modifier = Modifier.padding(16.dp),
+        modifier = modifier.padding(16.dp),
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Transparent,
-            contentColor = Color.White
+            contentColor = Color.White,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = Color.Gray
         ),
-        border = BorderStroke(1.dp, Color.White)
+        border = BorderStroke(1.dp, if (enabled) Color.White else Color.Gray)
     ) {
-        androidx.compose.material3.Text(text)
+        content()
     }
 }
 
@@ -75,7 +84,9 @@ fun TransparentButton(onClick: () -> Unit, text: String) {
 fun HalfHashedKittyThemePreview() {
     HalfHashedKittyTheme {
         androidx.compose.material3.Surface {
-            TransparentButton(onClick = {}, text = "Hello")
+            TransparentButton(onClick = {}) {
+                androidx.compose.material3.Text("Hello")
+            }
         }
     }
 }

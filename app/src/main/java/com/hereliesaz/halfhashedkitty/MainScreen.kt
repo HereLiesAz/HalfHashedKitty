@@ -23,11 +23,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.ConnectTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.InstructionsOverlay
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.PCConnectionTab
-import com.hereliesaz.halfhashedkitty.ui.tabs.PiControlTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.ScreenTitle
 import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
 
@@ -56,8 +56,8 @@ fun MainScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                Column() {
-                    AzNavRail() {
+                Column {
+                    AzNavRail {
                         azRailItem(
                             id = "Attack",
                             color = Color.White,
@@ -89,43 +89,29 @@ fun MainScreen(
                             false
                         }
                         azRailItem(
-                            id = "Pi Control",
+                            id = "Connect",
                             color = Color.White,
-                            text = "Pi Control"
+                            text = "Connect"
                         ) {
-                            selectedId = "Pi Control"; if (showInstructions) showInstructions =
-                            false
-                        }
-                        azRailItem(
-                            id = "PC Connect",
-                            color = Color.White,
-                            text = "PC Connect"
-                        ) {
-                            selectedId = "PC Connect"; if (showInstructions) showInstructions =
+                            selectedId = "Connect"; if (showInstructions) showInstructions =
                             false
                         }
                     }
                 }
 
                 Column(modifier = Modifier.fillMaxSize()) {
-                    Box() {
+                    ScreenTitle(title = selectedId) {
+                        showInstructions = true
+                    }
+                    Box(modifier = Modifier.fillMaxSize()) {
                         if (!showInstructions) {
                             when (selectedId) {
-                                "Attack" -> AttackTab(viewModel) { showInstructions = true }
-                                "Wordlist" -> WordlistTab(viewModel) { showInstructions = true }
-                                "Mask" -> MaskTab { showInstructions = true }
-                                "Terminal" -> TerminalTab(viewModel) { showInstructions = true }
-                                "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel) {
-                                    showInstructions = true
-                                }
-
-                                "Pi Control" -> PiControlTab(piControlViewModel) {
-                                    showInstructions = true
-                                }
-
-                                "PC Connect" -> PCConnectionTab(viewModel) {
-                                    showInstructions = true
-                                }
+                                "Attack" -> AttackTab(viewModel)
+                                "Wordlist" -> WordlistTab(viewModel)
+                                "Mask" -> MaskTab()
+                                "Terminal" -> TerminalTab(viewModel)
+                                "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
+                                "Connect" -> ConnectTab(viewModel)
                             }
                         }
                         if (showInstructions) {
