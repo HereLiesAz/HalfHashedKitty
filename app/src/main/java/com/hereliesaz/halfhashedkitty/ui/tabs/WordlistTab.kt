@@ -1,6 +1,5 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,23 +16,32 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @Composable
-fun WordlistTab(viewModel: MainViewModel) {
+fun WordlistTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("This tab is for specifying the path to the wordlist file on the remote server.")
+        ScreenTitle("Wordlist", onShowInstructions)
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("This tab is for specifying the path to the wordlist file on the remote server.")
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = viewModel.wordlistPath.value,
-            onValueChange = { viewModel.wordlistPath.value = it },
-            label = { Text("Remote Wordlist Path") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Text("The full path to the wordlist file on the remote server.", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(
+                value = viewModel.wordlistPath.value,
+                onValueChange = { viewModel.wordlistPath.value = it },
+                label = { Text("Remote Wordlist Path") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                "The full path to the wordlist file on the remote server.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
