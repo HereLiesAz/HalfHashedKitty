@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +39,8 @@ fun MainScreen(
     var selectedId by remember { mutableStateOf("Attack") }
     var showInstructions by remember { mutableStateOf(false) }
 
-    Scaffold { paddingValues ->
+    Scaffold {
+        paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             Image(
                 painter = painterResource(id = R.drawable.half_hashed_kitty_banner),
@@ -48,7 +50,7 @@ fun MainScreen(
                     .alpha(0.1f),
                 contentScale = ContentScale.Crop
             )
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)

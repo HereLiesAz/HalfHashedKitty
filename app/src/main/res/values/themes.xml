@@ -14,9 +14,9 @@
     <!-- Splash Screen Theme -->
     <style name="Theme.HalfHashedKitty.Starting" parent="Theme.SplashScreen">
         <!-- Set the splash screen background -->
-        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenBackground">@drawable/rotated_background</item>
         <!-- Set your custom icon as the animated icon -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/half_hashed_kitty_banner</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
         <!-- Post-splash screen theme -->
         <item name="postSplashScreenTheme">@style/Theme.HalfHashedKitty</item>
     </style>
