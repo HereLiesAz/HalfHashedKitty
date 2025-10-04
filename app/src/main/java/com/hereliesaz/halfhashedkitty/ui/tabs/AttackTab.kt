@@ -1,6 +1,5 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -14,20 +13,26 @@ import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.MainViewModel
 
 @Composable
-fun AttackTab(viewModel: MainViewModel) {
+fun AttackTab(viewModel: MainViewModel, onShowInstructions: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("This tab is for starting the hash cracking attack on the remote server.")
-        Button(onClick = { viewModel.startAttack() }) {
-            Text("Start Remote Attack")
+        ScreenTitle("Attack", onShowInstructions)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("This tab is for starting the hash cracking attack on the remote server.")
+            Button(onClick = { viewModel.startAttack() }) {
+                Text("Start Remote Attack")
+            }
+            Text(
+                "This will start the hash cracking attack on the remote server with the configured settings.",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
-        Text(
-            "This will start the hash cracking attack on the remote server with the configured settings.",
-            style = MaterialTheme.typography.bodySmall
-        )
     }
 }
