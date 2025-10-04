@@ -27,7 +27,9 @@ public class TasksPanel extends JPanel {
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         topPanel.add(titleLabel);
 
-        JLabel instructionsLabel = new JLabel("This panel displays the tasks from your Hashtopolis server.");
+        ImageIcon infoIcon = new ImageIcon(getClass().getResource("/info_icon.png"));
+        JLabel instructionsLabel = new JLabel(infoIcon);
+        instructionsLabel.setToolTipText("This panel displays the tasks from your Hashtopolis server.");
         instructionsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         topPanel.add(instructionsLabel);
         add(topPanel, BorderLayout.NORTH);
@@ -46,8 +48,9 @@ public class TasksPanel extends JPanel {
         buttonRow.add(refreshButton);
         buttonPanel.add(buttonRow);
 
-        JLabel buttonInstructions = new JLabel("Use 'New Task' to create a new task, and 'Refresh' to update the list.");
-        buttonInstructions.setFont(buttonInstructions.getFont().deriveFont(10f));
+        ImageIcon infoIcon = new ImageIcon(getClass().getResource("/info_icon.png"));
+        JLabel buttonInstructions = new JLabel(infoIcon);
+        buttonInstructions.setToolTipText("Use 'New Task' to create a new task, and 'Refresh' to update the list.");
         buttonInstructions.setAlignmentX(Component.CENTER_ALIGNMENT);
         buttonPanel.add(buttonInstructions);
 

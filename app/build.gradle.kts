@@ -32,9 +32,13 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            buildConfigField("String", "RELAY_URL", "\"wss://relay.hashkitty.com/ws\"")
+        }
+        getByName("debug") {
+            buildConfigField("String", "RELAY_URL", "\"ws://10.0.2.2:5001/ws\"")
         }
     }
     compileOptions {
@@ -43,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "2.0.0"
@@ -77,8 +82,9 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:3.3.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.0")
     implementation("io.ktor:ktor-client-logging:3.3.0")
+    implementation("io.ktor:ktor-client-websockets:3.3.0")
     implementation("org.jsoup:jsoup:1.21.2")
-    implementation("com.github.HereLiesAz:AzNavRail:2.9")
+    implementation("com.github.HereLiesAz:AzNavRail:3.10")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
     implementation("androidx.compose.foundation:foundation-layout:1.9.1")
 

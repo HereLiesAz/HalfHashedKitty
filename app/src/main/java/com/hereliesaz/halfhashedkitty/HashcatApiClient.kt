@@ -1,64 +1,76 @@
 package com.hereliesaz.halfhashedkitty
 
+import android.util.Log
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.MultiPartFormDataContent
-import io.ktor.client.request.forms.formData
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.InternalSerializationApi
+import io.ktor.client.plugins.websocket.*
+import io.ktor.websocket.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-@OptIn(InternalSerializationApi::class)
 class HashcatApiClient {
 
     private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
+        install(WebSockets)
+    }
+
+    private var session: DefaultClientWebSocketSession? = null
+    private val _incomingMessages = MutableSharedFlow<String>()
+    val incomingMessages = _incomingMessages.asSharedFlow()
+
+    suspend fun connect(relayUrl: String, roomId: String, scope: CoroutineScope) {
+        try {
+            session?.cancel()
+            val newSession = client.webSocketSession("$relayUrl?room=$roomId")
+            session = newSession
+
+            scope.launch {
+                try {
+                    for (frame in newSession.incoming) {
+                        if (frame is Frame.Text) {
+                            _incomingMessages.emit(frame.readText())
+                        }
+                    }
+                } catch (e: ClosedReceiveChannelException) {
+                    Log.d("HashcatApiClient", "WebSocket session closed.")
+                } catch (e: Exception) {
+                    Log.e("HashcatApiClient", "Error receiving message", e)
+                }
+            }
+            // Send the initial join message
+            val joinMessage = WebSocketMessage(type = "join", payload = "", room_id = roomId)
+            sendMessage(joinMessage)
+
+        } catch (e: Exception) {
+            Log.e("HashcatApiClient", "Error connecting to relay", e)
+            throw e
+        }
+    }
+
+    suspend fun sendMessage(message: WebSocketMessage) {
+        session?.let {
+            if (it.isActive) {
+                try {
+                    val jsonString = Json.encodeToString(message)
+                    it.send(Frame.Text(jsonString))
+                } catch (e: Exception) {
+                    Log.e("HashcatApiClient", "Error sending message", e)
+                }
+            } else {
+                Log.w("HashcatApiClient", "Cannot send message, session is not active.")
+            }
         }
     }
 
     fun close() {
+        session?.cancel()
         client.close()
-    }
-
-    suspend fun startAttack(serverUrl: String, request: AttackRequest): AttackResponse {
-        return client.post("$serverUrl/attack") {
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.body()
-    }
-
-    suspend fun getAttackStatus(serverUrl: String, jobId: String): AttackResponse {
-        return client.get("$serverUrl/attack/$jobId").body()
-    }
-
-    suspend fun identifyHash(serverUrl: String, hash: String): HashIdentificationResponse {
-        return client.post("$serverUrl/identify") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("hash" to hash))
-        }.body()
-    }
-
-    suspend fun uploadZipFile(serverUrl: String, file: ByteArray): UploadResponse {
-        return client.post("$serverUrl/upload") {
-            setBody(
-                MultiPartFormDataContent(
-                    formData {
-                        append("file", file, Headers.build {
-                            append(HttpHeaders.ContentType, "application/zip")
-                            append(HttpHeaders.ContentDisposition, "filename=\"hash.zip\"")
-                        })
-                    }
-                )
-            )
-        }.body<UploadResponse>()
     }
 }

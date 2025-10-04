@@ -1,42 +1,52 @@
 package com.hereliesaz.halfhashedkitty
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-@InternalSerializationApi @Serializable
+// --- Local UI Models ---
+
+@Serializable
 data class HashModeInfo(
-    val id: Int,
+    val mode: String,
     val name: String
 )
+// Note: Validation for this class is now handled at the ViewModel level
+// to avoid deserialization issues with invalid modes.
 
-@InternalSerializationApi @Serializable
-data class HashIdentificationResponse(
-    val hashModes: List<HashModeInfo>
-)
-
-@InternalSerializationApi @Serializable
-data class AttackRequest(
-    val hash: String,
-    val hashType: Int,
-    val wordlist: String,
-    val rules: String? = null,
-    val mask: String? = null
-)
-
-@InternalSerializationApi @Serializable
-data class AttackResponse(
-    val jobId: String,
-    val status: String,
-    val crackedPassword: String? = null
-)
-
-@InternalSerializationApi @Serializable
-data class UploadResponse(
-    val hash: String
-)
-
-@InternalSerializationApi @Serializable
+@Serializable
 data class AttackMode(
     val id: Int,
     val name: String
+)
+
+// --- WebSocket Communication Models ---
+
+@Serializable
+data class WebSocketMessage(
+    val type: String,
+    val payload: String, // Payload is always a JSON string
+    val room_id: String
+)
+
+@Serializable
+data class AttackParams(
+    val jobId: String,
+    val file: String,
+    val mode: String,
+    val attackMode: String,
+    val wordlist: String,
+    val rules: String? = null
+)
+
+@Serializable
+data class StatusUpdatePayload(
+    val jobId: String,
+    val status: String,
+    val output: String? = null,
+    val error: String? = null
+)
+
+@Serializable
+data class RoomInfo(
+    val type: String,
+    val id: String
 )

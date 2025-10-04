@@ -1,59 +1,77 @@
-# Half-Hashed Kitty
+# Half-Hashed Kitty: Anywhere Access
 
-*[Banner image not found at the specified path]*
+![Alt text](app/src/main/res/drawable/half_hashed_kitty_banner.png?raw=true "Half-Hashed Kitty")
 
 ## Intro
 
-Half-Hashed Kitty is an Android application that provides a Graphical User Interface for various WiFi security auditing tools, including the `aircrack-ng` suite and online hash-cracking utilities. It allows users to both process existing capture files and perform live, on-device packet capturing on supported hardware.
+Half-Hashed Kitty is a project that consists of an Android application and a desktop application for WiFi security auditing. This new version features a simple, robust, and self-contained desktop application written in Go that allows you to run and monitor Hashcat jobs from your Android phone on your local network.
 
-This project is under active development. If you spot any bugs, please submit an issue with as much detail as possible.
+## The Local Network Architecture
 
-## Features
+The system uses a simple and reliable two-part architecture for local network communication:
 
-- **File-based Handshake Extraction**:
-  - Upload `.pcapng` capture files directly within the app.
-  - Automatically sends the capture to the `hashcat.net/cap2hashcat` online service to extract the WPA/WPA2 handshake.
-  - The extracted hash is loaded into the app for further actions.
+1.  **The Go Desktop Server:** A single, self-contained executable that runs on your desktop computer. It requires no external dependencies like Python. When you run it, it starts a local web server and displays a QR code containing its local IP address.
+2.  **The Android App:** The mobile app that allows you to control the desktop server. You connect it to your desktop by simply scanning the QR code, which establishes a direct connection on your local network.
 
-- **On-Device Packet Capture (Root Required)**:
-  - Perform live WPA/WPA2 handshake captures.
-  - Automatically checks for root access and handles the installation of necessary command-line tools.
-  - Dynamically detects the device's CPU architecture and wireless interface (`wlanX`) to ensure compatibility.
-  - Provides a "Capture" tab with a terminal-like view for real-time output from the capture process.
-  - **Note**: This feature requires a rooted device with a wireless chipset that supports monitor mode.
+---
 
-- **Hashcat Integration**:
-  - A full GUI for managing hashcat and hashtopolis tasks.
-  - Auto-detection of hash types.
-  - Support for various attack modes, including dictionary and mask attacks.
+## Setup and Installation
 
-## Requirements
+### Step 0: Prerequisites
 
-1.  **Android Version**: Android 8.0 (Oreo) or newer.
-2.  **Root Access**: Required for the on-device packet capturing feature. The app will request `su` permissions when the capture is started.
-3.  **Monitor Mode Interface**: For on-device capturing, a wireless chipset that supports monitor mode is essential. This may require custom firmware (e.g., Nexmon) or an external USB WiFi adapter that is compatible with Android.
+Before you begin, make sure you have the following software installed on your computer:
 
-## Roadmap
+-   **Go:** [Download Go](https://go.dev/dl/) (for building the server)
+-   **Android Studio:** [Download Android Studio](https://developer.android.com/studio) (for building the app)
 
-### Desktop App: Integrate Hashcat and Hashtopolis (with Docker)
+### Step 1: Build the Go Desktop Server
 
-- Set up hashtopolis and hashcat using Docker.
-- Implement UI in the desktop app to manage the Docker containers (e.g., start/stop buttons).
-- Create a Java client to interact with the Hashtopolis API.
-- Design and implement a UI in the desktop app for managing hashcat tasks (e.g., creating tasks, viewing results) via the Hashtopolis API.
+The desktop server is a single, self-contained executable.
 
-### Android & Desktop App: Finalize Connection and UI
+**Instructions (for any OS):**
+```bash
+# Navigate to the Go application directory
+cd gokitty
 
-- Implement the WebSocket client in the Android app to receive real-time updates from the desktop app.
-- Create a UI in the Android app to display the status and results of hashcat/hashtopolis tasks.
+# Tidy dependencies
+go mod tidy
 
-### Final Testing and Verification
+# Build the executable
+go build .
+```
+This will create a `gokitty` (or `gokitty.exe` on Windows) executable in the current directory.
 
-- Thoroughly test the entire workflow:
-  - Android app UI and navigation.
-  - Root command execution.
-  - QR code scanning and connection.
-  - Desktop app functionality.
-  - Docker container management.
-  - WebSocket communication.
-  - Task management via the Hashtopolis API.
+### Step 2: Run the Desktop Server
+
+To run the server, simply execute the file you just built:
+
+**On Windows:**
+```cmd
+gokitty.exe
+```
+
+**On macOS & Linux:**
+```bash
+./gokitty
+```
+
+Upon starting, the server will display a **QR code** in the terminal. You will scan this QR code with the Android app to pair the devices.
+
+### Step 3: Set up the Android Application
+
+**Building the App:**
+Open the project in Android Studio and build it onto your Android device.
+
+**Connecting the App:**
+1.  Ensure your Android device is on the **same WiFi network** as your desktop computer.
+2.  Open the app and navigate to the **PC Connect** tab.
+3.  Scan the QR code displayed in the terminal by the desktop server.
+4.  The app will now be connected to your desktop.
+
+## How to Use
+
+1.  Ensure the Go Desktop Server is running.
+2.  Connect the Android app by scanning the QR code.
+3.  Navigate to the **Input** tab to specify the hash file path and other parameters. **Note:** The file paths must be valid on the desktop computer where the server is running.
+4.  Go to the **Attack** tab and press "Start Remote Attack".
+5.  You can monitor the progress and see the final results in the **Terminal** tab.
