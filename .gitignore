@@ -1101,4 +1101,4 @@ hashkitty-gui/venv/lib/python3.12/site-packages/pip/py.typed
 hashkitty-gui/venv/lib64
 hashkitty-gui/venv/pyvenv.cfg
 hashkitty-gui/venv/
-gokitty/gokitty
+gokitty/gokitty\n# Ignore the new desktop application directory\n/app/desktop-app/
