@@ -2,7 +2,7 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="Theme.HalfHashedKitty" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.HalfHashedKitty.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -14,10 +14,10 @@
     <!-- Splash Screen Theme -->
     <style name="Theme.HalfHashedKitty.Starting" parent="Theme.SplashScreen">
         <!-- Set the splash screen background -->
-        <item name="windowSplashScreenBackground">@drawable/half_hashed_kitty_banner</item>
+        <item name="windowSplashScreenBackground">@drawable/halfhashedkitty2</item>
         <!-- Set a transparent icon to avoid showing a distorted default icon -->
         <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
         <!-- Post-splash screen theme -->
-        <item name="postSplashScreenTheme">@style/Theme.HalfHashedKitty</item>
+        <item name="postSplashScreenTheme">@style/Theme.HalfHashedKitty.NoActionBar</item>
     </style>
 </resources>

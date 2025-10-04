@@ -2,7 +2,10 @@ package com.hereliesaz.halfhashedkitty.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -14,37 +17,38 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Primary,
-    secondary = Secondary,
+    primary = Color.White,
+    secondary = Color.White,
     background = Background,
     surface = Surface,
-    onPrimary = OnPrimary,
-    onSecondary = OnSecondary,
-    onBackground = OnBackground,
-    onSurface = OnSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = Color.White,
+    onSurface = Color.White,
     error = Error
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Primary,
-    secondary = Secondary,
+    primary = Color.White,
+    secondary = Color.White,
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),
-    onPrimary = OnPrimary,
-    onSecondary = OnSecondary,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = Color.White,
+    onSurface = Color.White,
     error = Error
 )
 
 @Composable
 fun HalfHashedKittyTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -53,13 +57,12 @@ fun HalfHashedKittyTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> DarkColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
         }
     }
@@ -69,4 +72,28 @@ fun HalfHashedKittyTheme(
         typography = Typography,
         content = content
     )
+}
+
+@Composable
+fun TransparentButton(onClick: () -> Unit, text: String) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = Color.White
+        ),
+        border = BorderStroke(1.dp, Color.White)
+    ) {
+        androidx.compose.material3.Text(text)
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+fun HalfHashedKittyThemePreview() {
+    HalfHashedKittyTheme {
+        androidx.compose.material3.Surface {
+            TransparentButton(onClick = {}, text = "Hello")
+        }
+    }
 }

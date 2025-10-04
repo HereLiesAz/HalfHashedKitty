@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hereliesaz.halfhashedkitty.HashtopolisViewModel
+import com.hereliesaz.halfhashedkitty.ui.theme.TransparentButton
 
 @Composable
 fun HashtopolisTab(viewModel: HashtopolisViewModel, onShowInstructions: () -> Unit) {
@@ -42,11 +43,10 @@ fun HashtopolisTab(viewModel: HashtopolisViewModel, onShowInstructions: () -> Un
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = { viewModel.getAgents() }
-            ) {
-                Text("Get Agents")
-            }
+            TransparentButton(
+                onClick = { viewModel.getAgents() },
+                text = "Get Agents"
+            )
             Text(
                 "Fetch and display the list of agents from the server.",
                 style = MaterialTheme.typography.bodySmall

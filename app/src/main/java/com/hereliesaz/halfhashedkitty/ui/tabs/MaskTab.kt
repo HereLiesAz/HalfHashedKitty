@@ -6,13 +6,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.hereliesaz.halfhashedkitty.ui.theme.TransparentButton
 
 @Composable
 fun MaskTab(onShowInstructions: () -> Unit) {
@@ -31,16 +31,12 @@ fun MaskTab(onShowInstructions: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(onClick = { /* TODO: Implement mask creator */ }) {
-                Text("Create Mask")
-            }
+            TransparentButton(onClick = { /* TODO: Implement mask creator */ }, text = "Create Mask")
             Text("Create a new mask for mask attacks.", style = MaterialTheme.typography.bodySmall)
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(onClick = { /* TODO: Implement file picker */ }) {
-                Text("Select Mask File")
-            }
+            TransparentButton(onClick = { /* TODO: Implement file picker */ }, text = "Select Mask File")
             Text("Select a mask file from your device.", style = MaterialTheme.typography.bodySmall)
         }
     }
