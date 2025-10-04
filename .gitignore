@@ -1102,3 +1102,4 @@ hashkitty-gui/venv/lib64
 hashkitty-gui/venv/pyvenv.cfg
 hashkitty-gui/venv/
 gokitty/gokitty\n# Ignore the new desktop application directory\n/app/desktop-app/
+\n# PyInstaller artifacts\n/app/desktop-app/build/\n/app/desktop-app/dist/\n/app/desktop-app/*.spec
