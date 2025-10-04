@@ -1,0 +1,9 @@
+[submodule "hashkitty-cpp/vendor/imgui"]
+	path = hashkitty-cpp/vendor/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "hashkitty-cpp/vendor/websocketpp"]
+	path = hashkitty-cpp/vendor/websocketpp
+	url = https://github.com/zaphoyd/websocketpp.git
+[submodule "hashkitty-cpp/vendor/json"]
+	path = hashkitty-cpp/vendor/json
+	url = https://github.com/nlohmann/json.git
