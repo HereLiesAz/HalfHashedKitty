@@ -33,7 +33,6 @@ public class RelayProcessManager {
         }
 
         try {
-            // Determine the name of the executable based on the OS
             String os = System.getProperty("os.name").toLowerCase();
             String executableName = "gokitty-relay";
             if (os.contains("win")) {
@@ -46,7 +45,7 @@ public class RelayProcessManager {
                 return;
             }
 
-            executable.setExecutable(true); // Ensure it has execute permissions
+            executable.setExecutable(true);
 
             ProcessBuilder pb = new ProcessBuilder(executable.getAbsolutePath());
             pb.redirectErrorStream(true);
@@ -54,7 +53,6 @@ public class RelayProcessManager {
             onStatusUpdate.accept("Starting standalone relay server...");
             relayProcess = pb.start();
 
-            // Consume the output in a separate thread to prevent blocking
             new Thread(() -> {
                 try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(relayProcess.getInputStream()))) {
                     String line;

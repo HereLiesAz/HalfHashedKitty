@@ -26,7 +26,6 @@ public class HhkUtil {
 
     /**
      * Exports a list of remote connections to a password-protected .hhk (zip) file.
-     * The connections are first serialized to a JSON file, which is then added to the encrypted archive.
      *
      * @param file The target .hhk file to create.
      * @param password The password for the archive.
@@ -51,7 +50,6 @@ public class HhkUtil {
 
     /**
      * Imports a list of remote connections from a password-protected .hhk (zip) file.
-     * It extracts the archive to a temporary location, reads the JSON data, and deserializes it.
      *
      * @param file The .hhk file to import from.
      * @param password The password for the archive.
@@ -82,7 +80,7 @@ public class HhkUtil {
 
         Files.walk(tempDir)
                 .map(Path::toFile)
-                .sorted((o1, o2) -> -o1.compareTo(o2)) // Reverse order for directories
+                .sorted((o1, o2) -> -o1.compareTo(o2))
                 .forEach(File::delete);
 
         return importedConnections;

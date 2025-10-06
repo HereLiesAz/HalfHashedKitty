@@ -46,7 +46,6 @@ func main() {
 
 	// This part allows for command-line management of the service
 	// e.g., `gokitty-relay install`, `gokitty-relay start`, etc.
-	// If no command is provided, it runs the service directly for debugging.
 	if len(os.Args) > 1 {
 		err = service.Control(s, os.Args[1])
 		if err != nil {

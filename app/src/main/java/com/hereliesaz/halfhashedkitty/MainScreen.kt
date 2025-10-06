@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.ConnectTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.HashcatSetupTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.InstructionsOverlay
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
@@ -96,6 +96,14 @@ fun MainScreen(
                             selectedId = "Connect"; if (showInstructions) showInstructions =
                             false
                         }
+                        azRailItem(
+                            id = "Hashcat Setup",
+                            color = Color.White,
+                            text = "Hashcat Setup"
+                        ) {
+                            selectedId = "Hashcat Setup"; if (showInstructions) showInstructions =
+                            false
+                        }
                     }
                 }
 
@@ -112,6 +120,7 @@ fun MainScreen(
                                 "Terminal" -> TerminalTab(viewModel)
                                 "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
                                 "Connect" -> ConnectTab(viewModel)
+                                "Hashcat Setup" -> HashcatSetupTab()
                             }
                         }
                         if (showInstructions) {

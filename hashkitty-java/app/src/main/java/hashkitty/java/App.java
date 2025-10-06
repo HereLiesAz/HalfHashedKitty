@@ -23,6 +23,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import net.lingala.zip4j.exception.ZipException;
@@ -32,7 +33,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,6 +48,8 @@ public class App extends Application {
     private Label crackedPasswordLabel;
     private TextField wordlistField;
     private TextField maskField;
+    private TextField hashFileField;
+    private TextField ruleFileField;
     private VBox attackInputsContainer;
     private HashcatManager hashcatManager;
     private SniffManager sniffManager;
@@ -63,14 +65,13 @@ public class App extends Application {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("HashKitty");
 
-        // --- Initialize Backend Managers ---
         remoteConnections.add(new RemoteConnection("pwn-pi", "pi@192.168.1.10"));
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
+
         hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus);
         relayProcessManager = new RelayProcessManager(this::updateStatus);
-        roomId = UUID.randomUUID().toString().substring(0, 8); // Create a unique room ID
+        roomId = UUID.randomUUID().toString().substring(0, 8);
 
-        // --- UI Setup ---
         BorderPane mainLayout = new BorderPane();
         mainLayout.setPadding(new Insets(10));
         VBox topVBox = createConnectionBox();
@@ -80,18 +81,18 @@ public class App extends Application {
             new Tab("Attack", createAttackConfigBox()),
             new Tab("Sniff", createSniffBox()),
             new Tab("Settings", createSettingsBox()),
-            new Tab("Learn", createLearnBox())
+            new Tab("Learn", new Label("Learn UI to be implemented")),
+            new Tab("Hashcat Setup", createHashcatSetupBox())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         mainLayout.setCenter(tabPane);
         mainLayout.setBottom(createResultsBox());
 
-        // --- Start Services & Show UI ---
         mainScene = new Scene(mainLayout, 600, 800);
         primaryStage.setScene(mainScene);
 
         relayProcessManager.startRelay();
-        connectToRelay(); // Connect the client after starting the process
+        connectToRelay();
 
         primaryStage.show();
 
@@ -109,9 +110,6 @@ public class App extends Application {
         if (relayProcessManager != null) relayProcessManager.stopRelay();
     }
 
-    /**
-     * Connects the internal WebSocket client to the standalone relay server.
-     */
     private void connectToRelay() {
         try {
             URI serverUri = new URI("ws://localhost:" + RELAY_PORT + "/ws");
@@ -125,18 +123,12 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Handles messages received from the relay server.
-     * This is where commands from the mobile client are processed.
-     * @param message The message received from the relay.
-     */
     private void handleRelayMessage(RelayClient.Message message) {
         if ("attack".equalsIgnoreCase(message.getType())) {
             updateStatus("Received remote attack command for hash: " + message.getHash());
             try {
-                // For now, assume remote attacks are always dictionary attacks with a default wordlist
                 String wordlistPath = "/app/test-hashes-short.txt";
-                hashcatManager.startCracking(message.getHash(), message.getMode(), "Dictionary", wordlistPath);
+                hashcatManager.startAttackWithString(message.getHash(), message.getMode(), "Dictionary", wordlistPath, null);
             } catch (IOException e) {
                 updateStatus("Error starting remote attack: " + e.getMessage());
             }
@@ -148,7 +140,6 @@ public class App extends Application {
         ImageView qrCodeView = (ImageView) mainScene.getRoot().lookup("#qrCodeView");
         Label connectionLabel = (Label) mainScene.getRoot().lookup("#connectionLabel");
         if (ipAddress != null && qrCodeView != null && connectionLabel != null) {
-            // The connection string now includes the room ID for the mobile client
             String connectionString = "ws://" + ipAddress + ":" + RELAY_PORT + "/ws?roomId=" + roomId;
             qrCodeView.setImage(QRCodeUtil.generateQRCodeImage(connectionString, QR_CODE_SIZE, QR_CODE_SIZE));
             connectionLabel.setText("Scan to join room: " + roomId);
@@ -175,46 +166,69 @@ public class App extends Application {
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 10, 20, 10));
-        TextField hashField = new TextField();
-        hashField.setPromptText("Enter hash here");
+
+        hashFileField = new TextField();
+        hashFileField.setPromptText("Path to hash file");
+        Button chooseHashFileButton = new Button("...");
+        chooseHashFileButton.setOnAction(e -> {
+            File file = new FileChooser().showOpenDialog(primaryStage);
+            if (file != null) hashFileField.setText(file.getAbsolutePath());
+        });
+        grid.add(new Label("Hash File:"), 0, 0);
+        grid.add(new HBox(5, hashFileField, chooseHashFileButton), 1, 0);
+
         TextField hashModeField = new TextField();
-        hashModeField.setPromptText("e.g., 0 for MD5");
+        hashModeField.setPromptText("e.g., 22000 for WPA2");
+        grid.add(new Label("Hash Mode:"), 0, 1);
+        grid.add(hashModeField, 1, 1);
+
         ComboBox<String> attackModeSelector = new ComboBox<>();
         attackModeSelector.getItems().addAll("Dictionary", "Mask");
         attackModeSelector.setValue("Dictionary");
-        grid.add(new Label("Hash:"), 0, 0);
-        grid.add(hashField, 1, 0);
-        grid.add(new Label("Hash Mode:"), 0, 1);
-        grid.add(hashModeField, 1, 1);
         grid.add(new Label("Attack Mode:"), 0, 2);
         grid.add(attackModeSelector, 1, 2);
+
+        ruleFileField = new TextField();
+        ruleFileField.setPromptText("(Optional) Path to rule file");
+        Button chooseRuleFileButton = new Button("...");
+        chooseRuleFileButton.setOnAction(e -> {
+            File file = new FileChooser().showOpenDialog(primaryStage);
+            if (file != null) ruleFileField.setText(file.getAbsolutePath());
+        });
+        grid.add(new Label("Rule File:"), 0, 3);
+        grid.add(new HBox(5, ruleFileField, chooseRuleFileButton), 1, 3);
+
         attackInputsContainer = new VBox(10);
         createDictionaryInput();
         attackModeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
             if ("Dictionary".equals(newVal)) createDictionaryInput(); else createMaskInput();
         });
+
         Button startButton = new Button("Start Local Attack");
         startButton.setOnAction(e -> {
             try {
-                String hash = hashField.getText();
+                String hashFile = hashFileField.getText();
                 String mode = hashModeField.getText();
                 String attackMode = attackModeSelector.getValue();
+                String ruleFile = ruleFileField.getText();
                 String target = "Dictionary".equals(attackMode) ? wordlistField.getText() : maskField.getText();
-                if (hash.isEmpty() || mode.isEmpty() || target.isEmpty()) {
-                    updateStatus("Error: Hash, Mode, and Wordlist/Mask cannot be empty.");
+
+                if (hashFile.isEmpty() || mode.isEmpty() || target.isEmpty()) {
+                    updateStatus("Error: Hash File, Hash Mode, and Wordlist/Mask cannot be empty.");
                     return;
                 }
+
                 updateStatus("Starting " + attackMode + " attack...");
-                hashcatManager.startCracking(hash, mode, attackMode, target);
+                hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
             } catch (IOException ex) {
                 updateStatus("Error starting hashcat process: " + ex.getMessage());
-                ex.printStackTrace();
             }
         });
         Button stopButton = new Button("Stop Attack");
         stopButton.setOnAction(e -> hashcatManager.stopCracking());
         HBox buttonBox = new HBox(20, startButton, stopButton);
         buttonBox.setAlignment(Pos.CENTER);
+
         VBox box = new VBox(20, grid, attackInputsContainer, buttonBox);
         box.setAlignment(Pos.TOP_CENTER);
         box.setPadding(new Insets(20));
@@ -258,6 +272,53 @@ public class App extends Application {
         VBox themeBox = new VBox(10, themeLabel, themeSelector);
         settingsLayout.getChildren().addAll(remotesBox, new Separator(), configBox, new Separator(), themeBox);
         return settingsLayout;
+    }
+
+    private ScrollPane createHashcatSetupBox() {
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+
+        Label title = new Label("Setting Up Hashcat for GPU Cracking");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        Text intro = new Text("Hashcat uses your Graphics Card (GPU) to crack hashes incredibly fast. To make this work, you need the right drivers installed. If hashcat isn't working, this is the most common reason why.");
+        intro.setWrappingWidth(550);
+
+        // --- Step 1: Install Hashcat ---
+        Label step1Title = new Label("Step 1: Install Hashcat");
+        step1Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        Text step1Text = new Text("Download the latest version from the official website: hashcat.net/hashcat/. Extract the archive to a known location on your computer.");
+        step1Text.setWrappingWidth(550);
+
+        // --- Step 2: Install GPU Drivers ---
+        Label step2Title = new Label("Step 2: Install GPU Drivers");
+        step2Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        Text step2Text = new Text(
+            "This is the most important step.\n\n" +
+            "NVIDIA Users:\n" +
+            "You need the latest 'Game Ready' or 'Studio' drivers. Download them from the official NVIDIA website. Hashcat uses the NVIDIA CUDA platform.\n\n" +
+            "AMD Users:\n" +
+            "You need the latest 'Adrenalin Edition' drivers. Download them from the official AMD website. Hashcat uses the OpenCL platform, which is included with these drivers.\n\n" +
+            "Intel GPU Users:\n" +
+            "You need the latest graphics drivers from Intel's website. Hashcat uses the OpenCL platform, which is included with these drivers."
+        );
+        step2Text.setWrappingWidth(550);
+
+        // --- Step 3: Verify Installation ---
+        Label step3Title = new Label("Step 3: Verify Everything Works");
+        step3Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        Text step3Text = new Text(
+            "Open a command prompt or terminal, navigate to your hashcat directory, and run the benchmark command:\n\n" +
+            "hashcat.exe -b\n\n" +
+            "If everything is set up correctly, you will see a list of your GPUs and a benchmark running for various hash types. If you see errors about missing DLLs or no devices being found, it means your GPU drivers are not installed correctly."
+        );
+        step3Text.setWrappingWidth(550);
+
+        content.getChildren().addAll(title, intro, new Separator(), step1Title, step1Text, new Separator(), step2Title, step2Text, new Separator(), step3Title, step3Text);
+
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        return scrollPane;
     }
 
     private void applyTheme(String themeName) {
@@ -312,23 +373,6 @@ public class App extends Application {
         controlButtons.setAlignment(Pos.CENTER);
         sniffLayout.getChildren().addAll(titleLabel, remoteSelectionBox, controlButtons, new Label("Output:"), sniffOutput);
         return sniffLayout;
-    }
-
-    private ScrollPane createLearnBox() {
-        VBox content = new VBox(15);
-        content.setPadding(new Insets(20));
-        Label hashTitle = new Label("What is a Hash?");
-        hashTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Text hashText = new Text("A 'hash function' is like a magic machine that turns your message into a secret code of a fixed length. Key properties: 1. The same message ALWAYS creates the same hash. 2. You can't turn the hash back into the original message.");
-        hashText.setWrappingWidth(500);
-        Label hashcatTitle = new Label("What is Hashcat?");
-        hashcatTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Text hashcatText = new Text("Hashcat is the world's fastest password cracker. If you have a hash, you can use hashcat to try millions of password guesses per second until it finds one that creates a matching hash.");
-        hashcatText.setWrappingWidth(500);
-        content.getChildren().addAll(hashTitle, hashText, new Separator(), hashcatTitle, hashcatText);
-        ScrollPane scrollPane = new ScrollPane(content);
-        scrollPane.setFitToWidth(true);
-        return scrollPane;
     }
 
     private void handleExport() {
@@ -455,7 +499,6 @@ public class App extends Application {
         Platform.runLater(() -> {
             crackedPasswordLabel.setText("Cracked Password: " + password);
             updateStatus("SUCCESS: Password found! -> " + password);
-            // Send cracked password back to the mobile client
             if (relayClient != null && relayClient.isOpen()) {
                 RelayClient.Message crackedMessage = new RelayClient.Message();
                 crackedMessage.setType("cracked");

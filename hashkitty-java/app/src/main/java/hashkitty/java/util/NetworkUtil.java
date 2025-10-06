@@ -5,6 +5,9 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+/**
+ * A utility class for network-related operations.
+ */
 public class NetworkUtil {
 
     /**

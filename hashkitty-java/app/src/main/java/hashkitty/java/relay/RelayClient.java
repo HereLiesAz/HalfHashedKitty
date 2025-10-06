@@ -37,7 +37,6 @@ public class RelayClient extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         onStatusUpdate.accept("Connected to relay server. Joining room: " + roomId);
-        // Once connected, send a "join" message
         Message joinMessage = new Message();
         joinMessage.setType("join");
         joinMessage.setRoomId(roomId);
@@ -88,7 +87,6 @@ public class RelayClient extends WebSocketClient {
         private String mode;
         private String payload;
 
-        // Getters and Setters
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
         public String getRoomId() { return roomId; }

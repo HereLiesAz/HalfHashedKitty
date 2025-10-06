@@ -9,6 +9,9 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
+/**
+ * A utility class for generating QR code images using the ZXing library.
+ */
 public class QRCodeUtil {
 
     /**

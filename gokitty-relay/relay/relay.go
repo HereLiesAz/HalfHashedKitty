@@ -144,7 +144,6 @@ func RunRelayServer(stop chan struct{}) {
 	<-stop
 	log.Println("Shutting down relay server...")
 
-	// Create a deadline to wait for.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
