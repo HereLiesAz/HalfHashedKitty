@@ -54,14 +54,12 @@ public class SniffManager {
                 session = jsch.getSession(user, host, 22);
                 session.setPassword(password);
 
-                // In a real application, you'd want to manage known_hosts.
                 session.setConfig("StrictHostKeyChecking", "no");
 
                 onOutput.accept("Connecting to " + host + "...");
                 session.connect(30000); // 30-second timeout
                 onOutput.accept("Connection established successfully.");
 
-                // This command likely requires sudo. A better implementation would handle this.
                 String command = "sudo tcpdump -i wlan0 -l -U";
                 onOutput.accept("Executing remote command: " + command);
 

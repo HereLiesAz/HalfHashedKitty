@@ -4,14 +4,17 @@
 
 ## Intro
 
-Half-Hashed Kitty is a project that consists of an Android application and a Java-based desktop application for simplifying WiFi security auditing. This new version replaces the previous Go implementation with a more feature-rich JavaFX application that includes a built-in relay server, a graphical user interface, and direct integration with `hashcat`.
+Half-Hashed Kitty is a cross-platform tool for simplifying WiFi security auditing and password cracking. It consists of a powerful JavaFX desktop application, a lightweight Go-based relay server, and an Android mobile client.
+
+This new architecture separates the user interface from the relay server, creating a more robust and modular system.
 
 ## The Architecture
 
-The system is designed for ease of use, with two core components:
+The system has three main components that work in concert:
 
-1.  **The Java Desktop Application (`hashkitty-java`):** A graphical desktop application built with JavaFX. It runs a WebSocket relay server, manages `hashcat` cracking sessions, and displays a QR code for easy mobile client connection. It is the central hub for all operations.
-2.  **The Android App:** The mobile client for controlling the desktop application. You connect it to your desktop by scanning the QR code, which establishes a real-time connection. From the app, you can submit hashes and monitor the cracking process.
+1.  **The Java Desktop Application (`hashkitty-java`):** The main control center. It provides the UI for managing `hashcat` attacks, remote sniffing, and application settings. It also launches and manages the Go relay process and acts as a client to it.
+2.  **The Standalone Go Relay (`gokitty-relay`):** A high-performance, standalone WebSocket relay server. Its sole job is to pass messages between clients that have joined the same "room".
+3.  **The Android App:** The mobile client used to connect to your desktop setup. It joins a specific room on the relay server to communicate with the desktop application.
 
 ---
 
@@ -19,43 +22,63 @@ The system is designed for ease of use, with two core components:
 
 ### Step 0: Prerequisites
 
-Before you begin, make sure you have the following software installed on your computer:
+Before you begin, make sure you have the following software installed:
 
 -   **Java Development Kit (JDK):** Version 17 or higher.
--   **Hashcat:** Must be installed and accessible from your system's PATH.
--   **Gradle:** The project uses the Gradle wrapper, so no separate installation is required.
+-   **Go:** Version 1.18 or higher (required to build the relay).
+-   **Hashcat:** Must be installed and accessible from your system's PATH. For GPU cracking, ensure you have the correct drivers installed (see the "Hashcat Setup" tab in the application for guidance).
 
-### Step 1: Build and Run the Java Application
+### Step 1: Build the Standalone Go Relay
 
-The desktop application is built and run using the included Gradle wrapper.
+First, you need to compile the relay server. The output executable must be placed in the `hashkitty-java` directory.
 
-**Instructions (for any OS):**
+```bash
+# Navigate to the Go relay directory
+cd /app/gokitty-relay
+
+# Build the relay and place it in the Java app's directory
+# (Adjust the output name if you are on Windows, e.g., gokitty-relay.exe)
+go build -o ../hashkitty-java/gokitty-relay ./cmd/gokitty-relay
+```
+For more detailed cross-compilation instructions (e.g., for Raspberry Pi), see `gokitty-relay/BUILD.md`.
+
+### Step 2: Build and Run the Java Application
+
+With the relay executable in place, you can now run the main desktop application using the Gradle wrapper.
+
 ```bash
 # Navigate to the Java application directory
 cd /app/hashkitty-java
 
 # Use the Gradle wrapper to run the application
-# This will automatically download dependencies and build the project
 ./gradlew run
 ```
-Upon starting, the JavaFX application window will appear, displaying a **QR code**. You will scan this with the Android app to pair the devices. The window also provides a status log and a field for displaying cracked passwords.
+Upon starting, the JavaFX application will launch the Go relay, connect to it, and display a QR code.
 
-### Step 2: Set up the Android Application
+### Step 3: Set up the Android Application
 
-**Building the App:**
-1. Open the project's root directory (`/app`) in Android Studio.
-2. Allow Android Studio to sync the Gradle project.
-3. Build and run the application on your Android device or an emulator.
+1.  Open the project's root directory (`/app`) in Android Studio.
+2.  Build and run the application on an Android device or an emulator.
+3.  Scan the QR code displayed in the Java desktop application to connect.
 
-**Connecting the App:**
-1. Open the app and navigate to the **Connect** screen.
-2. Scan the QR code displayed in the Java desktop application.
-3. The app will connect to your desktop, and you can begin submitting hashes.
+---
 
 ## How to Use
 
-1.  Ensure the Java desktop application is running.
-2.  Scan the QR code with the Android app to establish a connection.
-3.  From the Android app, send an "attack" command with the necessary hash information.
-4.  Monitor the status log in the desktop application to see real-time updates from the relay server and the `hashcat` process.
-5.  Any cracked passwords will be displayed in the desktop UI and sent back to the mobile client.
+### Local Attacks (Desktop App)
+
+1.  Navigate to the **Attack** tab.
+2.  Use the **"..."** buttons to select your **Hash File**, **Wordlist**, and an optional **Rule File**.
+3.  Enter the appropriate **Hash Mode** for your hashes (e.g., `22000` for WPA2).
+4.  Select your **Attack Mode** ("Dictionary" or "Mask").
+5.  Click **"Start Local Attack"**. Monitor the status log for progress.
+
+### Remote Attacks (Mobile App)
+
+1.  Ensure the desktop application is running and you have connected the mobile app by scanning the QR code.
+2.  From the mobile app, send an attack command with the hash string.
+3.  The desktop application will execute the attack using a default dictionary and report the results back to the mobile client and the desktop UI.
+
+### Hashcat Setup
+
+If you are having trouble with `hashcat`, please consult the **Hashcat Setup** tab in both the desktop and Android applications for detailed instructions on installing the tool and the necessary GPU drivers.

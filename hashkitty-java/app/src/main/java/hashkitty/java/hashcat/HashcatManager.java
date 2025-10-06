@@ -30,20 +30,41 @@ public class HashcatManager {
     }
 
     /**
-     * Starts a new hashcat cracking process in a background thread.
+     * Starts a new hashcat cracking process using a hash file.
      *
-     * @param hash       The hash string to be cracked.
-     * @param mode       The hashcat hash mode (e.g., "0" for MD5).
+     * @param hashFile   The path to the file containing hashes.
+     * @param mode       The hashcat hash mode (e.g., "22000" for WPA2).
      * @param attackMode The hashcat attack mode ("Dictionary" or "Mask").
-     * @param target     The target for the attack, either a path to a wordlist file or a mask pattern.
-     * @throws IOException if an I/O error occurs when starting the process (e.g., hashcat not found).
+     * @param target     The target for the attack (wordlist path or mask pattern).
+     * @param ruleFile   The path to a hashcat rule file (can be null).
+     * @throws IOException if an I/O error occurs when starting the process.
      */
-    public void startCracking(String hash, String mode, String attackMode, String target) throws IOException {
-        if (hashcatProcess != null && hashcatProcess.isAlive()) {
-            onError.accept("A hashcat process is already running.");
-            return;
-        }
+    public void startAttackWithFile(String hashFile, String mode, String attackMode, String target, String ruleFile) throws IOException {
+        List<String> command = buildCommand(mode, attackMode, target, ruleFile);
+        command.add(hashFile); // Add hash file as the main input
+        startAttackInternal(command, null); // Pass null because we don't have a single hash to monitor
+    }
 
+    /**
+     * Starts a new hashcat cracking process using a single hash string.
+     *
+     * @param hashString The single hash string to crack.
+     * @param mode       The hashcat hash mode.
+     * @param attackMode The hashcat attack mode.
+     * @param target     The target for the attack.
+     * @param ruleFile   The path to a hashcat rule file (can be null).
+     * @throws IOException if an I/O error occurs when starting the process.
+     */
+    public void startAttackWithString(String hashString, String mode, String attackMode, String target, String ruleFile) throws IOException {
+        List<String> command = buildCommand(mode, attackMode, target, ruleFile);
+        command.add(hashString); // Add the hash string directly to the command
+        startAttackInternal(command, hashString); // Pass the hash string to monitor the output precisely
+    }
+
+    /**
+     * Constructs the base hashcat command list.
+     */
+    private List<String> buildCommand(String mode, String attackMode, String target, String ruleFile) {
         List<String> command = new ArrayList<>();
         command.add("hashcat");
         command.add("-m");
@@ -60,8 +81,38 @@ public class HashcatManager {
             throw new IllegalArgumentException("Unsupported attack mode: " + attackMode);
         }
 
-        command.add(hash);
+        if (ruleFile != null && !ruleFile.isEmpty()) {
+            command.add("-r");
+            command.add(ruleFile);
+        }
+
+        // The target (wordlist or mask) and hash source (file or string) are added after this
         command.add(target);
+        return command;
+    }
+
+    /**
+     * The internal method that launches and monitors the hashcat process.
+     */
+    private void startAttackInternal(List<String> command, String hashToMonitor) throws IOException {
+        if (hashcatProcess != null && hashcatProcess.isAlive()) {
+            onError.accept("A hashcat process is already running.");
+            return;
+        }
+
+        // The hash source (file or string) should be the last argument before the target
+        // The buildCommand method doesn't add the hash source, so we add it here at the correct position
+        // Let's re-order: hashcat [options] hash target
+        int targetIndex = command.size() - 1;
+        String target = command.get(targetIndex);
+        command.remove(targetIndex);
+        if (hashToMonitor != null) { // It's a string hash
+             command.add(hashToMonitor);
+        } else { // It's a file path, which should be the last argument before the target
+             // The calling methods already added the hash file path
+        }
+        command.add(target);
+
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.redirectErrorStream(true);
@@ -82,7 +133,14 @@ public class HashcatManager {
                 while ((line = reader.readLine()) != null) {
                     System.out.println("hashcat: " + line);
 
-                    if (line.startsWith(hash + ":")) {
+                    boolean isCrackedLine;
+                    if (hashToMonitor != null) {
+                        isCrackedLine = line.startsWith(hashToMonitor + ":");
+                    } else {
+                        isCrackedLine = line.contains(":") && !line.startsWith("Status") && !line.startsWith("Session") && !line.startsWith("Input");
+                    }
+
+                    if (isCrackedLine) {
                         String[] parts = line.split(":", 2);
                         if (parts.length > 1) {
                             onCrackedPassword.accept(parts[1]);
@@ -94,22 +152,20 @@ public class HashcatManager {
                 int exitCode = hashcatProcess.waitFor();
                 System.out.println("Hashcat process finished with exit code: " + exitCode);
                 if (exitCode != 0 && !found) {
-                     onError.accept("Hashcat exited with error code " + exitCode + ". Check hash, mode, and target.");
+                     onError.accept("Hashcat exited with error code " + exitCode + ". Check parameters.");
                 }
 
             } catch (IOException e) {
                 onError.accept("Error reading hashcat output: " + e.getMessage());
-                e.printStackTrace();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 onError.accept("Hashcat process was interrupted.");
-                e.printStackTrace();
             }
         }).start();
     }
 
     /**
-     * Forcibly stops the currently running hashcat process, if one exists.
+     * Forcibly stops the currently running hashcat process.
      */
     public void stopCracking() {
         if (hashcatProcess != null && hashcatProcess.isAlive()) {
