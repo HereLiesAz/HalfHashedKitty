@@ -7,17 +7,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Manages the execution of the `hashcat` command-line tool.
+ * This class handles building the command, running the process,
+ * and parsing the output for cracked passwords or errors.
+ */
 public class HashcatManager {
 
     private Process hashcatProcess;
     private final Consumer<String> onCrackedPassword;
     private final Consumer<String> onError;
 
+    /**
+     * Constructs a new HashcatManager.
+     *
+     * @param onCrackedPassword A callback function to be executed when a password is successfully cracked.
+     * @param onError           A callback function to be executed when an error occurs.
+     */
     public HashcatManager(Consumer<String> onCrackedPassword, Consumer<String> onError) {
         this.onCrackedPassword = onCrackedPassword;
         this.onError = onError;
     }
 
+    /**
+     * Starts a new hashcat cracking process in a background thread.
+     *
+     * @param hash       The hash string to be cracked.
+     * @param mode       The hashcat hash mode (e.g., "0" for MD5).
+     * @param attackMode The hashcat attack mode ("Dictionary" or "Mask").
+     * @param target     The target for the attack, either a path to a wordlist file or a mask pattern.
+     * @throws IOException if an I/O error occurs when starting the process (e.g., hashcat not found).
+     */
     public void startCracking(String hash, String mode, String attackMode, String target) throws IOException {
         if (hashcatProcess != null && hashcatProcess.isAlive()) {
             onError.accept("A hashcat process is already running.");
@@ -37,7 +57,6 @@ public class HashcatManager {
             command.add("-a");
             command.add("3");
         } else {
-            // This case should ideally not be reached due to UI constraints
             throw new IllegalArgumentException("Unsupported attack mode: " + attackMode);
         }
 
@@ -50,9 +69,8 @@ public class HashcatManager {
         try {
             hashcatProcess = pb.start();
         } catch (IOException e) {
-            // This is a common error, e.g., hashcat not found in PATH
             onError.accept("Failed to start hashcat. Is it installed and in your system's PATH?");
-            throw e; // Re-throw to be caught by the App's UI logic
+            throw e;
         }
 
         System.out.println("Hashcat process started with command: " + String.join(" ", command));
@@ -62,7 +80,7 @@ public class HashcatManager {
                 String line;
                 boolean found = false;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println("hashcat: " + line); // Log all output for debugging
+                    System.out.println("hashcat: " + line);
 
                     if (line.startsWith(hash + ":")) {
                         String[] parts = line.split(":", 2);
@@ -90,6 +108,9 @@ public class HashcatManager {
         }).start();
     }
 
+    /**
+     * Forcibly stops the currently running hashcat process, if one exists.
+     */
     public void stopCracking() {
         if (hashcatProcess != null && hashcatProcess.isAlive()) {
             hashcatProcess.destroyForcibly();

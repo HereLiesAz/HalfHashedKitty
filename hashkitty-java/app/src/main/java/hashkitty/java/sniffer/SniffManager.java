@@ -6,16 +6,33 @@ import hashkitty.java.model.RemoteConnection;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
+/**
+ * Manages remote packet sniffing sessions over SSH.
+ * This class uses the JSch library to connect to a remote device,
+ * execute a sniffing command (e.g., tcpdump), and stream the output back.
+ */
 public class SniffManager {
 
     private Session session;
     private ChannelExec channel;
     private final Consumer<String> onOutput;
 
+    /**
+     * Constructs a new SniffManager.
+     *
+     * @param onOutput A callback function to be executed with output from the sniffing process or status messages.
+     */
     public SniffManager(Consumer<String> onOutput) {
         this.onOutput = onOutput;
     }
 
+    /**
+     * Starts a new remote sniffing session in a background thread.
+     * It establishes an SSH connection and executes a predefined sniffing command.
+     *
+     * @param connection The remote connection details (user and host).
+     * @param password   The password for the SSH connection.
+     */
     public void startSniffing(RemoteConnection connection, String password) {
         if (session != null && session.isConnected()) {
             onOutput.accept("Error: A session is already active. Please stop it first.");
@@ -96,6 +113,9 @@ public class SniffManager {
         }).start();
     }
 
+    /**
+     * Stops the currently active sniffing session and disconnects from the remote host.
+     */
     public void stopSniffing() {
         if (channel != null && channel.isConnected()) {
             channel.disconnect();

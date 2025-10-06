@@ -33,6 +33,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * The main class for the HashKitty JavaFX desktop application.
+ * This class sets up the user interface, manages application state,
+ * and coordinates the various backend managers and servers.
+ */
 public class App extends Application {
 
     private static final int RELAY_PORT = 5001;
@@ -53,6 +58,14 @@ public class App extends Application {
     private DirectServer directServer;
     private VBox connectionBox;
 
+    /**
+     * The main entry point for the JavaFX application.
+     * This method is called after the init method has returned, and it's where
+     * the primary stage and the application's UI are set up.
+     *
+     * @param primaryStage The primary stage for this application, onto which
+     *                     the application scene can be set.
+     */
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -94,6 +107,11 @@ public class App extends Application {
         });
     }
 
+    /**
+     * Gracefully stops all running background services.
+     * This includes hashcat processes, sniffing sessions, and WebSocket servers.
+     * This method is called when the application is closing.
+     */
     private void stopAllServices() {
         hashcatManager.stopCracking();
         if (sniffManager != null) sniffManager.stopSniffing();
@@ -101,6 +119,10 @@ public class App extends Application {
         if (directServer != null) try { directServer.stop(100); } catch (Exception ex) { ex.printStackTrace(); }
     }
 
+    /**
+     * Creates the UI component for selecting the server mode (Relay or Direct).
+     * @return A VBox containing the server mode selector.
+     */
     private VBox createServerControlBox() {
         VBox box = new VBox(10);
         box.setAlignment(Pos.CENTER);
@@ -114,6 +136,12 @@ public class App extends Application {
         return box;
     }
 
+    /**
+     * Stops the currently running server and starts a new one based on the selected mode.
+     * It also updates the QR code and connection string displayed in the UI.
+     *
+     * @param mode The server mode to start ("Relay" or "Direct").
+     */
     private void updateServerAndQRCode(String mode) {
         if (relayServer != null) try { relayServer.stop(100); } catch (Exception e) { e.printStackTrace(); }
         if (directServer != null) try { directServer.stop(100); } catch (Exception e) { e.printStackTrace(); }
@@ -143,6 +171,10 @@ public class App extends Application {
         }
     }
 
+    /**
+     * Creates the UI component that displays the connection QR code and server address.
+     * @return A VBox containing the connection information.
+     */
     private VBox createConnectionBox() {
         ImageView qrCodeView = new ImageView();
         qrCodeView.setId("qrCodeView");
@@ -155,6 +187,12 @@ public class App extends Application {
         return box;
     }
 
+    /**
+     * Creates the UI for the "Attack" tab.
+     * This includes input fields for the hash and mode, a selector for the attack type,
+     * and controls to start and stop the hashcat process.
+     * @return A VBox containing the attack configuration UI.
+     */
     private VBox createAttackConfigBox() {
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -201,7 +239,6 @@ public class App extends Application {
                 updateStatus("Starting " + attackMode + " attack...");
                 hashcatManager.startCracking(hash, mode, attackMode, target);
             } catch (IOException ex) {
-                // This catch block is now more effective because startCracking provides a specific error message.
                 updateStatus("Error starting hashcat process: " + ex.getMessage());
                 ex.printStackTrace();
             }
@@ -219,6 +256,12 @@ public class App extends Application {
         return box;
     }
 
+    /**
+     * Creates the UI for the "Settings" tab.
+     * This includes controls for managing saved remote connections and for
+     * importing/exporting configurations.
+     * @return A VBox containing the settings UI.
+     */
     private VBox createSettingsBox() {
         VBox settingsLayout = new VBox(20);
         settingsLayout.setPadding(new Insets(20));
@@ -255,6 +298,12 @@ public class App extends Application {
         return settingsLayout;
     }
 
+    /**
+     * Creates the UI for the "Sniff" tab.
+     * This includes controls for selecting a remote target and starting/stopping
+     * a remote packet sniffing session.
+     * @return A VBox containing the sniffing UI.
+     */
     private VBox createSniffBox() {
         VBox sniffLayout = new VBox(20);
         sniffLayout.setPadding(new Insets(20));
@@ -300,6 +349,11 @@ public class App extends Application {
         return sniffLayout;
     }
 
+    /**
+     * Creates the UI for the "Learn" tab.
+     * This section provides educational content about hashing and password cracking.
+     * @return A ScrollPane containing the educational text content.
+     */
     private ScrollPane createLearnBox() {
         VBox content = new VBox(15);
         content.setPadding(new Insets(20));
@@ -325,6 +379,10 @@ public class App extends Application {
         return scrollPane;
     }
 
+    /**
+     * Handles the logic for exporting remote connections to a .hhk file.
+     * Prompts the user for a file location and a password.
+     */
     private void handleExport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Connections");
@@ -348,6 +406,10 @@ public class App extends Application {
         }
     }
 
+    /**
+     * Handles the logic for importing remote connections from a .hhk file.
+     * Prompts the user for a file and a password.
+     */
     private void handleImport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Import Connections");
@@ -375,6 +437,9 @@ public class App extends Application {
         }
     }
 
+    /**
+     * Shows a dialog window to add a new remote connection to the list.
+     */
     private void showAddRemoteDialog() {
         Dialog<RemoteConnection> dialog = new Dialog<>();
         dialog.setTitle("Add New Remote");
@@ -410,6 +475,9 @@ public class App extends Application {
         });
     }
 
+    /**
+     * Creates the UI controls for a dictionary-based attack.
+     */
     private void createDictionaryInput() {
         attackInputsContainer.getChildren().clear();
         Label wordlistLabel = new Label("Wordlist:");
@@ -428,6 +496,9 @@ public class App extends Application {
         attackInputsContainer.getChildren().addAll(wordlistLabel, dicBox);
     }
 
+    /**
+     * Creates the UI control for a mask-based attack.
+     */
     private void createMaskInput() {
         attackInputsContainer.getChildren().clear();
         Label maskLabel = new Label("Mask:");
@@ -436,6 +507,10 @@ public class App extends Application {
         attackInputsContainer.getChildren().addAll(maskLabel, maskField);
     }
 
+    /**
+     * Creates the UI component for displaying status messages and cracked passwords.
+     * @return A VBox containing the status log and result label.
+     */
     private VBox createResultsBox() {
         statusLog = new TextArea();
         statusLog.setEditable(false);
@@ -447,10 +522,19 @@ public class App extends Application {
         return box;
     }
 
+    /**
+     * Updates the status log with a new message. This method is thread-safe
+     * and can be called from background threads.
+     * @param message The message to append to the status log.
+     */
     private void updateStatus(String message) {
         Platform.runLater(() -> statusLog.appendText(message + "\n"));
     }
 
+    /**
+     * Updates the UI to display a newly cracked password. This method is thread-safe.
+     * @param password The cracked password to display.
+     */
     private void displayCrackedPassword(String password) {
         Platform.runLater(() -> {
             crackedPasswordLabel.setText("Cracked Password: " + password);

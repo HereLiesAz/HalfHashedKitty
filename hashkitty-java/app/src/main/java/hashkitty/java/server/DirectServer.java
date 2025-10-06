@@ -11,6 +11,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
+/**
+ * A WebSocket server that handles a direct, one-to-one connection with a single client.
+ * This is simpler than the RelayServer and is intended for use when the client
+ * and server are on the same local network.
+ */
 public class DirectServer extends WebSocketServer {
 
     private final Gson gson = new Gson();
@@ -18,13 +23,17 @@ public class DirectServer extends WebSocketServer {
     private final Consumer<String> onStatusUpdate;
     private WebSocket connectedClient = null;
 
+    /**
+     * Constructs a new DirectServer.
+     *
+     * @param port              The port number for the server to listen on.
+     * @param onStatusUpdate    A callback for status and error messages.
+     * @param onPasswordCracked A callback for when a password is cracked.
+     */
     public DirectServer(int port, Consumer<String> onStatusUpdate, Consumer<String> onPasswordCracked) {
         super(new InetSocketAddress(port));
         this.onStatusUpdate = onStatusUpdate;
-        this.hashcatManager = new HashcatManager(crackedPassword -> {
-            onPasswordCracked.accept(crackedPassword);
-            sendCrackedPassword(crackedPassword);
-        });
+        this.hashcatManager = new HashcatManager(onPasswordCracked, onStatusUpdate);
     }
 
     @Override
@@ -32,7 +41,7 @@ public class DirectServer extends WebSocketServer {
         // Only allow one client at a time in direct mode
         if (connectedClient != null && connectedClient.isOpen()) {
             onStatusUpdate.accept("Direct connection already active. Closing new connection from " + conn.getRemoteSocketAddress());
-            conn.close(1013, "Server busy"); // Service Restart
+            conn.close(1013, "Server busy");
             return;
         }
         this.connectedClient = conn;
@@ -58,21 +67,30 @@ public class DirectServer extends WebSocketServer {
             }
         } catch (JsonSyntaxException e) {
             System.err.println("Failed to parse message: " + message);
+            onStatusUpdate.accept("Error: Received a malformed message from a client.");
         }
     }
 
+    /**
+     * Handles an incoming "attack" message by starting a hashcat process.
+     * @param msg The deserialized message containing attack parameters.
+     */
     private void handleAttack(Message msg) {
         onStatusUpdate.accept("Starting direct attack on hash: " + msg.getHash());
         try {
-            // This logic is similar to the RelayServer, but simpler.
+            String attackMode = "Dictionary";
             String wordlistPath = "/app/test-hashes-short.txt"; // Using a test wordlist for now
-            hashcatManager.startCracking(msg.getHash(), msg.getMode(), "Dictionary", wordlistPath);
+            hashcatManager.startCracking(msg.getHash(), msg.getMode(), attackMode, wordlistPath);
         } catch (IOException e) {
-            e.printStackTrace();
             onStatusUpdate.accept("Error starting hashcat: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Sends a cracked password back to the connected client.
+     * @param password The cracked password to send.
+     */
     private void sendCrackedPassword(String password) {
         if (connectedClient != null && connectedClient.isOpen()) {
             Message response = new Message();
@@ -100,14 +118,15 @@ public class DirectServer extends WebSocketServer {
         onStatusUpdate.accept("Direct connection server started on port " + getPort());
     }
 
-    // Inner class for message deserialization
+    /**
+     * Inner class for deserializing incoming JSON messages.
+     */
     private static class Message {
         private String type;
         private String hash;
         private String mode;
         private String payload;
 
-        // Getters and Setters
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
         public String getHash() { return hash; }

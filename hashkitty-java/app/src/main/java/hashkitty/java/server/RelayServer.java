@@ -15,6 +15,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
+/**
+ * A WebSocket server that acts as a relay, enabling multiple clients to communicate
+ * by joining "rooms". Messages are broadcast to all clients in the same room,
+ * except for the original sender.
+ */
 public class RelayServer extends WebSocketServer {
 
     private final Map<String, Set<WebSocket>> rooms = new ConcurrentHashMap<>();
@@ -23,14 +28,17 @@ public class RelayServer extends WebSocketServer {
     private final Consumer<String> onStatusUpdate;
     private String currentAttackingRoomId;
 
+    /**
+     * Constructs a new RelayServer.
+     *
+     * @param port              The port number for the server to listen on.
+     * @param onStatusUpdate    A callback for status and error messages.
+     * @param onPasswordCracked A callback for when a password is cracked.
+     */
     public RelayServer(int port, Consumer<String> onStatusUpdate, Consumer<String> onPasswordCracked) {
         super(new InetSocketAddress(port));
         this.onStatusUpdate = onStatusUpdate;
-        this.hashcatManager = new HashcatManager(crackedPassword -> {
-            // This callback is executed when hashcat finds a password
-            onPasswordCracked.accept(crackedPassword);
-            broadcastCrackedPassword(crackedPassword);
-        });
+        this.hashcatManager = new HashcatManager(onPasswordCracked, onStatusUpdate);
     }
 
     @Override
@@ -59,28 +67,35 @@ public class RelayServer extends WebSocketServer {
                 handleAttack(msg);
             }
 
-            // For most messages, we just broadcast them
             broadcastToRoom(conn, msg.getRoomId(), message);
 
         } catch (JsonSyntaxException e) {
             System.err.println("Failed to parse message: " + message);
+            onStatusUpdate.accept("Error: Received a malformed message from a client.");
         }
     }
 
+    /**
+     * Handles an incoming "attack" message by starting a hashcat process.
+     * @param msg The deserialized message containing attack parameters.
+     */
     private void handleAttack(Message msg) {
         this.currentAttackingRoomId = msg.getRoomId();
-        onStatusUpdate.accept("Starting attack on hash: " + msg.getHash());
+        onStatusUpdate.accept("Starting attack from relay on hash: " + msg.getHash());
         try {
-            // For now, we'll assume a wordlist is provided.
-            // A real implementation would need more robust logic for different attack types.
+            String attackMode = "Dictionary";
             String wordlistPath = "/app/test-hashes-short.txt"; // Using a test wordlist
-            hashcatManager.startCracking(msg.getHash(), msg.getMode(), wordlistPath);
+            hashcatManager.startCracking(msg.getHash(), msg.getMode(), attackMode, wordlistPath);
         } catch (IOException e) {
-            e.printStackTrace();
             onStatusUpdate.accept("Error starting hashcat: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Broadcasts a cracked password to all clients in the current attacking room.
+     * @param password The cracked password to send.
+     */
     private void broadcastCrackedPassword(String password) {
         if (currentAttackingRoomId != null) {
             Message response = new Message();
@@ -104,6 +119,7 @@ public class RelayServer extends WebSocketServer {
     @Override
     public void onError(WebSocket conn, Exception ex) {
         ex.printStackTrace();
+        onStatusUpdate.accept("Server Error: " + ex.getMessage());
         if (conn != null) {
             removeConnectionFromAllRooms(conn);
         }
@@ -115,6 +131,11 @@ public class RelayServer extends WebSocketServer {
         onStatusUpdate.accept("Relay server started on port " + getPort());
     }
 
+    /**
+     * Adds a client's WebSocket connection to a specified room.
+     * @param conn The client's WebSocket connection.
+     * @param roomId The ID of the room to join.
+     */
     private void joinRoom(WebSocket conn, String roomId) {
         removeConnectionFromAllRooms(conn);
         rooms.computeIfAbsent(roomId, k -> Collections.newSetFromMap(new ConcurrentHashMap<>())).add(conn);
@@ -122,6 +143,12 @@ public class RelayServer extends WebSocketServer {
         onStatusUpdate.accept("Client joined room: " + roomId);
     }
 
+    /**
+     * Broadcasts a message to all clients in a room except the sender.
+     * @param sender The WebSocket connection of the message sender.
+     * @param roomId The room to broadcast to.
+     * @param message The message to send.
+     */
     private void broadcastToRoom(WebSocket sender, String roomId, String message) {
         Set<WebSocket> clients = rooms.get(roomId);
         if (clients != null) {
@@ -133,6 +160,10 @@ public class RelayServer extends WebSocketServer {
         }
     }
 
+    /**
+     * Removes a client's WebSocket connection from any room it might be in.
+     * @param conn The connection to remove.
+     */
     private void removeConnectionFromAllRooms(WebSocket conn) {
         for (Map.Entry<String, Set<WebSocket>> entry : rooms.entrySet()) {
             if (entry.getValue().remove(conn)) {
@@ -145,7 +176,9 @@ public class RelayServer extends WebSocketServer {
         }
     }
 
-    // Inner class for message deserialization
+    /**
+     * Inner class for deserializing incoming JSON messages.
+     */
     private static class Message {
         private String type;
         private String roomId;
@@ -153,7 +186,6 @@ public class RelayServer extends WebSocketServer {
         private String mode;
         private String payload;
 
-        // Getters and Setters
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
         public String getRoomId() { return roomId; }
