@@ -1,0 +1,82 @@
+/*
+ * Dark Theme for HashKitty
+ */
+.root {
+    -fx-base: #3C3F41; /* A dark grey for the base color */
+    -fx-background: #2B2B2B; /* A slightly darker background */
+    -fx-control-inner-background: #45494A; /* Background of text fields, etc. */
+    -fx-accent: #007ACC; /* A bright blue for accents (buttons, selections) */
+    -fx-default-button: #555555;
+    -fx-focus-color: -fx-accent;
+    -fx-faint-focus-color: -fx-accent;
+}
+
+/* Text and Labels */
+.label {
+    -fx-text-fill: #BBBBBB; /* Light grey text */
+}
+
+/* Buttons */
+.button {
+    -fx-text-fill: white;
+    -fx-background-color: -fx-default-button;
+    -fx-border-color: #555555;
+    -fx-border-radius: 3;
+}
+.button:hover {
+    -fx-background-color: #666666;
+}
+.button:pressed {
+    -fx-background-color: #777777;
+}
+
+/* Text Fields and Text Areas */
+.text-input {
+    -fx-text-fill: #E0E0E0; /* Light text for input */
+    -fx-background-color: -fx-control-inner-background;
+}
+
+/* Tab Pane */
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #2B2B2B;
+}
+.tab-pane .tab {
+    -fx-background-color: #3C3F41;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.tab-pane .tab:selected {
+    -fx-background-color: #45494A;
+}
+.tab .tab-label {
+    -fx-text-fill: #BBBBBB;
+}
+
+/* ComboBox */
+.combo-box .list-cell {
+    -fx-text-fill: white;
+}
+
+/* ListView */
+.list-view {
+    -fx-background-color: -fx-control-inner-background;
+}
+.list-cell {
+    -fx-text-fill: #BBBBBB;
+}
+.list-cell:filled:selected, .list-cell:filled:selected:focused {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+}
+.list-cell:filled:hover {
+    -fx-background-color: #555555;
+    -fx-text-fill: white;
+}
+
+/* ScrollPane */
+.scroll-pane {
+    -fx-background-color: -fx-control-inner-background;
+}
+.scroll-pane .viewport {
+    -fx-background-color: -fx-control-inner-background;
+}

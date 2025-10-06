@@ -1,46 +1,59 @@
 # Project Documentation
 
-This document provides an overview of the HashKitty project architecture, components, and setup instructions.
+This document provides a detailed overview of the HashKitty project architecture, components, and communication flow.
 
 ## Project Overview
 
-HashKitty is a cross-platform tool designed to provide a user-friendly interface for the powerful hash-cracking tool, `hashcat`. The project consists of two main components:
+HashKitty is a cross-platform tool designed to provide a user-friendly interface for the powerful hash-cracking tool, `hashcat`. The project consists of three main components that work together:
 
-1.  **Java Desktop Application:** A JavaFX-based application that serves as the main hub. It runs a relay server, manages `hashcat` processes, and provides a user interface for monitoring and control.
-2.  **Android Mobile Application:** A mobile client that allows users to connect to the desktop application, submit hashes for cracking, and view results remotely.
+1.  **Java Desktop Application (`hashkitty-java`):** The primary user interface and control center. It manages `hashcat` processes, remote sniffing sessions, and all application settings. It also launches the Go relay and connects to it as a client.
+2.  **Standalone Go Relay (`gokitty-relay`):** A lightweight, high-performance WebSocket relay server written in Go. Its sole purpose is to relay messages between clients that have joined the same session "room".
+3.  **Android Mobile Application (`app`):** A mobile client used to connect to the desktop application's session and send commands.
 
-## Architecture
+## Architecture & Communication Flow
 
-The system is designed around a client-server model facilitated by a WebSocket relay.
+The system's architecture ensures that the UI, relay logic, and cracking tools are all decoupled.
 
--   **Relay Server:** The Java desktop application includes a built-in WebSocket relay server. This server creates "rooms" based on a unique ID, allowing multiple clients (e.g., the desktop UI and one or more mobile apps) to join the same session and communicate in real-time.
--   **Communication Protocol:** Clients communicate by sending JSON-formatted messages over the WebSocket connection. Key message types include `join` (to enter a room) and `attack` (to submit a hash for cracking).
--   **Hashcat Integration:** The Java application manages `hashcat` as a separate command-line process. It constructs the appropriate commands, starts the process, and monitors its output for results.
+1.  **Startup:**
+    -   The user launches the `hashkitty-java` application.
+    -   The Java app immediately starts the `gokitty-relay` executable as a background process.
+    -   The Java app generates a unique room ID (e.g., `a1b2c3d4`).
+    -   The Java app creates an internal WebSocket client (`RelayClient`) and connects to its own local relay server at `ws://localhost:5001`.
+    -   Upon connecting, the `RelayClient` sends a "join" message to the relay with its unique room ID.
 
-## Setup and Running the Application
+2.  **Mobile Connection:**
+    -   The Java app displays a QR code containing the server's local network IP address and the unique room ID (e.g., `ws://192.168.1.100:5001/ws?roomId=a1b2c3d4`).
+    -   The user scans this QR code with the Android mobile app.
+    -   The Android app connects to the `gokitty-relay` server and sends its own "join" message with the same room ID.
+    -   Now, both the Java app and the Android app are in the same room on the relay server.
 
-### Prerequisites
+3.  **Task Execution (e.g., an Attack):**
+    -   The user initiates an attack from the Android app.
+    -   The Android app sends a JSON message of type "attack" to the relay server.
+    -   The relay server receives the message and broadcasts it to all *other* clients in the room. In this case, it sends the message to the `RelayClient` inside the Java application.
+    -   The `RelayClient` receives the "attack" message and triggers the `HashcatManager` to start the `hashcat` process.
+    -   When `hashcat` cracks a password, the `HashcatManager` notifies the `App`, which in turn tells the `RelayClient` to send a "cracked" message back through the relay, which is then received by the Android app.
 
--   **Java Development Kit (JDK):** Version 17 or higher.
--   **Hashcat:** Must be installed and available in the system's PATH.
--   **Gradle:** Used for building the Java application.
+## Setup and Running
 
-### Building and Running the Java Desktop App
+The setup is a two-step process:
 
-1.  Navigate to the `/app/hashkitty-java` directory.
-2.  Build the application using Gradle:
+1.  **Build the Go Relay:**
+    Compile the standalone relay server. The resulting executable must be placed inside the `/app/hashkitty-java/` directory.
     ```bash
-    gradle build
+    # Navigate to the Go relay directory
+    cd /app/gokitty-relay
+
+    # Build and place the executable
+    go build -o ../hashkitty-java/gokitty-relay ./cmd/gokitty-relay
     ```
-3.  Run the application:
+
+2.  **Run the Java Desktop App:**
+    With the relay executable in place, run the main application.
     ```bash
-    gradle run
+    # Navigate to the Java application directory
+    cd /app/hashkitty-java
+
+    # Run the application using the Gradle wrapper
+    ./gradlew run
     ```
-The application will start, display a QR code for the relay server, and be ready to accept connections from the mobile client.
-
-### Building the Android App
-
-1.  Open the `/app` directory in Android Studio.
-2.  Let Gradle sync the project.
-3.  Build and run the application on an Android device or emulator.
-4.  Use the "Connect" feature in the app to scan the QR code displayed on the desktop application.

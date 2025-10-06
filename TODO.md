@@ -1,21 +1,15 @@
 # Project TODO List
 
-This document outlines the future work planned for the HashKitty project.
+This document outlines potential future work for the HashKitty project. The core desktop application is now feature-complete based on the initial requirements.
 
 ## High Priority
-- **Full UI Parity:** The Java desktop application's UI must be expanded to include all features and screens present in the Android application, as specified in `AGENTS.md`.
-- **Implement Settings Screen:** Create the "Settings" screen in the Java application with functionality for managing remote connections, and importing/exporting configurations as `.hhk` files.
-- **Implement Learn Section:** Develop the "Learn" section to provide educational content on hashcat, hashtopolis, and general password cracking concepts.
-- **Advanced Attack Configuration:** Move beyond the hardcoded wordlist and allow users to configure different hashcat attack modes (e.g., mask, dictionary, brute-force) from the UI.
+- **Full Android Integration:** The final step of the universal relay plan is to compile the `gokitty-relay` Go code into a library and integrate it as a background service into the Android application. This was blocked by environment issues but remains a key goal.
+- **Enhanced File System Integration:** Expand the "Attack" tab UI to allow users to select hash files and hashcat rule files directly from the file system, in addition to the existing wordlist selector.
 
 ## Medium Priority
-- **File System Integration:** Implement a file explorer in the Java application to allow users to select local wordlists, rule files, and hash files.
-- **"Sniff" Screen Functionality:** Develop the "Sniff" screen for managing remote packet capture on devices like a Raspberry Pi.
-- **Direct Connection Mode:** Add the ability for the mobile app to connect directly to the desktop application without relying on the relay server.
-- **Robust Error Handling:** Improve error handling and provide more informative feedback to the user for both the client and server applications.
+- **Expanded Application Packaging:** The project currently includes a `.deb` installer for Linux. This could be expanded by creating native installers for Windows (`.msi`) and macOS (`.dmg`) using `jpackage`.
+- **Localization:** Add support for multiple languages to the JavaFX application using resource bundles. This would make the application more accessible to a global audience.
 
 ## Low Priority
-- **Application Packaging:** Create native installers/packages for the Java application for Windows, macOS, and Linux using `jpackage`.
-- **Code Refactoring and Cleanup:** Refactor the codebase to improve maintainability, and add more comprehensive inline documentation.
-- **Localization:** Add support for multiple languages in the UI.
-- **Theming:** Allow users to choose between light and dark themes for the application.
+- **UI/UX Polish:** Continue to refine the user interface and user experience based on feedback.
+- **Codebase Health:** Continue to refactor and improve the codebase as new features are added or requirements change.
