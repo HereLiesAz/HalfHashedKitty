@@ -1,9 +1,18 @@
-1. On the Attack screen, there's no visual cue that anything happened when I pressed attack. I'd also like to be able to manually type in the ip address of a hashcat or hashkitty server.
-2. On the Wordlist screen, there needs to be a file explorer that allows me to FIND the file on the pc, on the phone, or enter a web url.
-3. On the Mask screen, neither button does anything.
-4. Pi Control and PC Control need to be combined into a single interface that's smart enough to tell the difference between the two, if telling the difference is even necessary.
-5. Every single info dialog needs at least four times as much information on it.
-6. Lastly, there MUST be a Learn and a Settings AzMenuItem. The Learn screen should be able to teach a 13 year old what hashcat is, how it works, and how to use it, and do the same for hashtopolis. The Settings screen must have a list of saved remotes, an option to back them all up into a password protected .hhk file (which is a .zip file full of .json files with the extension renamed to .hhk), the option to save a remote session as a single json file, and of course that means including an option to load remote session json and .hhk files.
-7. It should be able to connect to either a relay or direct. Hashtopolis has its own screen.
-8. That reminds me, we need a new Sniff screen, which is what the rest of the Pi Control screen will turn into. On the sniff screen, phones that are capable of capturing pcap files with root and monitor mode are able to do exactly that. Or the user can connect to a raspberry pi to do those things, allowing the phone to manage remotely.
-9. Change "PC Connect" to simply "Connect" and allow the qr code scanner to connect to pc's and pi's alike.
+# Project Documentation Table of Contents
+
+This file serves as a central index for the project's documentation. All detailed information has been moved to the `/docs` directory for better organization.
+
+## Documentation Index
+
+-   [**INDEX.md**](./docs/INDEX.md): Main index for the project documentation.
+-   [**auth.md**](./docs/auth.md): Authentication-related information.
+-   [**screens.md**](./docs/screens.md): Details about the application's screens and their functionality.
+-   [**workflow.md**](./docs/workflow.md): Information about the development workflow.
+-   [**UI_UX.md**](./docs/UI_UX.md): General UI and UX requirements.
+-   [**performance.md**](./docs/performance.md): Performance-related guidelines and requirements.
+-   [**data_layer.md**](./docs/data_layer.md): Requirements for the application's data layer and connectivity.
+-   [**testing.md**](./docs/testing.md): Guidelines and requirements for testing.
+-   [**task_flow.md**](./docs/task_flow.md): Information about task flow and management.
+-   [**conduct.md**](./docs/conduct.md): Code of conduct for contributors.
+-   [**fauxpas.md**](./docs/fauxpas.md): Common mistakes and how to avoid them.
+-   [**misc.md**](./docs/misc.md): Miscellaneous documentation.
