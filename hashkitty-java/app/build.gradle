@@ -35,6 +35,9 @@ dependencies {
 
     // JSON Processing (Gson)
     implementation 'com.google.code.gson:gson:2.9.0'
+
+    // Zip file handling (for .hhk files)
+    implementation 'net.lingala.zip4j:zip4j:2.11.2'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
