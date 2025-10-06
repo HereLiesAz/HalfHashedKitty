@@ -19,3 +19,32 @@ This document outlines the future work planned for the HashKitty project.
 - **Code Refactoring and Cleanup:** Refactor the codebase to improve maintainability, and add more comprehensive inline documentation.
 - **Localization:** Add support for multiple languages in the UI.
 - **Theming:** Allow users to choose between light and dark themes for the application.
+
+## Future Feature Ideas / "Dream App" Integrations
+
+Based on an analysis of Hashcat and the broader security ecosystem, here are suggestions for features that would make this a true "dream app" for security professionals.
+
+### 1. Advanced Wordlist & Rule Management
+- **Wordlist Generation Suite:**
+  - **`CeWL` Integration:** Crawl target websites to generate custom wordlists.
+  - **`CUPP` Integration:** Generate wordlists based on a target's personal information.
+  - **`Mentalist` Integration:** Provide a graphical interface for creating complex, rule-based wordlists.
+- **Online Wordlist Intelligence:**
+  - Connect to online repositories like **WeakPass** or **Hashes.org** to download and manage massive, up-to-date wordlists.
+
+### 2. Intelligent Hash Identification & Analysis
+- **Automated Hash ID:** Integrate a tool like `hash-identifier` to automatically detect the hash type.
+- **Hash Input Normalization:** Automatically clean and format hash files from different sources.
+
+### 3. Expanded Cracking Methodologies
+- **Rainbow Table Integration:** Use rainbow tables (e.g., from Ophcrack) for legacy hashes as a first-pass attack.
+- **Cloud Cracking as a Service:** Integrate with cloud providers (AWS, GCP, Azure) to rent powerful GPU instances on-demand.
+
+### 4. Post-Cracking Analysis & Reporting
+- **Password Analytics Dashboard:** Display detailed statistics on cracked passwords (complexity, common patterns, reuse).
+- **Automated Report Generation:** Create professional PDF/HTML reports summarizing the audit.
+- **Credential Exposure Check:** Integrate with **Have I Been Pwned (HIBP)** to check if cracked credentials are in public breaches.
+
+### 5. Seamless Integration with the Security Ecosystem
+- **Direct Metasploit/John the Ripper Integration:** Allow seamless import of hashes from Metasploit databases or John the Ripper `.pot` files.
+- **PCAP File Analysis:** Enhance the "Sniff" feature by integrating **TShark** to automatically extract handshakes and hashes from `.pcap` files.
