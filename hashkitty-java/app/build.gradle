@@ -38,6 +38,9 @@ dependencies {
 
     // Zip file handling (for .hhk files)
     implementation 'net.lingala.zip4j:zip4j:2.11.2'
+
+    // SSH library for remote sniffing
+    implementation 'com.jcraft:jsch:0.1.55'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

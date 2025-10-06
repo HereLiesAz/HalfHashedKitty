@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.server.RelayServer;
+import hashkitty.java.sniffer.SniffManager;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
 import hashkitty.java.util.QRCodeUtil;
@@ -44,6 +45,7 @@ public class App extends Application {
     private TextField maskField;
     private VBox attackInputsContainer;
     private HashcatManager hashcatManager;
+    private SniffManager sniffManager;
     private Stage primaryStage;
     private final ObservableList<RemoteConnection> remoteConnections = FXCollections.observableArrayList();
 
@@ -56,15 +58,17 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
         hashcatManager = new HashcatManager(this::displayCrackedPassword);
+        // SniffManager will be initialized later, when its output TextArea is created
 
         BorderPane mainLayout = new BorderPane();
         mainLayout.setPadding(new Insets(10));
 
         TabPane tabPane = new TabPane();
         Tab attackTab = new Tab("Attack", createAttackConfigBox());
+        Tab sniffTab = new Tab("Sniff", createSniffBox());
         Tab settingsTab = new Tab("Settings", createSettingsBox());
         Tab learnTab = new Tab("Learn", createLearnBox());
-        tabPane.getTabs().addAll(attackTab, settingsTab, learnTab);
+        tabPane.getTabs().addAll(attackTab, sniffTab, settingsTab, learnTab);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         mainLayout.setCenter(tabPane);
 
@@ -76,6 +80,7 @@ public class App extends Application {
 
         primaryStage.setOnCloseRequest(e -> {
             hashcatManager.stopCracking();
+            if (sniffManager != null) sniffManager.stopSniffing();
             Platform.exit();
             System.exit(0);
         });
@@ -198,55 +203,73 @@ public class App extends Application {
         return settingsLayout;
     }
 
+    private VBox createSniffBox() {
+        VBox sniffLayout = new VBox(20);
+        sniffLayout.setPadding(new Insets(20));
+        sniffLayout.setAlignment(Pos.TOP_CENTER);
+
+        Label titleLabel = new Label("Remote Packet Sniffing");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+
+        HBox remoteSelectionBox = new HBox(10);
+        remoteSelectionBox.setAlignment(Pos.CENTER);
+        Label remoteLabel = new Label("Target Remote:");
+        ComboBox<RemoteConnection> remoteSelector = new ComboBox<>(remoteConnections);
+        remoteSelectionBox.getChildren().addAll(remoteLabel, remoteSelector);
+
+        TextArea sniffOutput = new TextArea();
+        sniffOutput.setEditable(false);
+        sniffOutput.setPromptText("Sniffing output will appear here...");
+        sniffOutput.setPrefHeight(200);
+
+        // Initialize SniffManager here, passing the UI update callback
+        sniffManager = new SniffManager(output -> Platform.runLater(() -> sniffOutput.appendText(output)));
+
+        Button startSniffButton = new Button("Start Sniffing");
+        Button stopSniffButton = new Button("Stop Sniffing");
+        startSniffButton.setOnAction(e -> {
+            RemoteConnection selected = remoteSelector.getValue();
+            if (selected == null) {
+                sniffOutput.appendText("Please select a remote target first.\n");
+                return;
+            }
+            // Prompt for password
+            TextInputDialog passwordDialog = new TextInputDialog();
+            passwordDialog.setTitle("SSH Password");
+            passwordDialog.setHeaderText("Enter password for " + selected.getConnectionString());
+            passwordDialog.setContentText("Password:");
+            Optional<String> result = passwordDialog.showAndWait();
+            result.ifPresent(password -> sniffManager.startSniffing(selected, password));
+        });
+        stopSniffButton.setOnAction(e -> sniffManager.stopSniffing());
+
+        HBox controlButtons = new HBox(20, startSniffButton, stopSniffButton);
+        controlButtons.setAlignment(Pos.CENTER);
+
+        sniffLayout.getChildren().addAll(titleLabel, remoteSelectionBox, controlButtons, new Label("Output:"), sniffOutput);
+        return sniffLayout;
+    }
+
     private ScrollPane createLearnBox() {
         VBox content = new VBox(15);
         content.setPadding(new Insets(20));
-
-        // --- Section 1: What is a Hash? ---
         Label hashTitle = new Label("What is a Hash?");
         hashTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Text hashText = new Text(
-            "Imagine you have a secret message. A 'hash function' is like a magic machine that turns your message into a secret code. " +
-            "This code is called a 'hash'.\n\n" +
-            "Key things about hashes:\n" +
-            "1. It's always the same length, no matter how long your message is.\n" +
-            "2. The same message ALWAYS creates the same hash.\n" +
-            "3. You can't turn the hash back into the original message. It's a one-way street!\n\n" +
-            "Computers use hashes to store passwords safely. Instead of saving your actual password, they save its hash. When you log in, they hash the password you typed and check if the hashes match."
-        );
+        Text hashText = new Text("Imagine you have a secret message. A 'hash function' is like a magic machine that turns your message into a secret code. This code is called a 'hash'.\n\nKey things about hashes:\n1. It's always the same length, no matter how long your message is.\n2. The same message ALWAYS creates the same hash.\n3. You can't turn the hash back into the original message. It's a one-way street!\n\nComputers use hashes to store passwords safely. Instead of saving your actual password, they save its hash. When you log in, they hash the password you typed and check if the hashes match.");
         hashText.setWrappingWidth(500);
-
-        // --- Section 2: What is Hashcat? ---
         Label hashcatTitle = new Label("What is Hashcat?");
         hashcatTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Text hashcatText = new Text(
-            "Hashcat is a famous computer program known as the world's fastest 'password cracker'.\n\n" +
-            "If you have a hash but don't know the original password, you can use hashcat to try and find it. It's like having a super-fast robot that can try millions or even billions of password guesses per second until it finds one that creates the matching hash."
-        );
+        Text hashcatText = new Text("Hashcat is a famous computer program known as the world's fastest 'password cracker'.\n\nIf you have a hash but don't know the original password, you can use hashcat to try and find it. It's like having a super-fast robot that can try millions or even billions of password guesses per second until it finds one that creates the matching hash.");
         hashcatText.setWrappingWidth(500);
-
-        // --- Section 3: How does Hashcat work? ---
         Label howTitle = new Label("How Does Hashcat Work?");
         howTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Text howText = new Text(
-            "Hashcat uses a few main methods (or 'attack modes'):\n\n" +
-            "1. Dictionary Attack: Hashcat takes a huge list of words (a 'dictionary' or 'wordlist') and hashes every single one to see if it finds a match. This is the most common type of attack.\n\n" +
-            "2. Brute-Force (Mask) Attack: Hashcat tries every possible combination of letters, numbers, and symbols. You can give it a pattern (a 'mask'), like '????' for any four-letter password, or '?d?d?d?d' for any four-digit number.\n\n" +
-            "3. Hybrid Attack: A mix of both! It might take a word from a dictionary and add numbers or symbols to the end."
-        );
+        Text howText = new Text("Hashcat uses a few main methods (or 'attack modes'):\n\n1. Dictionary Attack: Hashcat takes a huge list of words (a 'dictionary' or 'wordlist') and hashes every single one to see if it finds a match. This is the most common type of attack.\n\n2. Brute-Force (Mask) Attack: Hashcat tries every possible combination of letters, numbers, and symbols. You can give it a pattern (a 'mask'), like '????' for any four-letter password, or '?d?d?d?d' for any four-digit number.\n\n3. Hybrid Attack: A mix of both! It might take a word from a dictionary and add numbers or symbols to the end.");
         howText.setWrappingWidth(500);
-
-        // --- Section 4: What is Hashtopolis? ---
         Label hashtopolisTitle = new Label("What is Hashtopolis?");
         hashtopolisTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Text hashtopolisText = new Text(
-            "Imagine you have a really hard hash to crack, and one computer isn't fast enough. Hashtopolis is a tool that lets you link lots of computers together to work on the same problem at the same time!\n\n" +
-            "It's like having a whole team of robots all trying to guess the password at once. It's a 'distributed cracking' system that manages all the computers (agents) and gives them jobs to do, making the process much, much faster."
-        );
+        Text hashtopolisText = new Text("Imagine you have a really hard hash to crack, and one computer isn't fast enough. Hashtopolis is a tool that lets you link lots of computers together to work on the same problem at the same time!\n\nIt's like having a whole team of robots all trying to guess the password at once. It's a 'distributed cracking' system that manages all the computers (agents) and gives them jobs to do, making the process much, much faster.");
         hashtopolisText.setWrappingWidth(500);
-
         content.getChildren().addAll(hashTitle, hashText, new Separator(), hashcatTitle, hashcatText, new Separator(), howTitle, howText, new Separator(), hashtopolisTitle, hashtopolisText);
-
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
         return scrollPane;
@@ -257,13 +280,11 @@ public class App extends Application {
         fileChooser.setTitle("Export Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
         File file = fileChooser.showSaveDialog(primaryStage);
-
         if (file != null) {
             TextInputDialog passwordDialog = new TextInputDialog();
             passwordDialog.setTitle("Set Export Password");
             passwordDialog.setHeaderText("Enter a password to protect the .hhk file.");
             passwordDialog.setContentText("Password:");
-
             Optional<String> result = passwordDialog.showAndWait();
             result.ifPresent(password -> {
                 try {
@@ -282,13 +303,11 @@ public class App extends Application {
         fileChooser.setTitle("Import Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
         File file = fileChooser.showOpenDialog(primaryStage);
-
         if (file != null) {
             TextInputDialog passwordDialog = new TextInputDialog();
             passwordDialog.setTitle("Enter Import Password");
             passwordDialog.setHeaderText("Enter the password for " + file.getName());
             passwordDialog.setContentText("Password:");
-
             Optional<String> result = passwordDialog.showAndWait();
             result.ifPresent(password -> {
                 try {
