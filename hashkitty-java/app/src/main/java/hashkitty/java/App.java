@@ -1,8 +1,8 @@
 package hashkitty.java;
 
-import com.google.gson.Gson;
 import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.model.RemoteConnection;
+import hashkitty.java.server.DirectServer;
 import hashkitty.java.server.RelayServer;
 import hashkitty.java.sniffer.SniffManager;
 import hashkitty.java.util.HhkUtil;
@@ -23,7 +23,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import net.lingala.zip4j.exception.ZipException;
@@ -37,6 +36,7 @@ import java.util.Optional;
 public class App extends Application {
 
     private static final int RELAY_PORT = 5001;
+    private static final int DIRECT_PORT = 5002;
     private static final int QR_CODE_SIZE = 150;
 
     private TextArea statusLog;
@@ -49,6 +49,10 @@ public class App extends Application {
     private Stage primaryStage;
     private final ObservableList<RemoteConnection> remoteConnections = FXCollections.observableArrayList();
 
+    private RelayServer relayServer;
+    private DirectServer directServer;
+    private VBox connectionBox;
+
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -57,11 +61,15 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("pwn-pi", "pi@192.168.1.10"));
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
-        hashcatManager = new HashcatManager(this::displayCrackedPassword);
-        // SniffManager will be initialized later, when its output TextArea is created
+        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus);
 
         BorderPane mainLayout = new BorderPane();
         mainLayout.setPadding(new Insets(10));
+
+        VBox serverControlBox = createServerControlBox();
+        this.connectionBox = createConnectionBox();
+        VBox topVBox = new VBox(15, serverControlBox, this.connectionBox);
+        mainLayout.setTop(topVBox);
 
         TabPane tabPane = new TabPane();
         Tab attackTab = new Tab("Attack", createAttackConfigBox());
@@ -72,32 +80,75 @@ public class App extends Application {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         mainLayout.setCenter(tabPane);
 
-        VBox bottomBox = new VBox(20, createResultsBox(), createConnectionBox());
-        mainLayout.setBottom(bottomBox);
+        mainLayout.setBottom(createResultsBox());
 
-        primaryStage.setScene(new Scene(mainLayout, 600, 800));
+        updateServerAndQRCode("Relay");
+
+        primaryStage.setScene(new Scene(mainLayout, 600, 850));
         primaryStage.show();
 
         primaryStage.setOnCloseRequest(e -> {
-            hashcatManager.stopCracking();
-            if (sniffManager != null) sniffManager.stopSniffing();
+            stopAllServices();
             Platform.exit();
             System.exit(0);
         });
     }
 
-    private VBox createConnectionBox() {
-        ImageView qrCodeView = new ImageView();
-        Label connectionLabel = new Label("Initializing...");
+    private void stopAllServices() {
+        hashcatManager.stopCracking();
+        if (sniffManager != null) sniffManager.stopSniffing();
+        if (relayServer != null) try { relayServer.stop(100); } catch (Exception ex) { ex.printStackTrace(); }
+        if (directServer != null) try { directServer.stop(100); } catch (Exception ex) { ex.printStackTrace(); }
+    }
+
+    private VBox createServerControlBox() {
+        VBox box = new VBox(10);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(10));
+        box.setStyle("-fx-border-color: lightgray; -fx-border-width: 1;");
+        ComboBox<String> serverModeSelector = new ComboBox<>();
+        serverModeSelector.getItems().addAll("Relay", "Direct");
+        serverModeSelector.setValue("Relay");
+        serverModeSelector.valueProperty().addListener((obs, oldVal, newVal) -> updateServerAndQRCode(newVal));
+        box.getChildren().addAll(new Label("Server Mode:"), serverModeSelector);
+        return box;
+    }
+
+    private void updateServerAndQRCode(String mode) {
+        if (relayServer != null) try { relayServer.stop(100); } catch (Exception e) { e.printStackTrace(); }
+        if (directServer != null) try { directServer.stop(100); } catch (Exception e) { e.printStackTrace(); }
+        relayServer = null;
+        directServer = null;
+
+        if ("Relay".equals(mode)) {
+            relayServer = new RelayServer(RELAY_PORT, this::updateStatus, this::displayCrackedPassword);
+            relayServer.start();
+        } else {
+            directServer = new DirectServer(DIRECT_PORT, this::updateStatus, this::displayCrackedPassword);
+            directServer.start();
+        }
+
+        ImageView qrCodeView = (ImageView) connectionBox.lookup("#qrCodeView");
+        Label connectionLabel = (Label) connectionBox.lookup("#connectionLabel");
+        int port = "Relay".equals(mode) ? RELAY_PORT : DIRECT_PORT;
         String ipAddress = NetworkUtil.getLocalIpAddress();
+
         if (ipAddress != null) {
-            String connectionString = "ws://" + ipAddress + ":" + RELAY_PORT;
+            String connectionString = "ws://" + ipAddress + ":" + port;
             qrCodeView.setImage(QRCodeUtil.generateQRCodeImage(connectionString, QR_CODE_SIZE, QR_CODE_SIZE));
-            connectionLabel.setText("Relay running at: " + connectionString);
+            connectionLabel.setText(mode + " server running at: " + connectionString);
         } else {
             connectionLabel.setText("Could not determine local IP address.");
+            qrCodeView.setImage(null);
         }
-        VBox box = new VBox(10, new Label("Mobile Client Connection"), qrCodeView, connectionLabel);
+    }
+
+    private VBox createConnectionBox() {
+        ImageView qrCodeView = new ImageView();
+        qrCodeView.setId("qrCodeView");
+        Label connectionLabel = new Label("Initializing...");
+        connectionLabel.setId("connectionLabel");
+        VBox box = new VBox(10, new Label("Connection Info"), qrCodeView, connectionLabel);
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(10));
         box.setStyle("-fx-border-color: lightgray; -fx-border-width: 1;");
@@ -147,10 +198,11 @@ public class App extends Application {
                     updateStatus("Error: Hash, Mode, and Wordlist/Mask cannot be empty.");
                     return;
                 }
-                hashcatManager.startCracking(hash, mode, attackMode, target);
                 updateStatus("Starting " + attackMode + " attack...");
+                hashcatManager.startCracking(hash, mode, attackMode, target);
             } catch (IOException ex) {
-                updateStatus("Error starting hashcat: " + ex.getMessage());
+                // This catch block is now more effective because startCracking provides a specific error message.
+                updateStatus("Error starting hashcat process: " + ex.getMessage());
                 ex.printStackTrace();
             }
         });
@@ -222,7 +274,6 @@ public class App extends Application {
         sniffOutput.setPromptText("Sniffing output will appear here...");
         sniffOutput.setPrefHeight(200);
 
-        // Initialize SniffManager here, passing the UI update callback
         sniffManager = new SniffManager(output -> Platform.runLater(() -> sniffOutput.appendText(output)));
 
         Button startSniffButton = new Button("Start Sniffing");
@@ -233,7 +284,6 @@ public class App extends Application {
                 sniffOutput.appendText("Please select a remote target first.\n");
                 return;
             }
-            // Prompt for password
             TextInputDialog passwordDialog = new TextInputDialog();
             passwordDialog.setTitle("SSH Password");
             passwordDialog.setHeaderText("Enter password for " + selected.getConnectionString());
@@ -406,15 +456,5 @@ public class App extends Application {
             crackedPasswordLabel.setText("Cracked Password: " + password);
             updateStatus("SUCCESS: Password found! -> " + password);
         });
-    }
-
-    @Override
-    public void init() {
-        Thread relayThread = new Thread(() -> {
-            RelayServer server = new RelayServer(RELAY_PORT, this::updateStatus, this::displayCrackedPassword);
-            server.start();
-        });
-        relayThread.setDaemon(true);
-        relayThread.start();
     }
 }

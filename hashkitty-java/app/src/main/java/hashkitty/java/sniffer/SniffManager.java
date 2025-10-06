@@ -18,7 +18,7 @@ public class SniffManager {
 
     public void startSniffing(RemoteConnection connection, String password) {
         if (session != null && session.isConnected()) {
-            onOutput.accept("A session is already active. Please stop it first.");
+            onOutput.accept("Error: A session is already active. Please stop it first.");
             return;
         }
 
@@ -26,35 +26,34 @@ public class SniffManager {
             try {
                 String[] connParts = connection.getConnectionString().split("@");
                 if (connParts.length != 2) {
-                    onOutput.accept("Invalid connection string format. Expected user@host.");
+                    onOutput.accept("Error: Invalid connection string format. Expected user@host.");
                     return;
                 }
                 String user = connParts[0];
                 String host = connParts[1];
 
                 JSch jsch = new JSch();
+                onOutput.accept("Initializing SSH session for " + connection.getConnectionString() + "...");
                 session = jsch.getSession(user, host, 22);
                 session.setPassword(password);
 
-                // For testing purposes, accept all host keys.
                 // In a real application, you'd want to manage known_hosts.
                 session.setConfig("StrictHostKeyChecking", "no");
 
                 onOutput.accept("Connecting to " + host + "...");
                 session.connect(30000); // 30-second timeout
-                onOutput.accept("Connection established.");
+                onOutput.accept("Connection established successfully.");
 
-                // Example command: run tcpdump to capture packets.
-                // This command would need to be adapted for the target system (e.g., using airodump-ng for WiFi).
+                // This command likely requires sudo. A better implementation would handle this.
                 String command = "sudo tcpdump -i wlan0 -l -U";
+                onOutput.accept("Executing remote command: " + command);
 
                 channel = (ChannelExec) session.openChannel("exec");
                 channel.setCommand(command);
                 channel.setInputStream(null);
-                channel.setErrStream(System.err);
 
                 InputStream in = channel.getInputStream();
-                channel.connect();
+                channel.connect(5000); // 5-second timeout for channel connection
                 onOutput.accept("Sniffing process started on remote host.");
 
                 byte[] tmp = new byte[1024];
@@ -66,16 +65,30 @@ public class SniffManager {
                     }
                     if (channel.isClosed()) {
                         if (in.available() > 0) continue;
-                        onOutput.accept("Sniffing process finished with exit code: " + channel.getExitStatus());
+                        int exitStatus = channel.getExitStatus();
+                        String exitMessage = "Sniffing process finished with exit code: " + exitStatus;
+                        if (exitStatus != 0) {
+                            exitMessage += ". (This could be due to permissions issues, e.g., needing sudo password, or an invalid interface).";
+                        }
+                        onOutput.accept(exitMessage);
                         break;
                     }
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 }
             } catch (JSchException e) {
-                onOutput.accept("SSH Error: " + e.getMessage());
+                String errorMessage = e.getMessage();
+                if (errorMessage.contains("Auth fail")) {
+                    onOutput.accept("SSH Error: Authentication failed. Please check your password.");
+                } else if (errorMessage.contains("UnknownHostException")) {
+                    onOutput.accept("SSH Error: Unknown host. Could not resolve " + connection.getConnectionString());
+                } else if (errorMessage.contains("Connection timed out")) {
+                    onOutput.accept("SSH Error: Connection timed out. Check host address and network.");
+                } else {
+                    onOutput.accept("SSH Error: " + errorMessage);
+                }
                 e.printStackTrace();
             } catch (Exception e) {
-                onOutput.accept("Error: " + e.getMessage());
+                onOutput.accept("An unexpected error occurred: " + e.getMessage());
                 e.printStackTrace();
             } finally {
                 stopSniffing();

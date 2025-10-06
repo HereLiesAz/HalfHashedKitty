@@ -11,78 +11,90 @@ public class HashcatManager {
 
     private Process hashcatProcess;
     private final Consumer<String> onCrackedPassword;
+    private final Consumer<String> onError;
 
-    public HashcatManager(Consumer<String> onCrackedPassword) {
+    public HashcatManager(Consumer<String> onCrackedPassword, Consumer<String> onError) {
         this.onCrackedPassword = onCrackedPassword;
+        this.onError = onError;
     }
 
     public void startCracking(String hash, String mode, String attackMode, String target) throws IOException {
         if (hashcatProcess != null && hashcatProcess.isAlive()) {
-            System.out.println("A hashcat process is already running.");
+            onError.accept("A hashcat process is already running.");
             return;
         }
 
-        // Construct the hashcat command based on the attack mode
         List<String> command = new ArrayList<>();
         command.add("hashcat");
         command.add("-m");
         command.add(mode);
-        command.add("--potfile-disable"); // Potfiles store cracked hashes, disabling for simplicity
+        command.add("--potfile-disable");
 
         if ("Dictionary".equalsIgnoreCase(attackMode)) {
             command.add("-a");
-            command.add("0"); // Dictionary attack mode
+            command.add("0");
         } else if ("Mask".equalsIgnoreCase(attackMode)) {
             command.add("-a");
-            command.add("3"); // Mask attack mode (aka brute-force)
+            command.add("3");
         } else {
+            // This case should ideally not be reached due to UI constraints
             throw new IllegalArgumentException("Unsupported attack mode: " + attackMode);
         }
 
-        command.add(hash);      // The hash to crack
-        command.add(target);    // The wordlist file or mask
+        command.add(hash);
+        command.add(target);
 
         ProcessBuilder pb = new ProcessBuilder(command);
-
-        // Redirect error stream to output stream for easier monitoring
         pb.redirectErrorStream(true);
 
-        // Start the process
-        hashcatProcess = pb.start();
+        try {
+            hashcatProcess = pb.start();
+        } catch (IOException e) {
+            // This is a common error, e.g., hashcat not found in PATH
+            onError.accept("Failed to start hashcat. Is it installed and in your system's PATH?");
+            throw e; // Re-throw to be caught by the App's UI logic
+        }
+
         System.out.println("Hashcat process started with command: " + String.join(" ", command));
 
-        // Read the output of the process in a new thread
         new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(hashcatProcess.getInputStream()))) {
                 String line;
+                boolean found = false;
                 while ((line = reader.readLine()) != null) {
                     System.out.println("hashcat: " + line); // Log all output for debugging
-                    // A simple way to check for a cracked password in the output
+
                     if (line.startsWith(hash + ":")) {
                         String[] parts = line.split(":", 2);
                         if (parts.length > 1) {
                             onCrackedPassword.accept(parts[1]);
+                            found = true;
                         }
                     }
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    hashcatProcess.waitFor();
-                    System.out.println("Hashcat process finished.");
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    e.printStackTrace();
+
+                int exitCode = hashcatProcess.waitFor();
+                System.out.println("Hashcat process finished with exit code: " + exitCode);
+                if (exitCode != 0 && !found) {
+                     onError.accept("Hashcat exited with error code " + exitCode + ". Check hash, mode, and target.");
                 }
+
+            } catch (IOException e) {
+                onError.accept("Error reading hashcat output: " + e.getMessage());
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                onError.accept("Hashcat process was interrupted.");
+                e.printStackTrace();
             }
         }).start();
     }
 
     public void stopCracking() {
         if (hashcatProcess != null && hashcatProcess.isAlive()) {
-            hashcatProcess.destroyForcibly(); // Use destroyForcibly for a more immediate stop
-            System.out.println("Hashcat process stopped.");
+            hashcatProcess.destroyForcibly();
+            System.out.println("Hashcat process stopped by user.");
+            onError.accept("Attack stopped by user.");
         }
     }
 }
