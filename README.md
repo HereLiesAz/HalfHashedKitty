@@ -12,7 +12,7 @@ This new architecture separates the user interface from the relay server, creati
 
 The system has three main components that work in concert:
 
-1.  **The Java Desktop Application (`hashkitty-java`):** The main control center. It provides the UI for managing `hashcat` attacks, remote sniffing, and application settings. It also launches and manages the Go relay process and acts as a client to it.
+1.  **The Java Desktop Application (`hashkitty-java`):** The main control center. It provides the UI for managing `hashcat` attacks, remote sniffing, application settings, and connecting to Hashtopolis. It also launches and manages the Go relay process and acts as a client to it.
 2.  **The Standalone Go Relay (`gokitty-relay`):** A high-performance, standalone WebSocket relay server. Its sole job is to pass messages between clients that have joined the same "room".
 3.  **The Android App:** The mobile client used to connect to your desktop setup. It joins a specific room on the relay server to communicate with the desktop application.
 
@@ -65,13 +65,24 @@ Upon starting, the JavaFX application will launch the Go relay, connect to it, a
 
 ## How to Use
 
-### Local Attacks (Desktop App)
+### Connecting to the Relay
+
+By default, the desktop application starts its own local relay server. Your mobile app can connect to this by scanning the QR code.
+
+If you are running the `gokitty-relay` server on a different machine (e.g., a Raspberry Pi or a cloud server), you can connect to it manually:
+1.  In the desktop app, find the "Mobile Connection" box.
+2.  Enter the full WebSocket address of your remote relay (e.g., `ws://192.168.1.50:5001`).
+3.  Click **"Connect"**. The QR code will update to point to your remote relay.
+
+### Running an Attack
 
 1.  Navigate to the **Attack** tab.
-2.  Use the **"..."** buttons to select your **Hash File**, **Wordlist**, and an optional **Rule File**.
-3.  Enter the appropriate **Hash Mode** for your hashes (e.g., `22000` for WPA2).
-4.  Select your **Attack Mode** ("Dictionary" or "Mask").
-5.  Click **"Start Local Attack"**. Monitor the status log for progress.
+2.  Fill in the **Hash File** and **Hash Mode**.
+3.  For a **Dictionary Attack**, you can either:
+    *   Click the **"..."** button to select a **local wordlist file**.
+    *   Or, paste a URL into the **Wordlist URL** field to download a wordlist from the web.
+4.  For a **Mask Attack**, enter your mask. You can use the helper buttons (`?l`, `?u`, `?d`, etc.) to build the mask string.
+5.  Click **"Start Local Attack"**. The configuration options will be disabled while the attack is running. Monitor the status log for progress.
 
 ### Remote Attacks (Mobile App)
 

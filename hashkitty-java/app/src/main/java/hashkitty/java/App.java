@@ -1,6 +1,8 @@
 package hashkitty.java;
 
 import hashkitty.java.hashcat.HashcatManager;
+import hashkitty.java.hashtopolis.HashtopolisClient;
+import hashkitty.java.model.HashtopolisTask;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.relay.RelayClient;
 import hashkitty.java.relay.RelayProcessManager;
@@ -18,6 +20,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -440,26 +443,55 @@ public class App extends Application {
         connectionGrid.add(apiKeyField, 1, 1);
 
         Button connectButton = new Button("Connect");
-        // TODO: Implement connection logic
-
         HBox connectionBox = new HBox(20, connectionGrid, connectButton);
         connectionBox.setAlignment(Pos.CENTER_LEFT);
 
         // --- Task Table ---
-        TableView<Object> taskTable = new TableView<>();
+        TableView<HashtopolisTask> taskTable = new TableView<>();
         taskTable.setPlaceholder(new Label("Not connected to Hashtopolis server."));
 
-        TableColumn<Object, Integer> idCol = new TableColumn<>("ID");
-        TableColumn<Object, String> nameCol = new TableColumn<>("Name");
-        TableColumn<Object, String> hashTypeCol = new TableColumn<>("Hash Type");
-        TableColumn<Object, String> statusCol = new TableColumn<>("Status");
+        TableColumn<HashtopolisTask, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("taskId"));
 
-        taskTable.getColumns().addAll(idCol, nameCol, hashTypeCol, statusCol);
+        TableColumn<HashtopolisTask, String> nameCol = new TableColumn<>("Name");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("taskName"));
+
+        TableColumn<HashtopolisTask, String> hashlistCol = new TableColumn<>("Hashlist");
+        hashlistCol.setCellValueFactory(new PropertyValueFactory<>("hashlistAlias"));
+
+        taskTable.getColumns().addAll(idCol, nameCol, hashlistCol);
         taskTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         // --- Status Label ---
         Label statusLabel = new Label("Status: Not Connected");
         statusLabel.setStyle("-fx-font-weight: bold;");
+
+        connectButton.setOnAction(e -> {
+            String serverUrl = serverUrlField.getText();
+            String apiKey = apiKeyField.getText();
+
+            if (serverUrl == null || serverUrl.trim().isEmpty() || apiKey == null || apiKey.trim().isEmpty()) {
+                statusLabel.setText("Status: URL and API Key cannot be empty.");
+                return;
+            }
+
+            statusLabel.setText("Status: Connecting...");
+
+            // Perform network operation on a background thread
+            new Thread(() -> {
+                try {
+                    HashtopolisClient client = new HashtopolisClient();
+                    List<HashtopolisTask> tasks = client.getTasks(serverUrl, apiKey);
+                    Platform.runLater(() -> {
+                        taskTable.setItems(FXCollections.observableArrayList(tasks));
+                        statusLabel.setText("Status: Connected. Fetched " + tasks.size() + " tasks.");
+                    });
+                } catch (IOException ex) {
+                    Platform.runLater(() -> statusLabel.setText("Status: Error - " + ex.getMessage()));
+                    ex.printStackTrace();
+                }
+            }).start();
+        });
 
         mainLayout.getChildren().addAll(connectionBox, new Separator(), new Label("Tasks"), taskTable, statusLabel);
         VBox.setVgrow(taskTable, javafx.scene.layout.Priority.ALWAYS);

@@ -35,6 +35,9 @@ dependencies {
 
     // SSH library for remote sniffing
     implementation 'com.jcraft:jsch:0.1.55'
+
+    // HTTP Client for API requests
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
 }
 
 java {
