@@ -12,7 +12,7 @@ This new architecture separates the user interface from the relay server, creati
 
 The system has three main components that work in concert:
 
-1.  **The Java Desktop Application (`hashkitty-java`):** The main control center. It provides the UI for managing `hashcat` attacks, remote sniffing, and application settings. It also launches and manages the Go relay process and acts as a client to it.
+1.  **The Java Desktop Application (`hashkitty-java`):** The main control center. It provides a rich UI for managing `hashcat` attacks with advanced options, remote sniffing, application settings, and connecting to Hashtopolis. It also features an automated setup process to help install dependencies. The app can launch and manage the Go relay process or connect to a remote one.
 2.  **The Standalone Go Relay (`gokitty-relay`):** A high-performance, standalone WebSocket relay server. Its sole job is to pass messages between clients that have joined the same "room".
 3.  **The Android App:** The mobile client used to connect to your desktop setup. It joins a specific room on the relay server to communicate with the desktop application.
 
@@ -20,65 +20,54 @@ The system has three main components that work in concert:
 
 ## Setup and Installation
 
-### Step 0: Prerequisites
+The desktop application features an automated setup process to simplify dependency installation.
 
-Before you begin, make sure you have the following software installed:
+### Step 1: Automated Setup (Desktop App)
 
--   **Java Development Kit (JDK):** Version 17 or higher.
--   **Go:** Version 1.18 or higher (required to build the relay).
--   **Hashcat:** Must be installed and accessible from your system's PATH. For GPU cracking, ensure you have the correct drivers installed (see the "Hashcat Setup" tab in the application for guidance).
+1.  Run the Java desktop application: `cd /app/hashkitty-java && ./gradlew run`
+2.  Navigate to the **Setup** tab.
+3.  Click **"Download & Unpack Hashcat"**. This will automatically download the latest version of Hashcat and unpack it into a `hashcat` directory in your user's home folder. The application will provide the full path upon completion.
+4.  **Add Hashcat to your system's PATH.** This is a manual step that is required for the application to find the `hashcat` executable.
+5.  Use the other buttons on the Setup screen to open the official download pages for your GPU drivers (NVIDIA, AMD, or Intel). Driver installation must be done manually to ensure you select the correct version for your specific hardware.
 
-### Step 1: Build the Standalone Go Relay
+### Step 2: Build the Go Relay (Optional)
 
-First, you need to compile the relay server. The output executable must be placed in the `hashkitty-java` directory.
+If you plan to use the relay server on a machine other than your local desktop, you will need to build it from source.
 
 ```bash
 # Navigate to the Go relay directory
 cd /app/gokitty-relay
-
-# Build the relay and place it in the Java app's directory
-# (Adjust the output name if you are on Windows, e.g., gokitty-relay.exe)
-go build -o ../hashkitty-java/gokitty-relay ./cmd/gokitty-relay
+# Build the relay
+go build ./cmd/gokitty-relay
 ```
-For more detailed cross-compilation instructions (e.g., for Raspberry Pi), see `gokitty-relay/BUILD.md`.
-
-### Step 2: Build and Run the Java Application
-
-With the relay executable in place, you can now run the main desktop application using the Gradle wrapper.
-
-```bash
-# Navigate to the Java application directory
-cd /app/hashkitty-java
-
-# Use the Gradle wrapper to run the application
-./gradlew run
-```
-Upon starting, the JavaFX application will launch the Go relay, connect to it, and display a QR code.
 
 ### Step 3: Set up the Android Application
 
 1.  Open the project's root directory (`/app`) in Android Studio.
 2.  Build and run the application on an Android device or an emulator.
-3.  Scan the QR code displayed in the Java desktop application to connect.
 
 ---
 
 ## How to Use
 
-### Local Attacks (Desktop App)
+### Connecting the Mobile App
+
+By default, the desktop application starts its own local relay server. Your mobile app can connect to this by scanning the QR code in the "Mobile Connection" box.
+
+You can also connect to a remote relay server or use a direct connection for local networks using the options in the "Mobile Connection" box.
+
+### Running an Attack
 
 1.  Navigate to the **Attack** tab.
-2.  Use the **"..."** buttons to select your **Hash File**, **Wordlist**, and an optional **Rule File**.
-3.  Enter the appropriate **Hash Mode** for your hashes (e.g., `22000` for WPA2).
-4.  Select your **Attack Mode** ("Dictionary" or "Mask").
-5.  Click **"Start Local Attack"**. Monitor the status log for progress.
+2.  Fill in the **Hash File** and **Hash Mode**.
+3.  For a **Dictionary Attack**, you can either use a local wordlist file or paste a URL to a wordlist.
+4.  For a **Mask Attack**, use the helper buttons (`?l`, `?u`, `?d`, etc.) to build the mask string.
+5.  Configure **Advanced Options** like `--force`, optimized kernels (`-O`), and workload profile (`-w`).
+6.  Click **"Start Local Attack"**. The configuration options will be disabled while the attack is running.
 
-### Remote Attacks (Mobile App)
+### Other Features
 
-1.  Ensure the desktop application is running and you have connected the mobile app by scanning the QR code.
-2.  From the mobile app, send an attack command with the hash string.
-3.  The desktop application will execute the attack using a default dictionary and report the results back to the mobile client and the desktop UI.
-
-### Hashcat Setup
-
-If you are having trouble with `hashcat`, please consult the **Hashcat Setup** tab in both the desktop and Android applications for detailed instructions on installing the tool and the necessary GPU drivers.
+-   **Hashtopolis:** Connect to a Hashtopolis server to view and manage tasks.
+-   **Sniff:** Remotely capture packets from a configured device (e.g., a Raspberry Pi).
+-   **Learn:** Read beginner-friendly explanations of Hashcat and Hashtopolis.
+-   **Settings:** Manage saved remote connections and import/export configurations.
