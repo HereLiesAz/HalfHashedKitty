@@ -1,10 +1,13 @@
 package hashkitty.java;
 
 import hashkitty.java.hashcat.HashcatManager;
+import hashkitty.java.hashtopolis.HashtopolisClient;
+import hashkitty.java.model.HashtopolisTask;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.relay.RelayClient;
 import hashkitty.java.relay.RelayProcessManager;
 import hashkitty.java.sniffer.SniffManager;
+import hashkitty.java.util.FileUtil;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
 import hashkitty.java.util.QRCodeUtil;
@@ -17,6 +20,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -48,6 +52,7 @@ public class App extends Application {
     private TextArea statusLog;
     private Label crackedPasswordLabel;
     private TextField wordlistField;
+    private TextField wordlistUrlField;
     private TextField maskField;
     private TextField hashFileField;
     private TextField ruleFileField;
@@ -58,6 +63,7 @@ public class App extends Application {
     private Button chooseRuleFileButton;
     private Button startButton;
     private Button stopButton;
+    private File tempWordlistFile;
     private HashcatManager hashcatManager;
     private SniffManager sniffManager;
     private RelayProcessManager relayProcessManager;
@@ -65,6 +71,7 @@ public class App extends Application {
     private Stage primaryStage;
     private Scene mainScene;
     private String roomId;
+    private String currentRelayUri;
     private final ObservableList<RemoteConnection> remoteConnections = FXCollections.observableArrayList();
 
     @Override
@@ -75,7 +82,18 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("pwn-pi", "pi@192.168.1.10"));
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
-        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus, () -> setAttackInProgress(false));
+        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus, () -> {
+            setAttackInProgress(false);
+            // Clean up temporary wordlist file if it exists
+            if (tempWordlistFile != null) {
+                if (tempWordlistFile.delete()) {
+                    updateStatus("Cleaned up temporary wordlist file.");
+                } else {
+                    updateStatus("Warning: Could not delete temporary wordlist file: " + tempWordlistFile.getAbsolutePath());
+                }
+                tempWordlistFile = null;
+            }
+        });
         relayProcessManager = new RelayProcessManager(this::updateStatus);
         roomId = UUID.randomUUID().toString().substring(0, 8);
 
@@ -89,6 +107,7 @@ public class App extends Application {
             new Tab("Sniff", createSniffBox()),
             new Tab("Settings", createSettingsBox()),
             new Tab("Learn", createLearnBox()),
+            new Tab("Hashtopolis", createHashtopolisBox()),
             new Tab("Hashcat Setup", createHashcatSetupBox())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -99,7 +118,7 @@ public class App extends Application {
         primaryStage.setScene(mainScene);
 
         relayProcessManager.startRelay();
-        connectToRelay();
+        connectToRelay("ws://localhost:" + RELAY_PORT + "/ws");
 
         primaryStage.show();
 
@@ -117,15 +136,19 @@ public class App extends Application {
         if (relayProcessManager != null) relayProcessManager.stopRelay();
     }
 
-    private void connectToRelay() {
+    private void connectToRelay(String serverUriString) {
+        if (relayClient != null && relayClient.isOpen()) {
+            relayClient.close();
+        }
         try {
-            URI serverUri = new URI("ws://localhost:" + RELAY_PORT + "/ws");
+            URI serverUri = new URI(serverUriString);
+            this.currentRelayUri = serverUriString;
             relayClient = new RelayClient(serverUri, roomId, this::handleRelayMessage, this::updateStatus);
-            updateStatus("Attempting to connect to local relay server...");
+            updateStatus("Attempting to connect to relay: " + serverUriString);
             relayClient.connect();
             updateQRCode();
         } catch (URISyntaxException e) {
-            updateStatus("Error: Invalid relay server URI.");
+            updateStatus("Error: Invalid relay server URI '" + serverUriString + "'.");
             e.printStackTrace();
         }
     }
@@ -143,15 +166,19 @@ public class App extends Application {
     }
 
     private void updateQRCode() {
-        String ipAddress = NetworkUtil.getLocalIpAddress();
         ImageView qrCodeView = (ImageView) mainScene.getRoot().lookup("#qrCodeView");
         Label connectionLabel = (Label) mainScene.getRoot().lookup("#connectionLabel");
-        if (ipAddress != null && qrCodeView != null && connectionLabel != null) {
-            String connectionString = "ws://" + ipAddress + ":" + RELAY_PORT + "/ws?roomId=" + roomId;
+
+        if (currentRelayUri != null && !currentRelayUri.isEmpty() && qrCodeView != null && connectionLabel != null) {
+            String connectionString = currentRelayUri + "?roomId=" + roomId;
             qrCodeView.setImage(QRCodeUtil.generateQRCodeImage(connectionString, QR_CODE_SIZE, QR_CODE_SIZE));
             connectionLabel.setText("Scan to join room: " + roomId);
+
+            if (!currentRelayUri.contains("localhost") && !currentRelayUri.contains("127.0.0.1")) {
+                connectionLabel.setText(connectionLabel.getText() + "\n@ " + currentRelayUri);
+            }
         } else if (connectionLabel != null) {
-            connectionLabel.setText("Could not determine local IP address.");
+            connectionLabel.setText("Could not determine relay address.");
         }
     }
 
@@ -164,7 +191,26 @@ public class App extends Application {
         qrCodeView.setId("qrCodeView");
         Label connectionLabel = new Label("Initializing Relay Server...");
         connectionLabel.setId("connectionLabel");
-        box.getChildren().addAll(new Label("Mobile Connection"), qrCodeView, connectionLabel);
+
+        TextField remoteRelayField = new TextField();
+        remoteRelayField.setPromptText("Or enter remote relay address, e.g., ws://1.2.3.4:5001");
+        HBox.setHgrow(remoteRelayField, javafx.scene.layout.Priority.ALWAYS);
+        Button connectRemoteButton = new Button("Connect");
+        connectRemoteButton.setOnAction(e -> {
+            String remoteAddress = remoteRelayField.getText();
+            if (remoteAddress != null && !remoteAddress.trim().isEmpty()) {
+                if (remoteAddress.startsWith("ws://") || remoteAddress.startsWith("wss://")) {
+                    connectToRelay(remoteAddress.trim());
+                } else {
+                    updateStatus("Error: Remote relay address must start with ws:// or wss://");
+                }
+            }
+        });
+
+        HBox remoteConnectBox = new HBox(10, remoteRelayField, connectRemoteButton);
+        remoteConnectBox.setAlignment(Pos.CENTER);
+
+        box.getChildren().addAll(new Label("Mobile Connection"), qrCodeView, connectionLabel, new Separator(), remoteConnectBox);
         return box;
     }
 
@@ -218,10 +264,29 @@ public class App extends Application {
                 String mode = hashModeField.getText();
                 String attackMode = attackModeSelector.getValue();
                 String ruleFile = ruleFileField.getText();
-                String target = "Dictionary".equals(attackMode) ? wordlistField.getText() : maskField.getText();
+                String target;
+
+                if ("Dictionary".equals(attackMode)) {
+                    String wordlistUrl = wordlistUrlField.getText();
+                    if (wordlistUrl != null && !wordlistUrl.trim().isEmpty()) {
+                        updateStatus("Downloading wordlist from URL...");
+                        tempWordlistFile = FileUtil.downloadFileToTemp(wordlistUrl.trim());
+                        target = tempWordlistFile.getAbsolutePath();
+                        updateStatus("Wordlist downloaded to temporary file: " + target);
+                    } else {
+                        target = wordlistField.getText();
+                    }
+                } else {
+                    target = maskField.getText();
+                }
 
                 if (hashFile.isEmpty() || mode.isEmpty() || target.isEmpty()) {
                     updateStatus("Error: Hash File, Hash Mode, and Wordlist/Mask cannot be empty.");
+                    // Clean up if a file was downloaded but other fields are empty
+                    if (tempWordlistFile != null) {
+                        tempWordlistFile.delete();
+                        tempWordlistFile = null;
+                    }
                     return;
                 }
 
@@ -229,7 +294,7 @@ public class App extends Application {
                 updateStatus("Starting " + attackMode + " attack...");
                 hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
             } catch (IOException ex) {
-                updateStatus("Error starting hashcat process: " + ex.getMessage());
+                updateStatus("Error: " + ex.getMessage());
                 setAttackInProgress(false);
             }
         });
@@ -351,6 +416,87 @@ public class App extends Application {
                 updateStatus("Error importing connection: " + ex.getMessage());
             }
         }
+    }
+
+    private Node createHashtopolisBox() {
+        VBox mainLayout = new VBox(20);
+        mainLayout.setPadding(new Insets(20));
+        mainLayout.setAlignment(Pos.TOP_CENTER);
+
+        // --- Connection Pane ---
+        GridPane connectionGrid = new GridPane();
+        connectionGrid.setHgap(10);
+        connectionGrid.setVgap(10);
+        connectionGrid.setAlignment(Pos.CENTER);
+
+        TextField serverUrlField = new TextField();
+        serverUrlField.setPromptText("e.g., http://localhost/hashtopolis/");
+        GridPane.setHgrow(serverUrlField, javafx.scene.layout.Priority.ALWAYS);
+
+        PasswordField apiKeyField = new PasswordField();
+        apiKeyField.setPromptText("Your Hashtopolis API Key");
+        GridPane.setHgrow(apiKeyField, javafx.scene.layout.Priority.ALWAYS);
+
+        connectionGrid.add(new Label("Server URL:"), 0, 0);
+        connectionGrid.add(serverUrlField, 1, 0);
+        connectionGrid.add(new Label("API Key:"), 0, 1);
+        connectionGrid.add(apiKeyField, 1, 1);
+
+        Button connectButton = new Button("Connect");
+        HBox connectionBox = new HBox(20, connectionGrid, connectButton);
+        connectionBox.setAlignment(Pos.CENTER_LEFT);
+
+        // --- Task Table ---
+        TableView<HashtopolisTask> taskTable = new TableView<>();
+        taskTable.setPlaceholder(new Label("Not connected to Hashtopolis server."));
+
+        TableColumn<HashtopolisTask, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("taskId"));
+
+        TableColumn<HashtopolisTask, String> nameCol = new TableColumn<>("Name");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("taskName"));
+
+        TableColumn<HashtopolisTask, String> hashlistCol = new TableColumn<>("Hashlist");
+        hashlistCol.setCellValueFactory(new PropertyValueFactory<>("hashlistAlias"));
+
+        taskTable.getColumns().addAll(idCol, nameCol, hashlistCol);
+        taskTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // --- Status Label ---
+        Label statusLabel = new Label("Status: Not Connected");
+        statusLabel.setStyle("-fx-font-weight: bold;");
+
+        connectButton.setOnAction(e -> {
+            String serverUrl = serverUrlField.getText();
+            String apiKey = apiKeyField.getText();
+
+            if (serverUrl == null || serverUrl.trim().isEmpty() || apiKey == null || apiKey.trim().isEmpty()) {
+                statusLabel.setText("Status: URL and API Key cannot be empty.");
+                return;
+            }
+
+            statusLabel.setText("Status: Connecting...");
+
+            // Perform network operation on a background thread
+            new Thread(() -> {
+                try {
+                    HashtopolisClient client = new HashtopolisClient();
+                    List<HashtopolisTask> tasks = client.getTasks(serverUrl, apiKey);
+                    Platform.runLater(() -> {
+                        taskTable.setItems(FXCollections.observableArrayList(tasks));
+                        statusLabel.setText("Status: Connected. Fetched " + tasks.size() + " tasks.");
+                    });
+                } catch (IOException ex) {
+                    Platform.runLater(() -> statusLabel.setText("Status: Error - " + ex.getMessage()));
+                    ex.printStackTrace();
+                }
+            }).start();
+        });
+
+        mainLayout.getChildren().addAll(connectionBox, new Separator(), new Label("Tasks"), taskTable, statusLabel);
+        VBox.setVgrow(taskTable, javafx.scene.layout.Priority.ALWAYS);
+
+        return mainLayout;
     }
 
     private Node createLearnBox() {
@@ -575,9 +721,12 @@ public class App extends Application {
 
     private void createDictionaryInput() {
         attackInputsContainer.getChildren().clear();
-        Label wordlistLabel = new Label("Wordlist:");
+
+        // --- Local File Input ---
+        Label wordlistFileLabel = new Label("Local Wordlist:");
         wordlistField = new TextField();
-        wordlistField.setPromptText("Path to wordlist file");
+        wordlistField.setPromptText("Path to local wordlist file");
+        HBox.setHgrow(wordlistField, javafx.scene.layout.Priority.ALWAYS);
         Button chooseFileButton = new Button("...");
         chooseFileButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
@@ -585,10 +734,22 @@ public class App extends Application {
             File file = fileChooser.showOpenDialog(primaryStage);
             if (file != null) {
                 wordlistField.setText(file.getAbsolutePath());
+                if (wordlistUrlField != null) wordlistUrlField.clear(); // Clear URL field
             }
         });
         HBox dicBox = new HBox(5, wordlistField, chooseFileButton);
-        attackInputsContainer.getChildren().addAll(wordlistLabel, dicBox);
+
+        // --- URL Input ---
+        Label wordlistUrlLabel = new Label("Or Wordlist URL:");
+        wordlistUrlField = new TextField();
+        wordlistUrlField.setPromptText("e.g., https://example.com/wordlist.txt");
+        wordlistUrlField.textProperty().addListener((obs, old, aNewUrl) -> {
+            if (aNewUrl != null && !aNewUrl.isEmpty()) {
+                if(wordlistField != null) wordlistField.clear(); // Clear file field
+            }
+        });
+
+        attackInputsContainer.getChildren().addAll(wordlistFileLabel, dicBox, wordlistUrlLabel, wordlistUrlField);
     }
 
     private void createMaskInput() {
@@ -596,7 +757,27 @@ public class App extends Application {
         Label maskLabel = new Label("Mask:");
         maskField = new TextField();
         maskField.setPromptText("e.g., ?d?d?d?d");
-        attackInputsContainer.getChildren().addAll(maskLabel, maskField);
+
+        HBox maskHelperButtons = new HBox(5);
+        maskHelperButtons.setAlignment(Pos.CENTER_LEFT);
+
+        Label helperLabel = new Label("Append:");
+        Button lowerAlphaButton = new Button("?l");
+        lowerAlphaButton.setOnAction(e -> maskField.appendText("?l"));
+        Button upperAlphaButton = new Button("?u");
+        upperAlphaButton.setOnAction(e -> maskField.appendText("?u"));
+        Button digitsButton = new Button("?d");
+        digitsButton.setOnAction(e -> maskField.appendText("?d"));
+        Button specialButton = new Button("?s");
+        specialButton.setOnAction(e -> maskField.appendText("?s"));
+        Button allButton = new Button("?a");
+        allButton.setOnAction(e -> maskField.appendText("?a"));
+
+        maskHelperButtons.getChildren().addAll(helperLabel, lowerAlphaButton, upperAlphaButton, digitsButton, specialButton, allButton);
+
+        VBox maskLayout = new VBox(10, maskLabel, maskField, maskHelperButtons);
+
+        attackInputsContainer.getChildren().add(maskLayout);
     }
 
     private VBox createResultsBox() {
