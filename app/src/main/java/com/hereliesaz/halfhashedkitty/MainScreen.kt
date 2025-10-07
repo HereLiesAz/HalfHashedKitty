@@ -107,7 +107,7 @@ fun MainScreen(
                     }
                 }
 
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.weight(1f)) {
                     ScreenTitle(title = selectedId) {
                         showInstructions = true
                     }
