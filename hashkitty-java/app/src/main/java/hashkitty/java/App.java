@@ -82,7 +82,7 @@ public class App extends Application {
             new Tab("Attack", createAttackConfigBox()),
             new Tab("Sniff", createSniffBox()),
             new Tab("Settings", createSettingsBox()),
-            new Tab("Learn", new Label("Learn UI to be implemented")),
+            new Tab("Learn", createLearnBox()),
             new Tab("Hashcat Setup", createHashcatSetupBox())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -323,6 +323,46 @@ public class App extends Application {
                 updateStatus("Error importing connection: " + ex.getMessage());
             }
         }
+    }
+
+    private Node createLearnBox() {
+        VBox layout = new VBox(20);
+        layout.setPadding(new Insets(20));
+
+        Accordion accordion = new Accordion();
+
+        // --- Hashcat Section ---
+        Text hashcatText = new Text(
+            "Hashcat is the world's fastest and most advanced password recovery tool.\n\n" +
+            "Think of it like this: When you save a password, it's not stored as plain text. It's turned into a unique, scrambled string called a 'hash'. You can't easily turn the hash back into the password.\n\n" +
+            "Hashcat takes a hash and tries billions of password combinations per second to find the one that creates the exact same hash. It uses the power of your computer's Graphics Card (GPU) to do this incredibly quickly.\n\n" +
+            "It's used by cybersecurity professionals to test the strength of passwords and by law enforcement to recover passwords from digital evidence."
+        );
+        hashcatText.setWrappingWidth(550); // Ensure text wraps nicely
+        TextFlow hashcatFlow = new TextFlow(hashcatText);
+
+        TitledPane hashcatPane = new TitledPane("What is Hashcat?", hashcatFlow);
+
+        // --- Hashtopolis Section ---
+        Text hashtopolisText = new Text(
+            "Hashtopolis is a tool that manages multiple Hashcat instances, often across many different computers.\n\n" +
+            "If Hashcat is a single, powerful worker, then Hashtopolis is the factory manager. It takes a big password-cracking job (called a 'task') and splits it up into smaller pieces. It then sends these pieces out to all the connected Hashcat 'agents' (the workers).\n\n" +
+            "This allows you to combine the power of many computers to crack passwords even faster. It's used for large-scale security audits and password recovery operations where a single computer wouldn't be powerful enough."
+        );
+        hashtopolisText.setWrappingWidth(550);
+        TextFlow hashtopolisFlow = new TextFlow(hashtopolisText);
+
+        TitledPane hashtopolisPane = new TitledPane("What is Hashtopolis?", hashtopolisFlow);
+
+        accordion.getPanes().addAll(hashcatPane, hashtopolisPane);
+        accordion.setExpandedPane(hashcatPane); // Start with the first pane open
+
+        layout.getChildren().add(accordion);
+
+        ScrollPane scrollPane = new ScrollPane(layout);
+        scrollPane.setFitToWidth(true);
+
+        return scrollPane;
     }
 
     private ScrollPane createHashcatSetupBox() {
