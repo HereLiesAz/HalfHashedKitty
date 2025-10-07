@@ -89,6 +89,7 @@ public class App extends Application {
             new Tab("Sniff", createSniffBox()),
             new Tab("Settings", createSettingsBox()),
             new Tab("Learn", createLearnBox()),
+            new Tab("Hashtopolis", createHashtopolisBox()),
             new Tab("Hashcat Setup", createHashcatSetupBox())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -351,6 +352,58 @@ public class App extends Application {
                 updateStatus("Error importing connection: " + ex.getMessage());
             }
         }
+    }
+
+    private Node createHashtopolisBox() {
+        VBox mainLayout = new VBox(20);
+        mainLayout.setPadding(new Insets(20));
+        mainLayout.setAlignment(Pos.TOP_CENTER);
+
+        // --- Connection Pane ---
+        GridPane connectionGrid = new GridPane();
+        connectionGrid.setHgap(10);
+        connectionGrid.setVgap(10);
+        connectionGrid.setAlignment(Pos.CENTER);
+
+        TextField serverUrlField = new TextField();
+        serverUrlField.setPromptText("e.g., http://localhost/hashtopolis/");
+        GridPane.setHgrow(serverUrlField, javafx.scene.layout.Priority.ALWAYS);
+
+        PasswordField apiKeyField = new PasswordField();
+        apiKeyField.setPromptText("Your Hashtopolis API Key");
+        GridPane.setHgrow(apiKeyField, javafx.scene.layout.Priority.ALWAYS);
+
+        connectionGrid.add(new Label("Server URL:"), 0, 0);
+        connectionGrid.add(serverUrlField, 1, 0);
+        connectionGrid.add(new Label("API Key:"), 0, 1);
+        connectionGrid.add(apiKeyField, 1, 1);
+
+        Button connectButton = new Button("Connect");
+        // TODO: Implement connection logic
+
+        HBox connectionBox = new HBox(20, connectionGrid, connectButton);
+        connectionBox.setAlignment(Pos.CENTER_LEFT);
+
+        // --- Task Table ---
+        TableView<Object> taskTable = new TableView<>();
+        taskTable.setPlaceholder(new Label("Not connected to Hashtopolis server."));
+
+        TableColumn<Object, Integer> idCol = new TableColumn<>("ID");
+        TableColumn<Object, String> nameCol = new TableColumn<>("Name");
+        TableColumn<Object, String> hashTypeCol = new TableColumn<>("Hash Type");
+        TableColumn<Object, String> statusCol = new TableColumn<>("Status");
+
+        taskTable.getColumns().addAll(idCol, nameCol, hashTypeCol, statusCol);
+        taskTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // --- Status Label ---
+        Label statusLabel = new Label("Status: Not Connected");
+        statusLabel.setStyle("-fx-font-weight: bold;");
+
+        mainLayout.getChildren().addAll(connectionBox, new Separator(), new Label("Tasks"), taskTable, statusLabel);
+        VBox.setVgrow(taskTable, javafx.scene.layout.Priority.ALWAYS);
+
+        return mainLayout;
     }
 
     private Node createLearnBox() {
