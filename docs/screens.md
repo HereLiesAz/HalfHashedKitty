@@ -5,6 +5,7 @@ This document outlines the requirements and feedback for the various screens wit
 ## Attack Screen
 - **[DONE]** ~~There's no visual cue that anything happened when the attack button is pressed.~~ (UI now disables during attack).
 - **[DONE]** ~~Users should be able to manually type in the IP address of a hashcat or hashkitty server.~~ (This is handled by the remote relay connection feature).
+- **[DONE]** Added advanced options: `--force`, `-O` (optimized kernels), and `-w` (workload profile).
 
 ## Wordlist Screen
 - **[DONE]** ~~There needs to be a file explorer that allows the user to find a file on the PC, on the phone, or enter a web URL.~~ (PC file selection and web URL input are now implemented in the desktop app).
@@ -37,5 +38,6 @@ This document outlines the requirements and feedback for the various screens wit
 - Users should also be able to connect to a Raspberry Pi to perform these actions, allowing the phone to manage the process remotely.
 
 ## Connect Screen
-- **[DONE]** ~~The "PC Connect" screen/feature should be renamed to simply "Connect".~~ (This is now the "Mobile Connection" box).
-- **[DONE]** ~~The QR code scanner should be able to connect to both PCs and Raspberry Pis.~~ (Desktop app now supports generating QR codes for remote relays).
+- **[DONE]** ~~The "PC Connect" screen/feature should be renamed to simply "Connect".~~ (This is now the "Mobile Connection" box on desktop and "Connect" on Android).
+- **[DONE]** ~~The QR code scanner should be able to connect to both PCs and Raspberry Pis.~~ (Desktop app now supports generating QR codes for remote relays, and Android app can connect to them).
+- **[DONE]** The Android UI has been refactored to use a `Switch` for the connection type and to correctly size the camera view.
