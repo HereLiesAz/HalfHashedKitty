@@ -262,8 +262,19 @@ public class App extends Application {
         importButton.setOnAction(e -> handleImport());
         Button exportButton = new Button("Export to .hhk file");
         exportButton.setOnAction(e -> handleExport());
-        HBox configButtons = new HBox(10, importButton, exportButton);
-        VBox configBox = new VBox(10, configLabel, configButtons);
+        HBox hhkButtons = new HBox(10, importButton, exportButton);
+
+        Button importJsonButton = new Button("Import from JSON");
+        importJsonButton.setOnAction(e -> handleJsonImport());
+
+        Button exportJsonButton = new Button("Export Selected as JSON");
+        exportJsonButton.setOnAction(e -> handleJsonExport(remotesList.getSelectionModel().getSelectedItem()));
+        exportJsonButton.disableProperty().bind(remotesList.getSelectionModel().selectedItemProperty().isNull());
+
+        HBox jsonButtons = new HBox(10, importJsonButton, exportJsonButton);
+
+        VBox configButtonsVbox = new VBox(10, hhkButtons, jsonButtons);
+        VBox configBox = new VBox(10, configLabel, configButtonsVbox);
         Label themeLabel = new Label("Appearance");
         themeLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         ComboBox<String> themeSelector = new ComboBox<>();
@@ -273,6 +284,45 @@ public class App extends Application {
         VBox themeBox = new VBox(10, themeLabel, themeSelector);
         settingsLayout.getChildren().addAll(remotesBox, new Separator(), configBox, new Separator(), themeBox);
         return settingsLayout;
+    }
+
+    private void handleJsonExport(RemoteConnection selected) {
+        if (selected == null) {
+            updateStatus("No remote connection selected for export.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Single Connection");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files (*.json)", "*.json"));
+        fileChooser.setInitialFileName(selected.getName() + ".json");
+        File file = fileChooser.showSaveDialog(primaryStage);
+
+        if (file != null) {
+            try {
+                HhkUtil.exportSingleConnection(file, selected);
+                updateStatus("Successfully exported '" + selected.getName() + "' to " + file.getName());
+            } catch (IOException ex) {
+                updateStatus("Error exporting connection: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void handleJsonImport() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Single Connection");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files (*.json)", "*.json"));
+        File file = fileChooser.showOpenDialog(primaryStage);
+
+        if (file != null) {
+            try {
+                RemoteConnection imported = HhkUtil.importSingleConnection(file);
+                remoteConnections.add(imported);
+                updateStatus("Successfully imported '" + imported.getName() + "' from " + file.getName());
+            } catch (IOException ex) {
+                updateStatus("Error importing connection: " + ex.getMessage());
+            }
+        }
     }
 
     private ScrollPane createHashcatSetupBox() {
