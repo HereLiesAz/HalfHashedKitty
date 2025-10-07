@@ -7,7 +7,6 @@ import hashkitty.java.relay.RelayProcessManager;
 import hashkitty.java.sniffer.SniffManager;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
-import hashkitty.java.util.SetupManager;
 import hashkitty.java.util.QRCodeUtil;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -34,7 +33,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -84,7 +82,7 @@ public class App extends Application {
             new Tab("Sniff", createSniffBox()),
             new Tab("Settings", createSettingsBox()),
             new Tab("Learn", new Label("Learn UI to be implemented")),
-            new Tab("Setup", createSetupBox())
+            new Tab("Hashcat Setup", createHashcatSetupBox())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         mainLayout.setCenter(tabPane);
@@ -276,62 +274,49 @@ public class App extends Application {
         return settingsLayout;
     }
 
-    private ScrollPane createSetupBox() {
-        VBox layout = new VBox(20);
-        layout.setPadding(new Insets(20));
-        layout.setAlignment(Pos.TOP_CENTER);
+    private ScrollPane createHashcatSetupBox() {
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
 
-        Label title = new Label("Automated Setup");
+        Label title = new Label("Setting Up Hashcat for GPU Cracking");
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
-        Text intro = new Text("Use the buttons below to download and launch the installers for the required software. This application will attempt to find the correct official download pages.");
+        Text intro = new Text("Hashcat uses your Graphics Card (GPU) to crack hashes incredibly fast. To make this work, you need the right drivers installed. If hashcat isn't working, this is the most common reason why.");
         intro.setWrappingWidth(550);
-        intro.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
-        // --- Hashcat Button ---
-        Button downloadHashcatButton = new Button("Download & Unpack Hashcat");
-        downloadHashcatButton.setPrefWidth(300);
+        // --- Step 1: Install Hashcat ---
+        Label step1Title = new Label("Step 1: Install Hashcat");
+        step1Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        Text step1Text = new Text("Download the latest version from the official website: hashcat.net/hashcat/. Extract the archive to a known location on your computer.");
+        step1Text.setWrappingWidth(550);
 
-        // --- Status Label ---
-        Label setupStatusLabel = new Label("Status: Idle");
-        setupStatusLabel.setStyle("-fx-font-weight: bold;");
-
-        // Instantiate SetupManager here with the correct callback
-        SetupManager setupManager = new SetupManager(status -> Platform.runLater(() -> setupStatusLabel.setText("Status: " + status)));
-
-        downloadHashcatButton.setOnAction(e -> new Thread(() -> setupManager.downloadAndInstallHashcat()).start());
-
-        // --- Driver Buttons ---
-        Label driversLabel = new Label("GPU Drivers");
-        driversLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
-        Text driverText = new Text("Driver installation requires administrative privileges and specific choices based on your hardware. For safety and correctness, this app will open the official download page for you to download and run the installer manually.");
-        driverText.setWrappingWidth(550);
-        driverText.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-
-        Button downloadNvidiaButton = new Button("Open NVIDIA Driver Page");
-        downloadNvidiaButton.setOnAction(e -> setupManager.openNvidiaDriversPage());
-        Button downloadAmdButton = new Button("Open AMD Driver Page");
-        downloadAmdButton.setOnAction(e -> setupManager.openAmdDriversPage());
-        Button downloadIntelButton = new Button("Open Intel Driver Page");
-        downloadIntelButton.setOnAction(e -> setupManager.openIntelDriversPage());
-        HBox driverButtons = new HBox(15, downloadNvidiaButton, downloadAmdButton, downloadIntelButton);
-        driverButtons.setAlignment(Pos.CENTER);
-
-        layout.getChildren().addAll(
-            title,
-            intro,
-            new Separator(),
-            downloadHashcatButton,
-            new Separator(),
-            driversLabel,
-            driverText,
-            driverButtons,
-            new Separator(),
-            setupStatusLabel
+        // --- Step 2: Install GPU Drivers ---
+        Label step2Title = new Label("Step 2: Install GPU Drivers");
+        step2Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        Text step2Text = new Text(
+            "This is the most important step.\n\n" +
+            "NVIDIA Users:\n" +
+            "You need the latest 'Game Ready' or 'Studio' drivers. Download them from the official NVIDIA website. Hashcat uses the NVIDIA CUDA platform.\n\n" +
+            "AMD Users:\n" +
+            "You need the latest 'Adrenalin Edition' drivers. Download them from the official AMD website. Hashcat uses the OpenCL platform, which is included with these drivers.\n\n" +
+            "Intel GPU Users:\n" +
+            "You need the latest graphics drivers from Intel's website. Hashcat uses the OpenCL platform, which is included with these drivers."
         );
+        step2Text.setWrappingWidth(550);
 
-        ScrollPane scrollPane = new ScrollPane(layout);
+        // --- Step 3: Verify Installation ---
+        Label step3Title = new Label("Step 3: Verify Everything Works");
+        step3Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        Text step3Text = new Text(
+            "Open a command prompt or terminal, navigate to your hashcat directory, and run the benchmark command:\n\n" +
+            "hashcat.exe -b\n\n" +
+            "If everything is set up correctly, you will see a list of your GPUs and a benchmark running for various hash types. If you see errors about missing DLLs or no devices being found, it means your GPU drivers are not installed correctly."
+        );
+        step3Text.setWrappingWidth(550);
+
+        content.getChildren().addAll(title, intro, new Separator(), step1Title, step1Text, new Separator(), step2Title, step2Text, new Separator(), step3Title, step3Text);
+
+        ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
         return scrollPane;
     }

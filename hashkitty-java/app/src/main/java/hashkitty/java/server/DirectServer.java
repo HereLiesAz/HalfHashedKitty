@@ -80,7 +80,7 @@ public class DirectServer extends WebSocketServer {
         try {
             String attackMode = "Dictionary";
             String wordlistPath = "/app/test-hashes-short.txt"; // Using a test wordlist for now
-            hashcatManager.startAttackWithString(msg.getHash(), msg.getMode(), attackMode, wordlistPath, null);
+            hashcatManager.startCracking(msg.getHash(), msg.getMode(), attackMode, wordlistPath);
         } catch (IOException e) {
             onStatusUpdate.accept("Error starting hashcat: " + e.getMessage());
             e.printStackTrace();

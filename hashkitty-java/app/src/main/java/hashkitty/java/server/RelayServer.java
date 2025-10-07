@@ -85,7 +85,7 @@ public class RelayServer extends WebSocketServer {
         try {
             String attackMode = "Dictionary";
             String wordlistPath = "/app/test-hashes-short.txt"; // Using a test wordlist
-            hashcatManager.startAttackWithString(msg.getHash(), msg.getMode(), attackMode, wordlistPath, null);
+            hashcatManager.startCracking(msg.getHash(), msg.getMode(), attackMode, wordlistPath);
         } catch (IOException e) {
             onStatusUpdate.accept("Error starting hashcat: " + e.getMessage());
             e.printStackTrace();

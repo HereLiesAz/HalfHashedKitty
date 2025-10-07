@@ -13,7 +13,6 @@ repositories {
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // WebSocket support
@@ -35,12 +34,6 @@ dependencies {
 
     // SSH library for remote sniffing
     implementation 'com.jcraft:jsch:0.1.55'
-
-    // HTTP Client for API requests
-    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
-
-    // 7-Zip archive handling
-    implementation 'org.apache.commons:commons-compress:1.21'
 }
 
 java {
