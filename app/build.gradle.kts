@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -67,10 +67,10 @@ android {
 dependencies {
 
     implementation("androidx.core:core-ktx:1.17.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.3")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation("androidx.activity:activity-compose:1.11.0") // Corrected this line
-    implementation(platform("androidx.compose:compose-bom:2025.09.00"))
+    implementation(platform("androidx.compose:compose-bom:2025.09.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -84,9 +84,9 @@ dependencies {
     implementation("io.ktor:ktor-client-logging:3.3.0")
     implementation("io.ktor:ktor-client-websockets:3.3.0")
     implementation("org.jsoup:jsoup:1.21.2")
-    implementation("com.github.HereLiesAz:AzNavRail:3.10")
+    implementation("com.github.HereLiesAz:AzNavRail:3.13")
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
-    implementation("androidx.compose.foundation:foundation-layout:1.9.1")
+    implementation("androidx.compose.foundation:foundation-layout:1.9.2")
 
     val cameraxVersion = "1.5.0"
     implementation("androidx.camera:camera-core:${cameraxVersion}")
@@ -100,15 +100,15 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation("org.robolectric:robolectric:4.16")
-    testImplementation(platform("androidx.compose:compose-bom:2025.09.00"))
+    testImplementation(platform("androidx.compose:compose-bom:2025.09.01"))
     testImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2025.09.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.09.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
