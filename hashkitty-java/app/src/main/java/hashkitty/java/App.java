@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,6 +52,12 @@ public class App extends Application {
     private TextField hashFileField;
     private TextField ruleFileField;
     private VBox attackInputsContainer;
+    private TextField hashModeField;
+    private ComboBox<String> attackModeSelector;
+    private Button chooseHashFileButton;
+    private Button chooseRuleFileButton;
+    private Button startButton;
+    private Button stopButton;
     private HashcatManager hashcatManager;
     private SniffManager sniffManager;
     private RelayProcessManager relayProcessManager;
@@ -68,7 +75,7 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("pwn-pi", "pi@192.168.1.10"));
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
-        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus);
+        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus, () -> setAttackInProgress(false));
         relayProcessManager = new RelayProcessManager(this::updateStatus);
         roomId = UUID.randomUUID().toString().substring(0, 8);
 
@@ -81,7 +88,7 @@ public class App extends Application {
             new Tab("Attack", createAttackConfigBox()),
             new Tab("Sniff", createSniffBox()),
             new Tab("Settings", createSettingsBox()),
-            new Tab("Learn", new Label("Learn UI to be implemented")),
+            new Tab("Learn", createLearnBox()),
             new Tab("Hashcat Setup", createHashcatSetupBox())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -169,7 +176,7 @@ public class App extends Application {
 
         hashFileField = new TextField();
         hashFileField.setPromptText("Path to hash file");
-        Button chooseHashFileButton = new Button("...");
+        chooseHashFileButton = new Button("...");
         chooseHashFileButton.setOnAction(e -> {
             File file = new FileChooser().showOpenDialog(primaryStage);
             if (file != null) hashFileField.setText(file.getAbsolutePath());
@@ -177,12 +184,12 @@ public class App extends Application {
         grid.add(new Label("Hash File:"), 0, 0);
         grid.add(new HBox(5, hashFileField, chooseHashFileButton), 1, 0);
 
-        TextField hashModeField = new TextField();
+        hashModeField = new TextField();
         hashModeField.setPromptText("e.g., 22000 for WPA2");
         grid.add(new Label("Hash Mode:"), 0, 1);
         grid.add(hashModeField, 1, 1);
 
-        ComboBox<String> attackModeSelector = new ComboBox<>();
+        attackModeSelector = new ComboBox<>();
         attackModeSelector.getItems().addAll("Dictionary", "Mask");
         attackModeSelector.setValue("Dictionary");
         grid.add(new Label("Attack Mode:"), 0, 2);
@@ -190,7 +197,7 @@ public class App extends Application {
 
         ruleFileField = new TextField();
         ruleFileField.setPromptText("(Optional) Path to rule file");
-        Button chooseRuleFileButton = new Button("...");
+        chooseRuleFileButton = new Button("...");
         chooseRuleFileButton.setOnAction(e -> {
             File file = new FileChooser().showOpenDialog(primaryStage);
             if (file != null) ruleFileField.setText(file.getAbsolutePath());
@@ -204,7 +211,7 @@ public class App extends Application {
             if ("Dictionary".equals(newVal)) createDictionaryInput(); else createMaskInput();
         });
 
-        Button startButton = new Button("Start Local Attack");
+        startButton = new Button("Start Local Attack");
         startButton.setOnAction(e -> {
             try {
                 String hashFile = hashFileField.getText();
@@ -218,13 +225,15 @@ public class App extends Application {
                     return;
                 }
 
+                setAttackInProgress(true);
                 updateStatus("Starting " + attackMode + " attack...");
                 hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
             } catch (IOException ex) {
                 updateStatus("Error starting hashcat process: " + ex.getMessage());
+                setAttackInProgress(false);
             }
         });
-        Button stopButton = new Button("Stop Attack");
+        stopButton = new Button("Stop Attack");
         stopButton.setOnAction(e -> hashcatManager.stopCracking());
         HBox buttonBox = new HBox(20, startButton, stopButton);
         buttonBox.setAlignment(Pos.CENTER);
@@ -233,6 +242,26 @@ public class App extends Application {
         box.setAlignment(Pos.TOP_CENTER);
         box.setPadding(new Insets(20));
         return box;
+    }
+
+    private void setAttackInProgress(boolean inProgress) {
+        Platform.runLater(() -> {
+            // Disable configuration inputs during an attack
+            hashFileField.setDisable(inProgress);
+            hashModeField.setDisable(inProgress);
+            ruleFileField.setDisable(inProgress);
+            attackModeSelector.setDisable(inProgress);
+            chooseHashFileButton.setDisable(inProgress);
+            chooseRuleFileButton.setDisable(inProgress);
+
+            // Also disable the dynamic inputs (wordlist/mask)
+            if (wordlistField != null) wordlistField.setDisable(inProgress);
+            if (maskField != null) maskField.setDisable(inProgress);
+
+            // Toggle the start/stop buttons
+            startButton.setDisable(inProgress);
+            stopButton.setDisable(!inProgress);
+        });
     }
 
     private VBox createSettingsBox() {
@@ -261,8 +290,19 @@ public class App extends Application {
         importButton.setOnAction(e -> handleImport());
         Button exportButton = new Button("Export to .hhk file");
         exportButton.setOnAction(e -> handleExport());
-        HBox configButtons = new HBox(10, importButton, exportButton);
-        VBox configBox = new VBox(10, configLabel, configButtons);
+        HBox hhkButtons = new HBox(10, importButton, exportButton);
+
+        Button importJsonButton = new Button("Import from JSON");
+        importJsonButton.setOnAction(e -> handleJsonImport());
+
+        Button exportJsonButton = new Button("Export Selected as JSON");
+        exportJsonButton.setOnAction(e -> handleJsonExport(remotesList.getSelectionModel().getSelectedItem()));
+        exportJsonButton.disableProperty().bind(remotesList.getSelectionModel().selectedItemProperty().isNull());
+
+        HBox jsonButtons = new HBox(10, importJsonButton, exportJsonButton);
+
+        VBox configButtonsVbox = new VBox(10, hhkButtons, jsonButtons);
+        VBox configBox = new VBox(10, configLabel, configButtonsVbox);
         Label themeLabel = new Label("Appearance");
         themeLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         ComboBox<String> themeSelector = new ComboBox<>();
@@ -272,6 +312,85 @@ public class App extends Application {
         VBox themeBox = new VBox(10, themeLabel, themeSelector);
         settingsLayout.getChildren().addAll(remotesBox, new Separator(), configBox, new Separator(), themeBox);
         return settingsLayout;
+    }
+
+    private void handleJsonExport(RemoteConnection selected) {
+        if (selected == null) {
+            updateStatus("No remote connection selected for export.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Single Connection");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files (*.json)", "*.json"));
+        fileChooser.setInitialFileName(selected.getName() + ".json");
+        File file = fileChooser.showSaveDialog(primaryStage);
+
+        if (file != null) {
+            try {
+                HhkUtil.exportSingleConnection(file, selected);
+                updateStatus("Successfully exported '" + selected.getName() + "' to " + file.getName());
+            } catch (IOException ex) {
+                updateStatus("Error exporting connection: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void handleJsonImport() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Single Connection");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON files (*.json)", "*.json"));
+        File file = fileChooser.showOpenDialog(primaryStage);
+
+        if (file != null) {
+            try {
+                RemoteConnection imported = HhkUtil.importSingleConnection(file);
+                remoteConnections.add(imported);
+                updateStatus("Successfully imported '" + imported.getName() + "' from " + file.getName());
+            } catch (IOException ex) {
+                updateStatus("Error importing connection: " + ex.getMessage());
+            }
+        }
+    }
+
+    private Node createLearnBox() {
+        VBox layout = new VBox(20);
+        layout.setPadding(new Insets(20));
+
+        Accordion accordion = new Accordion();
+
+        // --- Hashcat Section ---
+        Text hashcatText = new Text(
+            "Hashcat is the world's fastest and most advanced password recovery tool.\n\n" +
+            "Think of it like this: When you save a password, it's not stored as plain text. It's turned into a unique, scrambled string called a 'hash'. You can't easily turn the hash back into the password.\n\n" +
+            "Hashcat takes a hash and tries billions of password combinations per second to find the one that creates the exact same hash. It uses the power of your computer's Graphics Card (GPU) to do this incredibly quickly.\n\n" +
+            "It's used by cybersecurity professionals to test the strength of passwords and by law enforcement to recover passwords from digital evidence."
+        );
+        hashcatText.setWrappingWidth(550); // Ensure text wraps nicely
+        TextFlow hashcatFlow = new TextFlow(hashcatText);
+
+        TitledPane hashcatPane = new TitledPane("What is Hashcat?", hashcatFlow);
+
+        // --- Hashtopolis Section ---
+        Text hashtopolisText = new Text(
+            "Hashtopolis is a tool that manages multiple Hashcat instances, often across many different computers.\n\n" +
+            "If Hashcat is a single, powerful worker, then Hashtopolis is the factory manager. It takes a big password-cracking job (called a 'task') and splits it up into smaller pieces. It then sends these pieces out to all the connected Hashcat 'agents' (the workers).\n\n" +
+            "This allows you to combine the power of many computers to crack passwords even faster. It's used for large-scale security audits and password recovery operations where a single computer wouldn't be powerful enough."
+        );
+        hashtopolisText.setWrappingWidth(550);
+        TextFlow hashtopolisFlow = new TextFlow(hashtopolisText);
+
+        TitledPane hashtopolisPane = new TitledPane("What is Hashtopolis?", hashtopolisFlow);
+
+        accordion.getPanes().addAll(hashcatPane, hashtopolisPane);
+        accordion.setExpandedPane(hashcatPane); // Start with the first pane open
+
+        layout.getChildren().add(accordion);
+
+        ScrollPane scrollPane = new ScrollPane(layout);
+        scrollPane.setFitToWidth(true);
+
+        return scrollPane;
     }
 
     private ScrollPane createHashcatSetupBox() {
@@ -477,7 +596,27 @@ public class App extends Application {
         Label maskLabel = new Label("Mask:");
         maskField = new TextField();
         maskField.setPromptText("e.g., ?d?d?d?d");
-        attackInputsContainer.getChildren().addAll(maskLabel, maskField);
+
+        HBox maskHelperButtons = new HBox(5);
+        maskHelperButtons.setAlignment(Pos.CENTER_LEFT);
+
+        Label helperLabel = new Label("Append:");
+        Button lowerAlphaButton = new Button("?l");
+        lowerAlphaButton.setOnAction(e -> maskField.appendText("?l"));
+        Button upperAlphaButton = new Button("?u");
+        upperAlphaButton.setOnAction(e -> maskField.appendText("?u"));
+        Button digitsButton = new Button("?d");
+        digitsButton.setOnAction(e -> maskField.appendText("?d"));
+        Button specialButton = new Button("?s");
+        specialButton.setOnAction(e -> maskField.appendText("?s"));
+        Button allButton = new Button("?a");
+        allButton.setOnAction(e -> maskField.appendText("?a"));
+
+        maskHelperButtons.getChildren().addAll(helperLabel, lowerAlphaButton, upperAlphaButton, digitsButton, specialButton, allButton);
+
+        VBox maskLayout = new VBox(10, maskLabel, maskField, maskHelperButtons);
+
+        attackInputsContainer.getChildren().add(maskLayout);
     }
 
     private VBox createResultsBox() {

@@ -38,7 +38,7 @@ public class RelayServer extends WebSocketServer {
     public RelayServer(int port, Consumer<String> onStatusUpdate, Consumer<String> onPasswordCracked) {
         super(new InetSocketAddress(port));
         this.onStatusUpdate = onStatusUpdate;
-        this.hashcatManager = new HashcatManager(onPasswordCracked, onStatusUpdate);
+        this.hashcatManager = new HashcatManager(onPasswordCracked, onStatusUpdate, null); // No UI to update on complete
     }
 
     @Override
@@ -85,7 +85,7 @@ public class RelayServer extends WebSocketServer {
         try {
             String attackMode = "Dictionary";
             String wordlistPath = "/app/test-hashes-short.txt"; // Using a test wordlist
-            hashcatManager.startCracking(msg.getHash(), msg.getMode(), attackMode, wordlistPath);
+            hashcatManager.startAttackWithString(msg.getHash(), msg.getMode(), attackMode, wordlistPath, null);
         } catch (IOException e) {
             onStatusUpdate.accept("Error starting hashcat: " + e.getMessage());
             e.printStackTrace();

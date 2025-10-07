@@ -5,11 +5,15 @@ import javafx.beans.property.StringProperty;
 
 /**
  * Represents a saved remote connection, typically for an SSH target.
- * This class uses JavaFX properties to allow for easy data binding with UI components.
+ * This class uses JavaFX properties to allow for easy data binding with UI components,
+ * but separates the core data from the UI properties for robust serialization.
  */
 public class RemoteConnection {
-    private final StringProperty name;
-    private final StringProperty connectionString;
+    private final String name;
+    private final String connectionString;
+
+    private transient StringProperty nameProperty;
+    private transient StringProperty connectionStringProperty;
 
     /**
      * Constructs a new RemoteConnection.
@@ -18,32 +22,30 @@ public class RemoteConnection {
      * @param connectionString The actual connection string (e.g., "user@192.168.1.100").
      */
     public RemoteConnection(String name, String connectionString) {
-        this.name = new SimpleStringProperty(name);
-        this.connectionString = new SimpleStringProperty(connectionString);
+        this.name = name;
+        this.connectionString = connectionString;
     }
 
     public String getName() {
-        return name.get();
-    }
-
-    public StringProperty nameProperty() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name.set(name);
+    public StringProperty nameProperty() {
+        if (nameProperty == null) {
+            nameProperty = new SimpleStringProperty(name);
+        }
+        return nameProperty;
     }
 
     public String getConnectionString() {
-        return connectionString.get();
-    }
-
-    public StringProperty connectionStringProperty() {
         return connectionString;
     }
 
-    public void setConnectionString(String connectionString) {
-        this.connectionString.set(connectionString);
+    public StringProperty connectionStringProperty() {
+        if (connectionStringProperty == null) {
+            connectionStringProperty = new SimpleStringProperty(connectionString);
+        }
+        return connectionStringProperty;
     }
 
     /**
