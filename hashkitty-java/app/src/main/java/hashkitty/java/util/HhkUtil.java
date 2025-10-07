@@ -85,4 +85,28 @@ public class HhkUtil {
 
         return importedConnections;
     }
+
+    /**
+     * Exports a single remote connection to a JSON file.
+     *
+     * @param file        The target .json file to create.
+     * @param connection  The connection to export.
+     * @throws IOException if there is an error writing the file.
+     */
+    public static void exportSingleConnection(File file, RemoteConnection connection) throws IOException {
+        String jsonContent = gson.toJson(connection);
+        Files.writeString(file.toPath(), jsonContent);
+    }
+
+    /**
+     * Imports a single remote connection from a JSON file.
+     *
+     * @param file The .json file to import from.
+     * @return The imported RemoteConnection object.
+     * @throws IOException if there is an error reading the file.
+     */
+    public static RemoteConnection importSingleConnection(File file) throws IOException {
+        String jsonContent = Files.readString(file.toPath());
+        return gson.fromJson(jsonContent, RemoteConnection.class);
+    }
 }
