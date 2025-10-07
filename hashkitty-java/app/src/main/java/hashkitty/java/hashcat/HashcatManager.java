@@ -17,16 +17,19 @@ public class HashcatManager {
     private Process hashcatProcess;
     private final Consumer<String> onCrackedPassword;
     private final Consumer<String> onError;
+    private final Runnable onComplete;
 
     /**
      * Constructs a new HashcatManager.
      *
      * @param onCrackedPassword A callback function to be executed when a password is successfully cracked.
      * @param onError           A callback function to be executed when an error occurs.
+     * @param onComplete        A callback function to be executed when the hashcat process completes.
      */
-    public HashcatManager(Consumer<String> onCrackedPassword, Consumer<String> onError) {
+    public HashcatManager(Consumer<String> onCrackedPassword, Consumer<String> onError, Runnable onComplete) {
         this.onCrackedPassword = onCrackedPassword;
         this.onError = onError;
+        this.onComplete = onComplete;
     }
 
     /**
@@ -127,39 +130,45 @@ public class HashcatManager {
         System.out.println("Hashcat process started with command: " + String.join(" ", command));
 
         new Thread(() -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(hashcatProcess.getInputStream()))) {
-                String line;
-                boolean found = false;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("hashcat: " + line);
+            try {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(hashcatProcess.getInputStream()))) {
+                    String line;
+                    boolean found = false;
+                    while ((line = reader.readLine()) != null) {
+                        System.out.println("hashcat: " + line);
 
-                    boolean isCrackedLine;
-                    if (hashToMonitor != null) {
-                        isCrackedLine = line.startsWith(hashToMonitor + ":");
-                    } else {
-                        isCrackedLine = line.contains(":") && !line.startsWith("Status") && !line.startsWith("Session") && !line.startsWith("Input");
-                    }
+                        boolean isCrackedLine;
+                        if (hashToMonitor != null) {
+                            isCrackedLine = line.startsWith(hashToMonitor + ":");
+                        } else {
+                            isCrackedLine = line.contains(":") && !line.startsWith("Status") && !line.startsWith("Session") && !line.startsWith("Input");
+                        }
 
-                    if (isCrackedLine) {
-                        String[] parts = line.split(":", 2);
-                        if (parts.length > 1) {
-                            onCrackedPassword.accept(parts[1]);
-                            found = true;
+                        if (isCrackedLine) {
+                            String[] parts = line.split(":", 2);
+                            if (parts.length > 1) {
+                                onCrackedPassword.accept(parts[1]);
+                                found = true;
+                            }
                         }
                     }
-                }
 
-                int exitCode = hashcatProcess.waitFor();
-                System.out.println("Hashcat process finished with exit code: " + exitCode);
-                if (exitCode != 0 && !found) {
-                     onError.accept("Hashcat exited with error code " + exitCode + ". Check parameters.");
-                }
+                    int exitCode = hashcatProcess.waitFor();
+                    System.out.println("Hashcat process finished with exit code: " + exitCode);
+                    if (exitCode != 0 && !found) {
+                        onError.accept("Hashcat exited with error code " + exitCode + ". Check parameters.");
+                    }
 
-            } catch (IOException e) {
-                onError.accept("Error reading hashcat output: " + e.getMessage());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                onError.accept("Hashcat process was interrupted.");
+                } catch (IOException e) {
+                    onError.accept("Error reading hashcat output: " + e.getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    onError.accept("Hashcat process was interrupted.");
+                }
+            } finally {
+                if (onComplete != null) {
+                    onComplete.run();
+                }
             }
         }).start();
     }

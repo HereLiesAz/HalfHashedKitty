@@ -33,7 +33,7 @@ public class DirectServer extends WebSocketServer {
     public DirectServer(int port, Consumer<String> onStatusUpdate, Consumer<String> onPasswordCracked) {
         super(new InetSocketAddress(port));
         this.onStatusUpdate = onStatusUpdate;
-        this.hashcatManager = new HashcatManager(onPasswordCracked, onStatusUpdate);
+        this.hashcatManager = new HashcatManager(onPasswordCracked, onStatusUpdate, null); // No UI to update on complete
     }
 
     @Override

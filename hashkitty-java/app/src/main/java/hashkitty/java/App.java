@@ -52,6 +52,12 @@ public class App extends Application {
     private TextField hashFileField;
     private TextField ruleFileField;
     private VBox attackInputsContainer;
+    private TextField hashModeField;
+    private ComboBox<String> attackModeSelector;
+    private Button chooseHashFileButton;
+    private Button chooseRuleFileButton;
+    private Button startButton;
+    private Button stopButton;
     private HashcatManager hashcatManager;
     private SniffManager sniffManager;
     private RelayProcessManager relayProcessManager;
@@ -69,7 +75,7 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("pwn-pi", "pi@192.168.1.10"));
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
-        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus);
+        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus, () -> setAttackInProgress(false));
         relayProcessManager = new RelayProcessManager(this::updateStatus);
         roomId = UUID.randomUUID().toString().substring(0, 8);
 
@@ -170,7 +176,7 @@ public class App extends Application {
 
         hashFileField = new TextField();
         hashFileField.setPromptText("Path to hash file");
-        Button chooseHashFileButton = new Button("...");
+        chooseHashFileButton = new Button("...");
         chooseHashFileButton.setOnAction(e -> {
             File file = new FileChooser().showOpenDialog(primaryStage);
             if (file != null) hashFileField.setText(file.getAbsolutePath());
@@ -178,12 +184,12 @@ public class App extends Application {
         grid.add(new Label("Hash File:"), 0, 0);
         grid.add(new HBox(5, hashFileField, chooseHashFileButton), 1, 0);
 
-        TextField hashModeField = new TextField();
+        hashModeField = new TextField();
         hashModeField.setPromptText("e.g., 22000 for WPA2");
         grid.add(new Label("Hash Mode:"), 0, 1);
         grid.add(hashModeField, 1, 1);
 
-        ComboBox<String> attackModeSelector = new ComboBox<>();
+        attackModeSelector = new ComboBox<>();
         attackModeSelector.getItems().addAll("Dictionary", "Mask");
         attackModeSelector.setValue("Dictionary");
         grid.add(new Label("Attack Mode:"), 0, 2);
@@ -191,7 +197,7 @@ public class App extends Application {
 
         ruleFileField = new TextField();
         ruleFileField.setPromptText("(Optional) Path to rule file");
-        Button chooseRuleFileButton = new Button("...");
+        chooseRuleFileButton = new Button("...");
         chooseRuleFileButton.setOnAction(e -> {
             File file = new FileChooser().showOpenDialog(primaryStage);
             if (file != null) ruleFileField.setText(file.getAbsolutePath());
@@ -205,7 +211,7 @@ public class App extends Application {
             if ("Dictionary".equals(newVal)) createDictionaryInput(); else createMaskInput();
         });
 
-        Button startButton = new Button("Start Local Attack");
+        startButton = new Button("Start Local Attack");
         startButton.setOnAction(e -> {
             try {
                 String hashFile = hashFileField.getText();
@@ -219,13 +225,15 @@ public class App extends Application {
                     return;
                 }
 
+                setAttackInProgress(true);
                 updateStatus("Starting " + attackMode + " attack...");
                 hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
             } catch (IOException ex) {
                 updateStatus("Error starting hashcat process: " + ex.getMessage());
+                setAttackInProgress(false);
             }
         });
-        Button stopButton = new Button("Stop Attack");
+        stopButton = new Button("Stop Attack");
         stopButton.setOnAction(e -> hashcatManager.stopCracking());
         HBox buttonBox = new HBox(20, startButton, stopButton);
         buttonBox.setAlignment(Pos.CENTER);
@@ -234,6 +242,26 @@ public class App extends Application {
         box.setAlignment(Pos.TOP_CENTER);
         box.setPadding(new Insets(20));
         return box;
+    }
+
+    private void setAttackInProgress(boolean inProgress) {
+        Platform.runLater(() -> {
+            // Disable configuration inputs during an attack
+            hashFileField.setDisable(inProgress);
+            hashModeField.setDisable(inProgress);
+            ruleFileField.setDisable(inProgress);
+            attackModeSelector.setDisable(inProgress);
+            chooseHashFileButton.setDisable(inProgress);
+            chooseRuleFileButton.setDisable(inProgress);
+
+            // Also disable the dynamic inputs (wordlist/mask)
+            if (wordlistField != null) wordlistField.setDisable(inProgress);
+            if (maskField != null) maskField.setDisable(inProgress);
+
+            // Toggle the start/stop buttons
+            startButton.setDisable(inProgress);
+            stopButton.setDisable(!inProgress);
+        });
     }
 
     private VBox createSettingsBox() {
