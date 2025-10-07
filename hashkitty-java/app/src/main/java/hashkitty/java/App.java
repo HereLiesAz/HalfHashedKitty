@@ -6,6 +6,7 @@ import hashkitty.java.model.HashtopolisTask;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.relay.RelayClient;
 import hashkitty.java.relay.RelayProcessManager;
+import hashkitty.java.server.DirectServer;
 import hashkitty.java.sniffer.SniffManager;
 import hashkitty.java.util.FileUtil;
 import hashkitty.java.util.HhkUtil;
@@ -26,6 +27,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import com.google.gson.JsonSyntaxException;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
@@ -67,6 +69,7 @@ public class App extends Application {
     private HashcatManager hashcatManager;
     private SniffManager sniffManager;
     private RelayProcessManager relayProcessManager;
+    private DirectServer directServer;
     private RelayClient relayClient;
     private Stage primaryStage;
     private Scene mainScene;
@@ -133,7 +136,29 @@ public class App extends Application {
         hashcatManager.stopCracking();
         if (sniffManager != null) sniffManager.stopSniffing();
         if (relayClient != null) relayClient.close();
+        if (directServer != null) {
+            try {
+                directServer.stop(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                updateStatus("Error stopping direct server.");
+            }
+        }
         if (relayProcessManager != null) relayProcessManager.stopRelay();
+    }
+
+    private void toggleDirectConnection(boolean enabled) {
+        stopAllServices(); // Stop everything before switching
+        if (enabled) {
+            updateStatus("Starting direct connection server...");
+            directServer = new DirectServer(RELAY_PORT, this::updateStatus, this::displayCrackedPassword);
+            directServer.start();
+            connectToRelay("ws://" + NetworkUtil.getLocalIpAddress() + ":" + RELAY_PORT);
+        } else {
+            updateStatus("Starting Go relay server...");
+            relayProcessManager.startRelay();
+            connectToRelay("ws://localhost:" + RELAY_PORT + "/ws");
+        }
     }
 
     private void connectToRelay(String serverUriString) {
@@ -210,7 +235,14 @@ public class App extends Application {
         HBox remoteConnectBox = new HBox(10, remoteRelayField, connectRemoteButton);
         remoteConnectBox.setAlignment(Pos.CENTER);
 
-        box.getChildren().addAll(new Label("Mobile Connection"), qrCodeView, connectionLabel, new Separator(), remoteConnectBox);
+        CheckBox directConnectionCheckbox = new CheckBox("Use Direct Connection (LAN Only)");
+        directConnectionCheckbox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            toggleDirectConnection(newVal);
+        });
+        HBox directConnectBox = new HBox(10, directConnectionCheckbox);
+        directConnectBox.setAlignment(Pos.CENTER);
+
+        box.getChildren().addAll(new Label("Mobile Connection"), qrCodeView, connectionLabel, new Separator(), remoteConnectBox, new Separator(), directConnectBox);
         return box;
     }
 
@@ -412,6 +444,8 @@ public class App extends Application {
                 RemoteConnection imported = HhkUtil.importSingleConnection(file);
                 remoteConnections.add(imported);
                 updateStatus("Successfully imported '" + imported.getName() + "' from " + file.getName());
+            } catch (JsonSyntaxException ex) {
+                updateStatus("Error: The selected file is not a valid JSON remote connection file.");
             } catch (IOException ex) {
                 updateStatus("Error importing connection: " + ex.getMessage());
             }
@@ -486,6 +520,9 @@ public class App extends Application {
                         taskTable.setItems(FXCollections.observableArrayList(tasks));
                         statusLabel.setText("Status: Connected. Fetched " + tasks.size() + " tasks.");
                     });
+                } catch (JsonSyntaxException ex) {
+                    Platform.runLater(() -> statusLabel.setText("Status: Error - Server returned malformed data."));
+                    ex.printStackTrace();
                 } catch (IOException ex) {
                     Platform.runLater(() -> statusLabel.setText("Status: Error - " + ex.getMessage()));
                     ex.printStackTrace();
@@ -681,6 +718,8 @@ public class App extends Application {
                     updateStatus("Successfully imported " + imported.size() + " connections.");
                 } catch (ZipException ex) {
                     updateStatus("Error importing: Invalid password or corrupted file.");
+            } catch (JsonSyntaxException ex) {
+                updateStatus("Error: The .hhk file contains a malformed remotes.json file.");
                 } catch (IOException ex) {
                     updateStatus("Error importing connections: " + ex.getMessage());
                 }
