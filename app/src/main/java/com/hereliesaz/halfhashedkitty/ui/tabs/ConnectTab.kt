@@ -1,15 +1,9 @@
 package com.hereliesaz.halfhashedkitty.ui.tabs
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,12 +20,44 @@ fun ConnectTab(viewModel: MainViewModel) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ScannerScreen(
-            instructionText = "To connect this Android app with the desktop application, please scan the QR code displayed on the 'Connection' tab of the desktop app.",
-            onQrCodeScanned = { qrCodeValue ->
-                viewModel.onQrCodeScanned(qrCodeValue)
-            }
-        )
+        // Connection Type Toggle
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Relay")
+            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+            Switch(
+                checked = viewModel.connectionType.value == MainViewModel.ConnectionType.DIRECT,
+                onCheckedChange = { isChecked ->
+                    viewModel.connectionType.value = if (isChecked) {
+                        MainViewModel.ConnectionType.DIRECT
+                    } else {
+                        MainViewModel.ConnectionType.RELAY
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+            Text("Direct (LAN)")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // QR Code Scanner (constrained size)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .aspectRatio(1f)
+        ) {
+            ScannerScreen(
+                instructionText = "Scan the QR code from the desktop app to connect.",
+                onQrCodeScanned = { qrCodeValue ->
+                    viewModel.onQrCodeScanned(qrCodeValue)
+                }
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -45,26 +71,6 @@ fun ConnectTab(viewModel: MainViewModel) {
             label = { Text("IP Address or Relay Room ID") },
             modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Connection Type:")
-            Spacer(modifier = Modifier.weight(1f))
-            RadioButton(
-                selected = viewModel.connectionType.value == MainViewModel.ConnectionType.RELAY,
-                onClick = { viewModel.connectionType.value = MainViewModel.ConnectionType.RELAY }
-            )
-            Text("Relay")
-            RadioButton(
-                selected = viewModel.connectionType.value == MainViewModel.ConnectionType.DIRECT,
-                onClick = { viewModel.connectionType.value = MainViewModel.ConnectionType.DIRECT }
-            )
-            Text("Direct")
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
