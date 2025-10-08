@@ -48,3 +48,27 @@ Based on an analysis of Hashcat and the broader security ecosystem, here are sug
 ### 5. Seamless Integration with the Security Ecosystem
 - **Direct Metasploit/John the Ripper Integration:** Allow seamless import of hashes from Metasploit databases or John the Ripper `.pot` files.
 - **PCAP File Analysis:** Enhance the "Sniff" feature by integrating **TShark** to automatically extract handshakes and hashes from `.pcap` files.
+
+## Project Chimera Features
+
+### Architecture & Core Platform
+- **Modular, API-First Design:** Develop a high-performance backend server (e.g., in Go or Python) that exposes a comprehensive REST API for all platform operations.
+- **Hybrid Agent Model:** Support both local and remote cracking agents, allowing users to seamlessly scale from a single machine to a distributed network.
+
+### User Interface & User Experience (UI/UX)
+- **Guided Workflow UI:** Create an intuitive web interface that guides users through setting up an attack, abstracting away complex command-line flags.
+- **"Attack Planner" Wizard:** Implement an intelligent wizard that recommends a multi-stage attack plan based on user-defined goals (hash type, time budget, resources).
+- **Interactive Session Management:** Build a central dashboard for real-time monitoring and control of active attacks (pause, resume, modify).
+
+### Data Management & Workflow
+- **Unified Data Store:** Create a centralized repository for hashlists, wordlists, and rules with automatic ingestion, indexing, and de-duplication.
+- **"Global Potfile" & Brain Integration:** Implement a system-wide database of all cracked hashes and tested candidates to prevent redundant work.
+- **Rule and Mask Visualizer:** Develop a tool to preview the impact of rules and masks on a wordlist, providing keyspace estimates and time-to-completion calculations.
+
+### Distributed Cracking & Scalability
+- **Zero-Configuration Agents:** Simplify the process of adding new agents with self-contained, pre-configured binaries that auto-connect and self-benchmark.
+- **Dynamic and Adaptive Chunking:** Implement an advanced scheduling algorithm that dynamically adjusts work unit sizes based on real-time agent performance and health.
+
+### Analytics & Reporting
+- **Password Pattern Analysis:** Develop an analytics dashboard to identify systemic weaknesses, such as common base words, prefixes/suffixes, and password complexity.
+- **Audit-Ready Reporting:** Enable one-click generation of professional, executive-ready reports summarizing audit findings and providing actionable recommendations.

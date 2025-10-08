@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="TOP_CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hashkitty.java.attack.AttackController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+    <children>
+        <GridPane hgap="10.0" vgap="10.0">
+            <padding>
+                <Insets bottom="20.0" left="10.0" right="10.0" top="20.0" />
+            </padding>
+            <children>
+                <Label text="Hash File:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <HBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <children>
+                        <TextField fx:id="hashFileField" promptText="Path to hash file" HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#chooseHashFile" text="..." />
+                        <Button mnemonicParsing="false" onAction="#identifyHash" text="Identify" />
+                        <Button mnemonicParsing="false" onAction="#importPotfile" text="Import Potfile" />
+                    </children>
+                </HBox>
+                <Label text="Hash Mode:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <ComboBox fx:id="hashModeField" editable="true" prefWidth="250.0" promptText="Select or enter hash mode (e.g., 22000)" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <Label text="Attack Mode:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                <ComboBox fx:id="attackModeSelector" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                <Label text="Rule File:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                <HBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                    <children>
+                        <TextField fx:id="ruleFileField" promptText="(Optional) Path to rule file" HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#chooseRuleFile" text="..." />
+                    </children>
+                </HBox>
+                <Label text="Advanced Options:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                <CheckBox fx:id="forceCheckbox" mnemonicParsing="false" text="Force (--force)" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                <CheckBox fx:id="optimizedKernelsCheckbox" mnemonicParsing="false" text="Optimized Kernels (-O)" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                <Label text="Workload Profile (-w):" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                <ComboBox fx:id="workloadProfileSelector" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+            </children>
+        </GridPane>
+        <VBox fx:id="attackInputsContainer" spacing="10.0" />
+        <HBox alignment="CENTER" spacing="20.0">
+            <children>
+                <Button mnemonicParsing="false" onAction="#startAttack" text="Start Local Attack" />
+                <Button mnemonicParsing="false" onAction="#stopAttack" text="Stop Attack" />
+            </children>
+        </HBox>
+    </children>
+</VBox>
