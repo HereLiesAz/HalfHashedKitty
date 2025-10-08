@@ -3,6 +3,7 @@ package hashkitty.java;
 import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.relay.RelayClient;
+import hashkitty.java.attack.AttackController;
 import hashkitty.java.relay.RelayProcessManager;
 import hashkitty.java.settings.SettingsController;
 import hashkitty.java.sniffer.SniffManager;
@@ -82,7 +83,7 @@ public class App extends Application {
         mainLayout.setTop(topVBox);
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(
-                new Tab("Attack", createAttackConfigBox()),
+                new Tab("Attack", loadAttackScreen()),
                 new Tab("Sniff", createSniffBox()),
                 new Tab("Settings", loadSettingsScreen()),
                 new Tab("Learn", loadLearnScreen()),
@@ -165,84 +166,18 @@ public class App extends Application {
         return box;
     }
 
-    private VBox createAttackConfigBox() {
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 10, 20, 10));
-
-        hashFileField = new TextField();
-        hashFileField.setPromptText("Path to hash file");
-        Button chooseHashFileButton = new Button("...");
-        chooseHashFileButton.setOnAction(e -> {
-            File file = new FileChooser().showOpenDialog(primaryStage);
-            if (file != null) hashFileField.setText(file.getAbsolutePath());
-        });
-        grid.add(new Label("Hash File:"), 0, 0);
-        grid.add(new HBox(5, hashFileField, chooseHashFileButton), 1, 0);
-
-        TextField hashModeField = new TextField();
-        hashModeField.setPromptText("e.g., 22000 for WPA2");
-        grid.add(new Label("Hash Mode:"), 0, 1);
-        grid.add(hashModeField, 1, 1);
-
-        ComboBox<String> attackModeSelector = new ComboBox<>();
-        attackModeSelector.getItems().addAll("Dictionary", "Mask");
-        attackModeSelector.setValue("Dictionary");
-        grid.add(new Label("Attack Mode:"), 0, 2);
-        grid.add(attackModeSelector, 1, 2);
-
-        ruleFileField = new TextField();
-        ruleFileField.setPromptText("(Optional) Path to rule file");
-        Button chooseRuleFileButton = new Button("...");
-        chooseRuleFileButton.setOnAction(e -> {
-            File file = new FileChooser().showOpenDialog(primaryStage);
-            if (file != null) ruleFileField.setText(file.getAbsolutePath());
-        });
-        grid.add(new Label("Rule File:"), 0, 3);
-        grid.add(new HBox(5, ruleFileField, chooseRuleFileButton), 1, 3);
-
-        attackInputsContainer = new VBox(10);
-        createDictionaryInput();
-        attackModeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if ("Dictionary".equals(newVal)) createDictionaryInput(); else createMaskInput();
-        });
-
-        Button startButton = new Button("Start Local Attack");
-        startButton.setOnAction(e -> {
-            try {
-                String hashFile = hashFileField.getText();
-                String mode = hashModeField.getText();
-                String attackMode = attackModeSelector.getValue();
-                String ruleFile = ruleFileField.getText();
-                String target;
-
-                if ("Dictionary".equals(attackMode)) {
-                    target = wordlistField.getText();
-                } else { // Mask attack
-                    target = maskField.getText();
-                }
-
-                if (hashFile.isEmpty() || mode.isEmpty() || target.isEmpty()) {
-                    updateStatus("Error: Hash File, Hash Mode, and Wordlist/Mask cannot be empty.");
-                    return;
-                }
-
-                updateStatus("Starting " + attackMode + " attack...");
-                hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
-            } catch (IOException ex) {
-                updateStatus("Error starting hashcat process: " + ex.getMessage());
-            }
-        });
-        Button stopButton = new Button("Stop Attack");
-        stopButton.setOnAction(e -> hashcatManager.stopCracking());
-        HBox buttonBox = new HBox(20, startButton, stopButton);
-        buttonBox.setAlignment(Pos.CENTER);
-
-        VBox box = new VBox(20, grid, attackInputsContainer, buttonBox);
-        box.setAlignment(Pos.TOP_CENTER);
-        box.setPadding(new Insets(20));
-        return box;
+    private Node loadAttackScreen() {
+        try {
+            String fxmlPath = "/fxml/Attack.fxml";
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            Parent root = fxmlLoader.load();
+            AttackController controller = fxmlLoader.getController();
+            controller.initData(this, hashcatManager, primaryStage);
+            return root;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Attack screen: " + e.getMessage());
+        }
     }
 
     private Parent loadFxml(String fxml) throws IOException {
@@ -456,52 +391,6 @@ public class App extends Application {
         });
         Optional<RemoteConnection> result = dialog.showAndWait();
         result.ifPresent(remoteConnections::add);
-    }
-
-    private void createDictionaryInput() {
-        attackInputsContainer.getChildren().clear();
-        Label wordlistLabel = new Label("Wordlist:");
-        wordlistField = new TextField();
-        wordlistField.setPromptText("Path to wordlist file");
-        Button chooseFileButton = new Button("...");
-        chooseFileButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select Wordlist File");
-            File file = fileChooser.showOpenDialog(primaryStage);
-            if (file != null) {
-                wordlistField.setText(file.getAbsolutePath());
-            }
-        });
-        HBox dicBox = new HBox(5, wordlistField, chooseFileButton);
-        attackInputsContainer.getChildren().addAll(wordlistLabel, dicBox);
-    }
-
-    private void createMaskInput() {
-        attackInputsContainer.getChildren().clear();
-        Label maskLabel = new Label("Mask:");
-        maskField = new TextField();
-        maskField.setPromptText("e.g., ?d?d?d?d");
-
-        HBox maskHelperButtons = new HBox(5);
-        maskHelperButtons.setAlignment(Pos.CENTER_LEFT);
-
-        Label helperLabel = new Label("Append:");
-        Button lowerAlphaButton = new Button("?l");
-        lowerAlphaButton.setOnAction(e -> maskField.appendText("?l"));
-        Button upperAlphaButton = new Button("?u");
-        upperAlphaButton.setOnAction(e -> maskField.appendText("?u"));
-        Button digitsButton = new Button("?d");
-        digitsButton.setOnAction(e -> maskField.appendText("?d"));
-        Button specialButton = new Button("?s");
-        specialButton.setOnAction(e -> maskField.appendText("?s"));
-        Button allButton = new Button("?a");
-        allButton.setOnAction(e -> maskField.appendText("?a"));
-
-        maskHelperButtons.getChildren().addAll(helperLabel, lowerAlphaButton, upperAlphaButton, digitsButton, specialButton, allButton);
-
-        VBox maskLayout = new VBox(10, maskLabel, maskField, maskHelperButtons);
-
-        attackInputsContainer.getChildren().add(maskLayout);
     }
 
     private VBox createResultsBox() {
