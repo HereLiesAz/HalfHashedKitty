@@ -26,6 +26,7 @@
                         <TextField fx:id="hashFileField" promptText="Path to hash file" HBox.hgrow="ALWAYS" />
                         <Button mnemonicParsing="false" onAction="#chooseHashFile" text="..." />
                         <Button mnemonicParsing="false" onAction="#identifyHash" text="Identify" />
+                        <Button mnemonicParsing="false" onAction="#importPotfile" text="Import Potfile" />
                     </children>
                 </HBox>
                 <Label text="Hash Mode:" GridPane.columnIndex="0" GridPane.rowIndex="1" />

@@ -9,6 +9,7 @@ import hashkitty.java.settings.SettingsController;
 import hashkitty.java.sniffer.SniffController;
 import hashkitty.java.sniffer.SniffManager;
 import hashkitty.java.util.ErrorUtil;
+import hashkitty.java.util.HibpUtil;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
 import hashkitty.java.util.QRCodeUtil;
@@ -66,6 +67,8 @@ public class App extends Application {
     private Scene mainScene;
     private String roomId;
     private final ObservableList<RemoteConnection> remoteConnections = FXCollections.observableArrayList();
+    private String lastCrackedPassword;
+    private Button hibpCheckButton;
 
     @Override
     public void start(Stage primaryStage) {
@@ -376,7 +379,15 @@ public class App extends Application {
         statusLog.setPrefHeight(100);
         crackedPasswordLabel = new Label("Cracked Password: N/A");
         crackedPasswordLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        VBox box = new VBox(10, new Label("Status Log"), statusLog, crackedPasswordLabel);
+
+        hibpCheckButton = new Button("Check HIBP for Exposure");
+        hibpCheckButton.setDisable(true); // Disable until a password is cracked
+        hibpCheckButton.setOnAction(e -> checkHibp());
+
+        HBox crackedPasswordBox = new HBox(20, crackedPasswordLabel, hibpCheckButton);
+        crackedPasswordBox.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(10, new Label("Status Log"), statusLog, crackedPasswordBox);
         box.setPadding(new Insets(10));
         return box;
     }
@@ -387,6 +398,8 @@ public class App extends Application {
 
     private void displayCrackedPassword(String password) {
         Platform.runLater(() -> {
+            lastCrackedPassword = password;
+            hibpCheckButton.setDisable(false);
             crackedPasswordLabel.setText("Cracked Password: " + password);
             updateStatus("SUCCESS: Password found! -> " + password);
             if (relayClient != null && relayClient.isOpen()) {
@@ -397,5 +410,39 @@ public class App extends Application {
                 relayClient.sendMessage(crackedMessage);
             }
         });
+    }
+
+    private void checkHibp() {
+        if (lastCrackedPassword == null || lastCrackedPassword.isEmpty()) {
+            return;
+        }
+        hibpCheckButton.setDisable(true); // Disable while checking
+        updateStatus("Checking password '" + lastCrackedPassword + "' against HIBP database...");
+
+        // Run the check on a background thread to avoid freezing the UI
+        new Thread(() -> {
+            try {
+                int count = HibpUtil.checkPassword(lastCrackedPassword);
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("HIBP Check Result");
+                    if (count > 0) {
+                        alert.setHeaderText("Password Found!");
+                        alert.setContentText("The password '" + lastCrackedPassword + "' has been found in " + String.format("%,d", count) + " data breaches.\n\nIt is strongly recommended not to use this password.");
+                    } else {
+                        alert.setHeaderText("Password Not Found");
+                        alert.setContentText("Good news! The password '" + lastCrackedPassword + "' was not found in the Have I Been Pwned database.");
+                    }
+                    alert.showAndWait();
+                    updateStatus("HIBP check complete.");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    ErrorUtil.showError("HIBP API Error", "Failed to check password: " + e.getMessage());
+                });
+            } finally {
+                Platform.runLater(() -> hibpCheckButton.setDisable(false)); // Re-enable the button
+            }
+        }).start();
     }
 }

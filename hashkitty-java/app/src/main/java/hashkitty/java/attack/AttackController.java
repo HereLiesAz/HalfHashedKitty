@@ -15,9 +15,13 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class AttackController {
@@ -142,6 +146,55 @@ public class AttackController {
 
         } catch (IOException e) {
             ErrorUtil.showError("File Error", "Could not read the hash file: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void importPotfile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select John the Ripper Potfile");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JtR Potfile", "*.pot"));
+        File potfile = fileChooser.showOpenDialog(primaryStage);
+
+        if (potfile != null) {
+            List<String> hashes = new ArrayList<>();
+            try (BufferedReader reader = new BufferedReader(new FileReader(potfile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    int lastColonIndex = line.lastIndexOf(':');
+                    if (lastColonIndex > 0) { // Ensure there is a colon and the hash part is not empty
+                        String hash = line.substring(0, lastColonIndex);
+                        if (!hash.isEmpty()) {
+                            hashes.add(hash);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                ErrorUtil.showError("File Error", "Failed to read the potfile: " + e.getMessage());
+                return;
+            }
+
+            if (!hashes.isEmpty()) {
+                try {
+                    File tempFile = File.createTempFile("imported_hashes_", ".txt");
+                    tempFile.deleteOnExit(); // Clean up the file when the application closes
+
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                        for (String hash : hashes) {
+                            writer.write(hash);
+                            writer.newLine();
+                        }
+                    }
+
+                    hashFileField.setText(tempFile.getAbsolutePath());
+                    app.updateStatus("Successfully imported " + hashes.size() + " hashes from potfile.");
+
+                } catch (IOException e) {
+                    ErrorUtil.showError("File Error", "Failed to create temporary hash file: " + e.getMessage());
+                }
+            } else {
+                ErrorUtil.showError("Import Failed", "No valid hashes were found in the selected potfile.");
+            }
         }
     }
 
