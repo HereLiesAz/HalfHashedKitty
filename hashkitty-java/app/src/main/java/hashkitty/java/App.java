@@ -8,6 +8,7 @@ import hashkitty.java.relay.RelayProcessManager;
 import hashkitty.java.settings.SettingsController;
 import hashkitty.java.sniffer.SniffController;
 import hashkitty.java.sniffer.SniffManager;
+import hashkitty.java.util.ErrorUtil;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
 import hashkitty.java.util.QRCodeUtil;
@@ -124,7 +125,7 @@ public class App extends Application {
             relayClient.connect();
             updateQRCode();
         } catch (URISyntaxException e) {
-            updateStatus("Error: Invalid relay server URI.");
+            ErrorUtil.showError("Connection Error", "Invalid relay server URI.");
             e.printStackTrace();
         }
     }
@@ -136,7 +137,7 @@ public class App extends Application {
                 String wordlistPath = "/app/test-hashes-short.txt";
                 hashcatManager.startAttackWithString(message.getHash(), message.getMode(), "Dictionary", wordlistPath, null);
             } catch (IOException e) {
-                updateStatus("Error starting remote attack: " + e.getMessage());
+                ErrorUtil.showError("Remote Attack Error", "Error starting remote attack: " + e.getMessage());
             }
         }
     }
@@ -221,7 +222,7 @@ public class App extends Application {
                 mainScene.getStylesheets().add(css);
                 updateStatus("Applied Dark Theme.");
             } catch (Exception e) {
-                updateStatus("Error: Could not load dark theme stylesheet.");
+                ErrorUtil.showError("Theme Error", "Could not load dark theme stylesheet.");
                 e.printStackTrace();
             }
         } else {
@@ -306,7 +307,7 @@ public class App extends Application {
                     HhkUtil.exportConnections(file, password, new ArrayList<>(remoteConnections));
                     updateStatus("Successfully exported connections.");
                 } catch (IOException ex) {
-                    updateStatus("Error exporting connections: " + ex.getMessage());
+                    ErrorUtil.showError("Export Error", "Error exporting connections: " + ex.getMessage());
                 }
             });
         }
@@ -330,9 +331,9 @@ public class App extends Application {
                     remoteConnections.addAll(imported);
                     updateStatus("Successfully imported " + imported.size() + " connections.");
                 } catch (ZipException ex) {
-                    updateStatus("Error importing: Invalid password or corrupted file.");
+                    ErrorUtil.showError("Import Error", "Invalid password or corrupted file.");
                 } catch (IOException ex) {
-                    updateStatus("Error importing connections: " + ex.getMessage());
+                    ErrorUtil.showError("Import Error", "Error importing connections: " + ex.getMessage());
                 }
             });
         }

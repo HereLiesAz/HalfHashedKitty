@@ -1,5 +1,7 @@
 package hashkitty.java.hashcat;
 
+import hashkitty.java.util.ErrorUtil;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -99,7 +101,7 @@ public class HashcatManager {
      */
     private void startAttackInternal(List<String> command, String hashToMonitor) throws IOException {
         if (hashcatProcess != null && hashcatProcess.isAlive()) {
-            onError.accept("A hashcat process is already running.");
+            ErrorUtil.showError("Process Error", "A hashcat process is already running.");
             return;
         }
 
@@ -123,7 +125,7 @@ public class HashcatManager {
         try {
             hashcatProcess = pb.start();
         } catch (IOException e) {
-            onError.accept("Failed to start hashcat. Is it installed and in your system's PATH?");
+            ErrorUtil.showError("Process Error", "Failed to start hashcat. Is it installed and in your system's PATH?");
             throw e;
         }
 
@@ -156,14 +158,14 @@ public class HashcatManager {
                     int exitCode = hashcatProcess.waitFor();
                     System.out.println("Hashcat process finished with exit code: " + exitCode);
                     if (exitCode != 0 && !found) {
-                        onError.accept("Hashcat exited with error code " + exitCode + ". Check parameters.");
+                        ErrorUtil.showError("Hashcat Error", "Hashcat exited with error code " + exitCode + ". Check parameters and hash file.");
                     }
 
                 } catch (IOException e) {
-                    onError.accept("Error reading hashcat output: " + e.getMessage());
+                    ErrorUtil.showError("I/O Error", "Error reading hashcat output: " + e.getMessage());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    onError.accept("Hashcat process was interrupted.");
+                    ErrorUtil.showError("Process Error", "Hashcat process was interrupted.");
                 }
             } finally {
                 if (onComplete != null) {

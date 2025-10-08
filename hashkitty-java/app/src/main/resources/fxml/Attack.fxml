@@ -27,7 +27,7 @@
                     </children>
                 </HBox>
                 <Label text="Hash Mode:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                <TextField fx:id="hashModeField" promptText="e.g., 22000 for WPA2" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <ComboBox fx:id="hashModeField" editable="true" prefWidth="250.0" promptText="Select or enter hash mode (e.g., 22000)" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                 <Label text="Attack Mode:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
                 <ComboBox fx:id="attackModeSelector" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                 <Label text="Rule File:" GridPane.columnIndex="0" GridPane.rowIndex="3" />

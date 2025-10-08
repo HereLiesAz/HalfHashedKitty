@@ -2,6 +2,7 @@ package hashkitty.java.attack;
 
 import hashkitty.java.App;
 import hashkitty.java.hashcat.HashcatManager;
+import hashkitty.java.util.ErrorUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -20,7 +21,7 @@ public class AttackController {
     @FXML
     private TextField hashFileField;
     @FXML
-    private TextField hashModeField;
+    private ComboBox<String> hashModeField;
     @FXML
     private ComboBox<String> attackModeSelector;
     @FXML
@@ -40,6 +41,16 @@ public class AttackController {
     public void initialize() {
         attackModeSelector.getItems().addAll("Dictionary", "Mask");
         attackModeSelector.setValue("Dictionary");
+
+        // Populate the hash mode selector with common types
+        hashModeField.getItems().addAll(
+                "0 - MD5",
+                "1000 - NTLM",
+                "1800 - sha512crypt, SHA-512 (Unix)",
+                "3200 - bcrypt, Blowfish (Unix)",
+                "22000 - WPA-PBKDF2-PMKID+EAPOL",
+                "13100 - Kerberos 5 TGS-REP etype 23"
+        );
 
         // Add listener to switch input fields based on attack mode
         attackModeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -80,7 +91,7 @@ public class AttackController {
     private void startAttack() {
         try {
             String hashFile = hashFileField.getText();
-            String mode = hashModeField.getText();
+            String modeInput = hashModeField.getValue();
             String attackMode = attackModeSelector.getValue();
             String ruleFile = ruleFileField.getText();
             String target;
@@ -91,15 +102,18 @@ public class AttackController {
                 target = maskField.getText();
             }
 
-            if (hashFile.isEmpty() || mode.isEmpty() || target.isEmpty()) {
-                app.updateStatus("Error: Hash File, Hash Mode, and Wordlist/Mask cannot be empty.");
+            if (hashFile.isEmpty() || modeInput == null || modeInput.isEmpty() || target.isEmpty()) {
+                ErrorUtil.showError("Missing Information", "Hash File, Hash Mode, and Wordlist/Mask cannot be empty.");
                 return;
             }
+
+            // Handle case where user selects "0 - MD5", we only want "0"
+            String mode = modeInput.split(" ")[0];
 
             app.updateStatus("Starting " + attackMode + " attack...");
             hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
         } catch (IOException ex) {
-            app.updateStatus("Error starting hashcat process: " + ex.getMessage());
+            ErrorUtil.showError("Hashcat Error", "Error starting hashcat process: " + ex.getMessage());
         }
     }
 
