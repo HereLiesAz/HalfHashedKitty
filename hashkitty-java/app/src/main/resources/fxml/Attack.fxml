@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
@@ -24,6 +25,7 @@
                     <children>
                         <TextField fx:id="hashFileField" promptText="Path to hash file" HBox.hgrow="ALWAYS" />
                         <Button mnemonicParsing="false" onAction="#chooseHashFile" text="..." />
+                        <Button mnemonicParsing="false" onAction="#identifyHash" text="Identify" />
                     </children>
                 </HBox>
                 <Label text="Hash Mode:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
@@ -37,6 +39,11 @@
                         <Button mnemonicParsing="false" onAction="#chooseRuleFile" text="..." />
                     </children>
                 </HBox>
+                <Label text="Advanced Options:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                <CheckBox fx:id="forceCheckbox" mnemonicParsing="false" text="Force (--force)" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                <CheckBox fx:id="optimizedKernelsCheckbox" mnemonicParsing="false" text="Optimized Kernels (-O)" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                <Label text="Workload Profile (-w):" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                <ComboBox fx:id="workloadProfileSelector" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
             </children>
         </GridPane>
         <VBox fx:id="attackInputsContainer" spacing="10.0" />

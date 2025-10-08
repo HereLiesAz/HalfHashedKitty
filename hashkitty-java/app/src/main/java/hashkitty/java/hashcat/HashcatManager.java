@@ -44,8 +44,8 @@ public class HashcatManager {
      * @param ruleFile   The path to a hashcat rule file (can be null).
      * @throws IOException if an I/O error occurs when starting the process.
      */
-    public void startAttackWithFile(String hashFile, String mode, String attackMode, String target, String ruleFile) throws IOException {
-        List<String> command = buildCommand(mode, attackMode, target, ruleFile);
+    public void startAttackWithFile(String hashFile, String mode, String attackMode, String target, String ruleFile, boolean force, boolean optimizedKernels, String workloadProfile) throws IOException {
+        List<String> command = buildCommand(mode, attackMode, target, ruleFile, force, optimizedKernels, workloadProfile);
         command.add(hashFile); // Add hash file as the main input
         startAttackInternal(command, null); // Pass null because we don't have a single hash to monitor
     }
@@ -61,7 +61,8 @@ public class HashcatManager {
      * @throws IOException if an I/O error occurs when starting the process.
      */
     public void startAttackWithString(String hashString, String mode, String attackMode, String target, String ruleFile) throws IOException {
-        List<String> command = buildCommand(mode, attackMode, target, ruleFile);
+        // Remote attacks do not yet support advanced options, so pass default values.
+        List<String> command = buildCommand(mode, attackMode, target, ruleFile, false, false, null);
         command.add(hashString); // Add the hash string directly to the command
         startAttackInternal(command, hashString); // Pass the hash string to monitor the output precisely
     }
@@ -69,12 +70,23 @@ public class HashcatManager {
     /**
      * Constructs the base hashcat command list.
      */
-    private List<String> buildCommand(String mode, String attackMode, String target, String ruleFile) {
+    private List<String> buildCommand(String mode, String attackMode, String target, String ruleFile, boolean force, boolean optimizedKernels, String workloadProfile) {
         List<String> command = new ArrayList<>();
         command.add("hashcat");
         command.add("-m");
         command.add(mode);
         command.add("--potfile-disable");
+
+        if (force) {
+            command.add("--force");
+        }
+        if (optimizedKernels) {
+            command.add("-O");
+        }
+        if (workloadProfile != null && !workloadProfile.isEmpty()) {
+            command.add("-w");
+            command.add(workloadProfile);
+        }
 
         if ("Dictionary".equalsIgnoreCase(attackMode)) {
             command.add("-a");

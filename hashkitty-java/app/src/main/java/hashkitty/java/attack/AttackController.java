@@ -5,6 +5,7 @@ import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.util.ErrorUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -13,8 +14,11 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.Optional;
 
 public class AttackController {
 
@@ -28,6 +32,12 @@ public class AttackController {
     private TextField ruleFileField;
     @FXML
     private VBox attackInputsContainer;
+    @FXML
+    private CheckBox forceCheckbox;
+    @FXML
+    private CheckBox optimizedKernelsCheckbox;
+    @FXML
+    private ComboBox<String> workloadProfileSelector;
 
     private HashcatManager hashcatManager;
     private Stage primaryStage;
@@ -51,6 +61,15 @@ public class AttackController {
                 "22000 - WPA-PBKDF2-PMKID+EAPOL",
                 "13100 - Kerberos 5 TGS-REP etype 23"
         );
+
+        // Populate the workload profile selector
+        workloadProfileSelector.getItems().addAll(
+                "1 - Low",
+                "2 - Default",
+                "3 - High",
+                "4 - Nightmare"
+        );
+        workloadProfileSelector.setValue("2 - Default");
 
         // Add listener to switch input fields based on attack mode
         attackModeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -88,6 +107,45 @@ public class AttackController {
     }
 
     @FXML
+    private void identifyHash() {
+        String hashFilePath = hashFileField.getText();
+        if (hashFilePath == null || hashFilePath.isEmpty()) {
+            ErrorUtil.showError("Input Error", "Please select a hash file first.");
+            return;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(hashFilePath))) {
+            String firstLine = reader.readLine();
+            if (firstLine == null || firstLine.isEmpty()) {
+                ErrorUtil.showError("File Error", "The selected hash file is empty.");
+                return;
+            }
+
+            String identifiedMode = identifyHashType(firstLine.trim());
+            if (identifiedMode != null) {
+                // Find the full description in the combo box
+                Optional<String> match = hashModeField.getItems().stream()
+                        .filter(item -> item.startsWith(identifiedMode + " "))
+                        .findFirst();
+
+                if (match.isPresent()) {
+                    hashModeField.setValue(match.get());
+                    app.updateStatus("Identified hash type: " + match.get());
+                } else {
+                    // If not in the list, just set the mode number
+                    hashModeField.setValue(identifiedMode);
+                    app.updateStatus("Identified hash mode: " + identifiedMode);
+                }
+            } else {
+                ErrorUtil.showError("Identification Failed", "Could not automatically identify the hash type.");
+            }
+
+        } catch (IOException e) {
+            ErrorUtil.showError("File Error", "Could not read the hash file: " + e.getMessage());
+        }
+    }
+
+    @FXML
     private void startAttack() {
         try {
             String hashFile = hashFileField.getText();
@@ -109,9 +167,13 @@ public class AttackController {
 
             // Handle case where user selects "0 - MD5", we only want "0"
             String mode = modeInput.split(" ")[0];
+            boolean force = forceCheckbox.isSelected();
+            boolean optimizedKernels = optimizedKernelsCheckbox.isSelected();
+            String workloadProfileInput = workloadProfileSelector.getValue();
+            String workloadProfile = workloadProfileInput != null ? workloadProfileInput.split(" ")[0] : null;
 
             app.updateStatus("Starting " + attackMode + " attack...");
-            hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
+            hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile, force, optimizedKernels, workloadProfile);
         } catch (IOException ex) {
             ErrorUtil.showError("Hashcat Error", "Error starting hashcat process: " + ex.getMessage());
         }
@@ -166,5 +228,31 @@ public class AttackController {
         VBox maskLayout = new VBox(10, maskLabel, maskField, maskHelperButtons);
 
         attackInputsContainer.getChildren().add(maskLayout);
+    }
+
+    /**
+     * A simple heuristic-based method to identify a hash type from a string.
+     * @param hash The hash string to analyze.
+     * @return A string representing the suggested hashcat mode, or null if not identified.
+     */
+    private String identifyHashType(String hash) {
+        // NTLM (or MD5)
+        if (hash.length() == 32 && hash.matches("^[a-fA-F0-9]{32}$")) {
+            return "1000"; // Default to NTLM as it's common in password dumps
+        }
+        // SHA-1
+        if (hash.length() == 40 && hash.matches("^[a-fA-F0-9]{40}$")) {
+            return "100";
+        }
+        // bcrypt
+        if (hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$")) {
+            return "3200";
+        }
+        // sha512crypt
+        if (hash.startsWith("$6$")) {
+            return "1800";
+        }
+        // Could add many more rules here...
+        return null; // Not identified
     }
 }
