@@ -97,11 +97,11 @@ fun MainScreen(
                             false
                         }
                         azRailItem(
-                            id = "Hashcat Setup",
+                            id = "Setup",
                             color = Color.White,
-                            text = "Hashcat Setup"
+                            text = "Setup"
                         ) {
-                            selectedId = "Hashcat Setup"; if (showInstructions) showInstructions =
+                            selectedId = "Setup"; if (showInstructions) showInstructions =
                             false
                         }
                     }
