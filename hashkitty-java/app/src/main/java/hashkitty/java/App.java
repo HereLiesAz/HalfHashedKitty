@@ -4,6 +4,7 @@ import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.relay.RelayClient;
 import hashkitty.java.relay.RelayProcessManager;
+import hashkitty.java.settings.SettingsController;
 import hashkitty.java.sniffer.SniffManager;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
@@ -21,6 +22,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -69,7 +72,7 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("pwn-pi", "pi@192.168.1.10"));
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
-        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus);
+        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus, () -> {});
         relayProcessManager = new RelayProcessManager(this::updateStatus);
         roomId = UUID.randomUUID().toString().substring(0, 8);
 
@@ -79,11 +82,11 @@ public class App extends Application {
         mainLayout.setTop(topVBox);
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(
-            new Tab("Attack", createAttackConfigBox()),
-            new Tab("Sniff", createSniffBox()),
-            new Tab("Settings", createSettingsBox()),
-            new Tab("Learn", new Label("Learn UI to be implemented")),
-            new Tab("Hashcat Setup", createHashcatSetupBox())
+                new Tab("Attack", createAttackConfigBox()),
+                new Tab("Sniff", createSniffBox()),
+                new Tab("Settings", loadSettingsScreen()),
+                new Tab("Learn", loadLearnScreen()),
+                new Tab("Hashcat Setup", createHashcatSetupBox())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         mainLayout.setCenter(tabPane);
@@ -242,43 +245,52 @@ public class App extends Application {
         return box;
     }
 
-    private VBox createSettingsBox() {
-        VBox settingsLayout = new VBox(20);
-        settingsLayout.setPadding(new Insets(20));
-        settingsLayout.setAlignment(Pos.TOP_LEFT);
-        Label remotesLabel = new Label("Saved Remotes");
-        remotesLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        ListView<RemoteConnection> remotesList = new ListView<>(remoteConnections);
-        remotesList.setPrefHeight(100);
-        Button addButton = new Button("Add");
-        addButton.setOnAction(e -> showAddRemoteDialog());
-        Button removeButton = new Button("Remove");
-        removeButton.setOnAction(e -> {
-            RemoteConnection selected = remotesList.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                remoteConnections.remove(selected);
-                updateStatus("Settings: Removed remote '" + selected.getName() + "'.");
+    private Parent loadFxml(String fxml) throws IOException {
+        String fxmlPath = "/fxml/" + fxml + ".fxml";
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+        return fxmlLoader.load();
+    }
+
+    private Node loadLearnScreen() {
+        try {
+            return loadFxml("Learn");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Learn screen: " + e.getMessage());
+        }
+    }
+
+    private Node loadSettingsScreen() {
+        try {
+            String fxmlPath = "/fxml/Settings.fxml";
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            Parent root = fxmlLoader.load();
+
+            // Get the controller and pass the App instance and remote connections list
+            SettingsController controller = fxmlLoader.getController();
+            controller.initData(this, remoteConnections);
+
+            return root;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Settings screen: " + e.getMessage());
+        }
+    }
+
+    public void applyTheme(String themeName) {
+        mainScene.getStylesheets().clear();
+        if ("Dark".equals(themeName)) {
+            try {
+                String css = this.getClass().getResource("/styles/dark-theme.css").toExternalForm();
+                mainScene.getStylesheets().add(css);
+                updateStatus("Applied Dark Theme.");
+            } catch (Exception e) {
+                updateStatus("Error: Could not load dark theme stylesheet.");
+                e.printStackTrace();
             }
-        });
-        HBox remoteButtons = new HBox(10, addButton, removeButton);
-        VBox remotesBox = new VBox(10, remotesLabel, remotesList, remoteButtons);
-        Label configLabel = new Label("Configuration Management");
-        configLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        Button importButton = new Button("Import from .hhk file");
-        importButton.setOnAction(e -> handleImport());
-        Button exportButton = new Button("Export to .hhk file");
-        exportButton.setOnAction(e -> handleExport());
-        HBox configButtons = new HBox(10, importButton, exportButton);
-        VBox configBox = new VBox(10, configLabel, configButtons);
-        Label themeLabel = new Label("Appearance");
-        themeLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        ComboBox<String> themeSelector = new ComboBox<>();
-        themeSelector.getItems().addAll("Light", "Dark");
-        themeSelector.setValue("Light");
-        themeSelector.valueProperty().addListener((obs, oldVal, newVal) -> applyTheme(newVal));
-        VBox themeBox = new VBox(10, themeLabel, themeSelector);
-        settingsLayout.getChildren().addAll(remotesBox, new Separator(), configBox, new Separator(), themeBox);
-        return settingsLayout;
+        } else {
+            updateStatus("Applied Light Theme.");
+        }
     }
 
     private ScrollPane createHashcatSetupBox() {
@@ -328,21 +340,6 @@ public class App extends Application {
         return scrollPane;
     }
 
-    private void applyTheme(String themeName) {
-        mainScene.getStylesheets().clear();
-        if ("Dark".equals(themeName)) {
-            try {
-                String css = this.getClass().getResource("/styles/dark-theme.css").toExternalForm();
-                mainScene.getStylesheets().add(css);
-                updateStatus("Applied Dark Theme.");
-            } catch (Exception e) {
-                updateStatus("Error: Could not load dark theme stylesheet.");
-                e.printStackTrace();
-            }
-        } else {
-            updateStatus("Applied Light Theme.");
-        }
-    }
 
     private VBox createSniffBox() {
         VBox sniffLayout = new VBox(20);
@@ -382,7 +379,7 @@ public class App extends Application {
         return sniffLayout;
     }
 
-    private void handleExport() {
+    public void handleExport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
@@ -404,7 +401,7 @@ public class App extends Application {
         }
     }
 
-    private void handleImport() {
+    public void handleImport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Import Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
@@ -430,7 +427,7 @@ public class App extends Application {
         }
     }
 
-    private void showAddRemoteDialog() {
+    public void showAddRemoteDialog() {
         Dialog<RemoteConnection> dialog = new Dialog<>();
         dialog.setTitle("Add New Remote");
         ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
@@ -518,7 +515,7 @@ public class App extends Application {
         return box;
     }
 
-    private void updateStatus(String message) {
+    public void updateStatus(String message) {
         Platform.runLater(() -> statusLog.appendText(message + "\n"));
     }
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="hashkitty.java.learn.LearnController"
+      spacing="10" alignment="CENTER">
+    <Label text="Learn about Hashcat and Hashtopolis"/>
+    <!-- More content will be added here -->
+</VBox>
