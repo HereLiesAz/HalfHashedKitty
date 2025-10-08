@@ -6,6 +6,7 @@ import hashkitty.java.relay.RelayClient;
 import hashkitty.java.attack.AttackController;
 import hashkitty.java.relay.RelayProcessManager;
 import hashkitty.java.settings.SettingsController;
+import hashkitty.java.sniffer.SniffController;
 import hashkitty.java.sniffer.SniffManager;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
@@ -84,7 +85,7 @@ public class App extends Application {
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(
                 new Tab("Attack", loadAttackScreen()),
-                new Tab("Sniff", createSniffBox()),
+                new Tab("Sniff", loadSniffScreen()),
                 new Tab("Settings", loadSettingsScreen()),
                 new Tab("Learn", loadLearnScreen()),
                 new Tab("Hashcat Setup", createHashcatSetupBox())
@@ -275,43 +276,18 @@ public class App extends Application {
         return scrollPane;
     }
 
-
-    private VBox createSniffBox() {
-        VBox sniffLayout = new VBox(20);
-        sniffLayout.setPadding(new Insets(20));
-        sniffLayout.setAlignment(Pos.TOP_CENTER);
-        Label titleLabel = new Label("Remote Packet Sniffing");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        HBox remoteSelectionBox = new HBox(10);
-        remoteSelectionBox.setAlignment(Pos.CENTER);
-        Label remoteLabel = new Label("Target Remote:");
-        ComboBox<RemoteConnection> remoteSelector = new ComboBox<>(remoteConnections);
-        remoteSelectionBox.getChildren().addAll(remoteLabel, remoteSelector);
-        TextArea sniffOutput = new TextArea();
-        sniffOutput.setEditable(false);
-        sniffOutput.setPromptText("Sniffing output will appear here...");
-        sniffOutput.setPrefHeight(200);
-        sniffManager = new SniffManager(output -> Platform.runLater(() -> sniffOutput.appendText(output)));
-        Button startSniffButton = new Button("Start Sniffing");
-        Button stopSniffButton = new Button("Stop Sniffing");
-        startSniffButton.setOnAction(e -> {
-            RemoteConnection selected = remoteSelector.getValue();
-            if (selected == null) {
-                sniffOutput.appendText("Please select a remote target first.\n");
-                return;
-            }
-            TextInputDialog passwordDialog = new TextInputDialog();
-            passwordDialog.setTitle("SSH Password");
-            passwordDialog.setHeaderText("Enter password for " + selected.getConnectionString());
-            passwordDialog.setContentText("Password:");
-            Optional<String> result = passwordDialog.showAndWait();
-            result.ifPresent(password -> sniffManager.startSniffing(selected, password));
-        });
-        stopSniffButton.setOnAction(e -> sniffManager.stopSniffing());
-        HBox controlButtons = new HBox(20, startSniffButton, stopSniffButton);
-        controlButtons.setAlignment(Pos.CENTER);
-        sniffLayout.getChildren().addAll(titleLabel, remoteSelectionBox, controlButtons, new Label("Output:"), sniffOutput);
-        return sniffLayout;
+    private Node loadSniffScreen() {
+        try {
+            String fxmlPath = "/fxml/Sniff.fxml";
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            Parent root = fxmlLoader.load();
+            SniffController controller = fxmlLoader.getController();
+            controller.initData(this, remoteConnections);
+            return root;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Sniff screen: " + e.getMessage());
+        }
     }
 
     public void handleExport() {
