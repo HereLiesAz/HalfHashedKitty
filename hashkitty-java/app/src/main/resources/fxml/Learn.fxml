@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+
+<ScrollPane fitToWidth="true" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hashkitty.java.learn.LearnController">
+    <content>
+        <VBox spacing="15.0">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+            <children>
+                <Label style="-fx-font-size: 20px; -fx-font-weight: bold;" text="Learning Center: Hashcat &amp; Hashtopolis" />
+                <Text text="This section provides a brief overview of the core tools used in password cracking." wrappingWidth="550.0" />
+                <Separator prefWidth="200.0" />
+
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="What is Hashcat?" />
+                <Text wrappingWidth="550.0">
+                    Hashcat is widely regarded as the world's fastest and most advanced password recovery utility. Its primary strength is its ability to use the massive parallel processing power of modern Graphics Processing Units (GPUs) to perform cryptanalytic tasks at incredible speeds.
+                    {"\n\n"}
+                    It is a command-line tool used by cybersecurity professionals for password auditing, digital forensics, and recovering lost credentials. Hashcat supports hundreds of hashing algorithms and multiple attack modes, making it an extremely versatile and powerful engine for cracking.
+                </Text>
+
+                <Separator prefWidth="200.0" />
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="What is Hashtopolis?" />
+                <Text wrappingWidth="550.0">
+                    Hashtopolis is a distributed password cracking management system. While Hashcat is the engine that performs the cracking, Hashtopolis is the framework that manages and coordinates the cracking process across multiple computers, often referred to as a "cracking farm."
+                    {"\n\n"}
+                    It uses a client-server architecture. A central server manages tasks (like lists of hashes to crack), wordlists, and rules. Agents (clients) are installed on various machines, which request work from the server, perform the cracking using their local Hashcat instance, and report the results back.
+                </Text>
+
+                <Separator prefWidth="200.0" />
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="How They Work Together" />
+                <Text wrappingWidth="550.0">
+                    Hashtopolis orchestrates Hashcat. Instead of a user manually running a complex Hashcat command on a single machine, they submit a task to the Hashtopolis web interface. Hashtopolis intelligently breaks this large task into thousands of smaller "chunks" and distributes them to all available agents.
+                    {"\n\n"}
+                    This allows for massively scalable password cracking operations, efficiently utilizing the combined power of all connected machines without requiring manual intervention. HashKitty aims to provide a user-friendly interface to this powerful combination.
+                </Text>
+            </children>
+        </VBox>
+    </content>
+</ScrollPane>

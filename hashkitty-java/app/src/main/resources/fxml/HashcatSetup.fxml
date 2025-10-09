@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+
+<ScrollPane fitToWidth="true" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hashkitty.java.setup.HashcatSetupController">
+    <content>
+        <VBox spacing="15.0">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+            <children>
+                <Label style="-fx-font-size: 20px; -fx-font-weight: bold;" text="Setting Up Hashcat for GPU Cracking" />
+                <Text text="Hashcat uses your Graphics Card (GPU) to crack hashes incredibly fast. To make this work, you need the right drivers installed. If hashcat isn't working, this is the most common reason why." wrappingWidth="550.0" />
+                <Separator prefWidth="200.0" />
+
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Step 1: Install Hashcat" />
+                <Text text="Download the latest version from the official website: hashcat.net/hashcat/. Extract the archive to a known location on your computer." wrappingWidth="550.0" />
+                <Separator prefWidth="200.0" />
+
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Step 2: Install GPU Drivers" />
+                <Text wrappingWidth="550.0">This is the most important step.
+
+NVIDIA Users:
+You need the latest 'Game Ready' or 'Studio' drivers. Download them from the official NVIDIA website. Hashcat uses the NVIDIA CUDA platform.
+
+AMD Users:
+You need the latest 'Adrenalin Edition' drivers. Download them from the official AMD website. Hashcat uses the OpenCL platform, which is included with these drivers.
+
+Intel GPU Users:
+You need the latest graphics drivers from Intel's website. Hashcat uses the OpenCL platform, which is included with these drivers.</Text>
+                <Separator prefWidth="200.0" />
+
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Step 3: Verify Everything Works" />
+                <Text wrappingWidth="550.0">Open a command prompt or terminal, navigate to your hashcat directory, and run the benchmark command:
+
+hashcat.exe -b
+
+If everything is set up correctly, you will see a list of your GPUs and a benchmark running for various hash types. If you see errors about missing DLLs or no devices being found, it means your GPU drivers are not installed correctly.</Text>
+            </children>
+        </VBox>
+    </content>
+</ScrollPane>
