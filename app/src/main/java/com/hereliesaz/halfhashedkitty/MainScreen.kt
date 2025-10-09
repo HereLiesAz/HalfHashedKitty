@@ -128,7 +128,7 @@ fun MainScreen(
                                 "Wordlist" -> WordlistTab(viewModel)
                                 "Mask" -> MaskTab()
                                 "Terminal" -> TerminalTab(viewModel)
-                                "Sniff" -> SniffTab(viewModel, sniffViewModel)
+                                "Sniff" -> SniffTab(sniffViewModel)
                                 "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
                                 "Connect" -> ConnectTab(viewModel)
                                 "Hashcat Setup" -> HashcatSetupTab()
@@ -150,14 +150,15 @@ fun MainScreen(
 @Preview()
 @Composable
 fun DefaultPreview() {
+    val mainViewModel = MainViewModel(
+        Application(),
+        HashcatApiClient(),
+        Cap2HashcatApiClient()
+    )
     MainScreen(
-        MainViewModel(
-            Application(),
-            HashcatApiClient(),
-            Cap2HashcatApiClient()
-        ),
-        HashtopolisViewModel(),
+        mainViewModel,
+        HashtopolisViewModel(HashtopolisApiClient()),
         PiControlViewModel(),
-        SniffViewModel()
+        SniffViewModel(HashcatApiClient(), mainViewModel)
     )
 }

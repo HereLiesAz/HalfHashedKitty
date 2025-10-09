@@ -4,40 +4,36 @@
 
 plugins {
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
-}
-
-repositories {
-    mavenCentral()
+    alias(libs.plugins.openjfx)
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation libs.junit.jupiter.api
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.platform.launcher
 
     // WebSocket support
-    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation libs.java.websocket
 
     // JavaFX
-    implementation 'org.openjfx:javafx-controls:17.0.1'
-    implementation 'org.openjfx:javafx-fxml:17.0.1'
+    implementation libs.javafx.controls
+    implementation libs.javafx.fxml
 
     // QR Code Generation (ZXing)
-    implementation 'com.google.zxing:core:3.4.1'
-    implementation 'com.google.zxing:javase:3.4.1'
+    implementation libs.zxing.core
+    implementation libs.zxing.javase
 
     // JSON Processing (Gson)
-    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation libs.gson
 
     // Zip file handling (for .hhk files)
-    implementation 'net.lingala.zip4j:zip4j:2.11.2'
+    implementation libs.zip4j
 
     // SSH library for remote sniffing
-    implementation 'com.jcraft:jsch:0.1.55'
+    implementation libs.jsch
 
     // HTTP Client for API requests
-    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation libs.okhttp
 }
 
 java {
@@ -55,6 +51,6 @@ tasks.named('test') {
 }
 
 javafx {
-    version = "17.0.1"
+    version = libs.versions.javafx.get()
     modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
