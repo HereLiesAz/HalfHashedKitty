@@ -2,7 +2,6 @@ package com.hereliesaz.halfhashedkitty.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -19,11 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hereliesaz.halfhashedkitty.QrCodeAnalyzer
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
@@ -57,7 +56,6 @@ fun ScannerScreen(instructionText: String, onQrCodeScanned: (String) -> Unit) {
                         .build()
                     preview.setSurfaceProvider(previewView.surfaceProvider)
                     val imageAnalysis = ImageAnalysis.Builder()
-                        .setTargetResolution(Size(640, 480))
                         .setBackpressureStrategy(STRATEGY_KEEP_ONLY_LATEST)
                         .build()
 

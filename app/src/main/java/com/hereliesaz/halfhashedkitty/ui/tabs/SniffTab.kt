@@ -32,9 +32,7 @@ fun SniffTab(
                 readOnly = true,
                 label = { Text("Target Device") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             )
             ExposedDropdownMenu(
                 expanded = expanded,
