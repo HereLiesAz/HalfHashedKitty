@@ -2,11 +2,14 @@
 
 .root {
     -fx-base: #2E2E2E;
-    -fx-background: #1E1E1E;
+    -fx-background-color: #1E1E1E;
     -fx-control-inner-background: #3E3E3E;
     -fx-control-inner-background-alt: #3E3E3E;
     -fx-text-background-color: #DCDCDC;
     -fx-accent: #007ACC;
+    -fx-background-image: url("../images/half_hashed_kitty_banner.png");
+    -fx-background-size: cover;
+    -fx-background-blend-mode: multiply;
 }
 
 .label {
