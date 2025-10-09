@@ -6,7 +6,6 @@ plugins {
 dependencies {
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
-    testRuntimeOnly(libs.junit.platform.launcher)
 
     // WebSocket support
     implementation(libs.java.websocket)
@@ -48,5 +47,5 @@ tasks.named<Test>("test") {
 
 javafx {
     version = libs.versions.javafx.get()
-    modules.set(listOf("javafx.controls", "javafx.fxml"))
+    modules = listOf("javafx.controls", "javafx.fxml")
 }
