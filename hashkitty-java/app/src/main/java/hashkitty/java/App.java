@@ -3,8 +3,13 @@ package hashkitty.java;
 import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.relay.RelayClient;
+import hashkitty.java.attack.AttackController;
 import hashkitty.java.relay.RelayProcessManager;
+import hashkitty.java.settings.SettingsController;
+import hashkitty.java.sniffer.SniffController;
 import hashkitty.java.sniffer.SniffManager;
+import hashkitty.java.util.ErrorUtil;
+import hashkitty.java.util.HibpUtil;
 import hashkitty.java.util.HhkUtil;
 import hashkitty.java.util.NetworkUtil;
 import hashkitty.java.util.QRCodeUtil;
@@ -21,6 +26,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -60,6 +67,8 @@ public class App extends Application {
     private Scene mainScene;
     private String roomId;
     private final ObservableList<RemoteConnection> remoteConnections = FXCollections.observableArrayList();
+    private String lastCrackedPassword;
+    private Button hibpCheckButton;
 
     @Override
     public void start(Stage primaryStage) {
@@ -69,7 +78,7 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("pwn-pi", "pi@192.168.1.10"));
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
-        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus);
+        hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus, () -> {});
         relayProcessManager = new RelayProcessManager(this::updateStatus);
         roomId = UUID.randomUUID().toString().substring(0, 8);
 
@@ -79,11 +88,11 @@ public class App extends Application {
         mainLayout.setTop(topVBox);
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(
-            new Tab("Attack", createAttackConfigBox()),
-            new Tab("Sniff", createSniffBox()),
-            new Tab("Settings", createSettingsBox()),
-            new Tab("Learn", new Label("Learn UI to be implemented")),
-            new Tab("Hashcat Setup", createHashcatSetupBox())
+                new Tab("Attack", loadAttackScreen()),
+                new Tab("Sniff", loadSniffScreen()),
+                new Tab("Settings", loadSettingsScreen()),
+                new Tab("Learn", loadLearnScreen()),
+                new Tab("Hashcat Setup", loadHashcatSetupScreen())
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         mainLayout.setCenter(tabPane);
@@ -119,7 +128,7 @@ public class App extends Application {
             relayClient.connect();
             updateQRCode();
         } catch (URISyntaxException e) {
-            updateStatus("Error: Invalid relay server URI.");
+            ErrorUtil.showError("Connection Error", "Invalid relay server URI.");
             e.printStackTrace();
         }
     }
@@ -131,7 +140,7 @@ public class App extends Application {
                 String wordlistPath = "/app/test-hashes-short.txt";
                 hashcatManager.startAttackWithString(message.getHash(), message.getMode(), "Dictionary", wordlistPath, null);
             } catch (IOException e) {
-                updateStatus("Error starting remote attack: " + e.getMessage());
+                ErrorUtil.showError("Remote Attack Error", "Error starting remote attack: " + e.getMessage());
             }
         }
     }
@@ -162,173 +171,53 @@ public class App extends Application {
         return box;
     }
 
-    private VBox createAttackConfigBox() {
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 10, 20, 10));
-
-        hashFileField = new TextField();
-        hashFileField.setPromptText("Path to hash file");
-        Button chooseHashFileButton = new Button("...");
-        chooseHashFileButton.setOnAction(e -> {
-            File file = new FileChooser().showOpenDialog(primaryStage);
-            if (file != null) hashFileField.setText(file.getAbsolutePath());
-        });
-        grid.add(new Label("Hash File:"), 0, 0);
-        grid.add(new HBox(5, hashFileField, chooseHashFileButton), 1, 0);
-
-        TextField hashModeField = new TextField();
-        hashModeField.setPromptText("e.g., 22000 for WPA2");
-        grid.add(new Label("Hash Mode:"), 0, 1);
-        grid.add(hashModeField, 1, 1);
-
-        ComboBox<String> attackModeSelector = new ComboBox<>();
-        attackModeSelector.getItems().addAll("Dictionary", "Mask");
-        attackModeSelector.setValue("Dictionary");
-        grid.add(new Label("Attack Mode:"), 0, 2);
-        grid.add(attackModeSelector, 1, 2);
-
-        ruleFileField = new TextField();
-        ruleFileField.setPromptText("(Optional) Path to rule file");
-        Button chooseRuleFileButton = new Button("...");
-        chooseRuleFileButton.setOnAction(e -> {
-            File file = new FileChooser().showOpenDialog(primaryStage);
-            if (file != null) ruleFileField.setText(file.getAbsolutePath());
-        });
-        grid.add(new Label("Rule File:"), 0, 3);
-        grid.add(new HBox(5, ruleFileField, chooseRuleFileButton), 1, 3);
-
-        attackInputsContainer = new VBox(10);
-        createDictionaryInput();
-        attackModeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if ("Dictionary".equals(newVal)) createDictionaryInput(); else createMaskInput();
-        });
-
-        Button startButton = new Button("Start Local Attack");
-        startButton.setOnAction(e -> {
-            try {
-                String hashFile = hashFileField.getText();
-                String mode = hashModeField.getText();
-                String attackMode = attackModeSelector.getValue();
-                String ruleFile = ruleFileField.getText();
-                String target;
-
-                if ("Dictionary".equals(attackMode)) {
-                    target = wordlistField.getText();
-                } else { // Mask attack
-                    target = maskField.getText();
-                }
-
-                if (hashFile.isEmpty() || mode.isEmpty() || target.isEmpty()) {
-                    updateStatus("Error: Hash File, Hash Mode, and Wordlist/Mask cannot be empty.");
-                    return;
-                }
-
-                updateStatus("Starting " + attackMode + " attack...");
-                hashcatManager.startAttackWithFile(hashFile, mode, attackMode, target, ruleFile.isEmpty() ? null : ruleFile);
-            } catch (IOException ex) {
-                updateStatus("Error starting hashcat process: " + ex.getMessage());
-            }
-        });
-        Button stopButton = new Button("Stop Attack");
-        stopButton.setOnAction(e -> hashcatManager.stopCracking());
-        HBox buttonBox = new HBox(20, startButton, stopButton);
-        buttonBox.setAlignment(Pos.CENTER);
-
-        VBox box = new VBox(20, grid, attackInputsContainer, buttonBox);
-        box.setAlignment(Pos.TOP_CENTER);
-        box.setPadding(new Insets(20));
-        return box;
+    private Node loadAttackScreen() {
+        try {
+            String fxmlPath = "/fxml/Attack.fxml";
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            Parent root = fxmlLoader.load();
+            AttackController controller = fxmlLoader.getController();
+            controller.initData(this, hashcatManager, primaryStage);
+            return root;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Attack screen: " + e.getMessage());
+        }
     }
 
-    private VBox createSettingsBox() {
-        VBox settingsLayout = new VBox(20);
-        settingsLayout.setPadding(new Insets(20));
-        settingsLayout.setAlignment(Pos.TOP_LEFT);
-        Label remotesLabel = new Label("Saved Remotes");
-        remotesLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        ListView<RemoteConnection> remotesList = new ListView<>(remoteConnections);
-        remotesList.setPrefHeight(100);
-        Button addButton = new Button("Add");
-        addButton.setOnAction(e -> showAddRemoteDialog());
-        Button removeButton = new Button("Remove");
-        removeButton.setOnAction(e -> {
-            RemoteConnection selected = remotesList.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                remoteConnections.remove(selected);
-                updateStatus("Settings: Removed remote '" + selected.getName() + "'.");
-            }
-        });
-        HBox remoteButtons = new HBox(10, addButton, removeButton);
-        VBox remotesBox = new VBox(10, remotesLabel, remotesList, remoteButtons);
-        Label configLabel = new Label("Configuration Management");
-        configLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        Button importButton = new Button("Import from .hhk file");
-        importButton.setOnAction(e -> handleImport());
-        Button exportButton = new Button("Export to .hhk file");
-        exportButton.setOnAction(e -> handleExport());
-        HBox configButtons = new HBox(10, importButton, exportButton);
-        VBox configBox = new VBox(10, configLabel, configButtons);
-        Label themeLabel = new Label("Appearance");
-        themeLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        ComboBox<String> themeSelector = new ComboBox<>();
-        themeSelector.getItems().addAll("Light", "Dark");
-        themeSelector.setValue("Light");
-        themeSelector.valueProperty().addListener((obs, oldVal, newVal) -> applyTheme(newVal));
-        VBox themeBox = new VBox(10, themeLabel, themeSelector);
-        settingsLayout.getChildren().addAll(remotesBox, new Separator(), configBox, new Separator(), themeBox);
-        return settingsLayout;
+    private Parent loadFxml(String fxml) throws IOException {
+        String fxmlPath = "/fxml/" + fxml + ".fxml";
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+        return fxmlLoader.load();
     }
 
-    private ScrollPane createHashcatSetupBox() {
-        VBox content = new VBox(15);
-        content.setPadding(new Insets(20));
-
-        Label title = new Label("Setting Up Hashcat for GPU Cracking");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-
-        Text intro = new Text("Hashcat uses your Graphics Card (GPU) to crack hashes incredibly fast. To make this work, you need the right drivers installed. If hashcat isn't working, this is the most common reason why.");
-        intro.setWrappingWidth(550);
-
-        // --- Step 1: Install Hashcat ---
-        Label step1Title = new Label("Step 1: Install Hashcat");
-        step1Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        Text step1Text = new Text("Download the latest version from the official website: hashcat.net/hashcat/. Extract the archive to a known location on your computer.");
-        step1Text.setWrappingWidth(550);
-
-        // --- Step 2: Install GPU Drivers ---
-        Label step2Title = new Label("Step 2: Install GPU Drivers");
-        step2Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        Text step2Text = new Text(
-            "This is the most important step.\n\n" +
-            "NVIDIA Users:\n" +
-            "You need the latest 'Game Ready' or 'Studio' drivers. Download them from the official NVIDIA website. Hashcat uses the NVIDIA CUDA platform.\n\n" +
-            "AMD Users:\n" +
-            "You need the latest 'Adrenalin Edition' drivers. Download them from the official AMD website. Hashcat uses the OpenCL platform, which is included with these drivers.\n\n" +
-            "Intel GPU Users:\n" +
-            "You need the latest graphics drivers from Intel's website. Hashcat uses the OpenCL platform, which is included with these drivers."
-        );
-        step2Text.setWrappingWidth(550);
-
-        // --- Step 3: Verify Installation ---
-        Label step3Title = new Label("Step 3: Verify Everything Works");
-        step3Title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        Text step3Text = new Text(
-            "Open a command prompt or terminal, navigate to your hashcat directory, and run the benchmark command:\n\n" +
-            "hashcat.exe -b\n\n" +
-            "If everything is set up correctly, you will see a list of your GPUs and a benchmark running for various hash types. If you see errors about missing DLLs or no devices being found, it means your GPU drivers are not installed correctly."
-        );
-        step3Text.setWrappingWidth(550);
-
-        content.getChildren().addAll(title, intro, new Separator(), step1Title, step1Text, new Separator(), step2Title, step2Text, new Separator(), step3Title, step3Text);
-
-        ScrollPane scrollPane = new ScrollPane(content);
-        scrollPane.setFitToWidth(true);
-        return scrollPane;
+    private Node loadLearnScreen() {
+        try {
+            return loadFxml("Learn");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Learn screen: " + e.getMessage());
+        }
     }
 
-    private void applyTheme(String themeName) {
+    private Node loadSettingsScreen() {
+        try {
+            String fxmlPath = "/fxml/Settings.fxml";
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            Parent root = fxmlLoader.load();
+
+            // Get the controller and pass the App instance and remote connections list
+            SettingsController controller = fxmlLoader.getController();
+            controller.initData(this, remoteConnections);
+
+            return root;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Settings screen: " + e.getMessage());
+        }
+    }
+
+    public void applyTheme(String themeName) {
         mainScene.getStylesheets().clear();
         if ("Dark".equals(themeName)) {
             try {
@@ -336,7 +225,7 @@ public class App extends Application {
                 mainScene.getStylesheets().add(css);
                 updateStatus("Applied Dark Theme.");
             } catch (Exception e) {
-                updateStatus("Error: Could not load dark theme stylesheet.");
+                ErrorUtil.showError("Theme Error", "Could not load dark theme stylesheet.");
                 e.printStackTrace();
             }
         } else {
@@ -344,45 +233,30 @@ public class App extends Application {
         }
     }
 
-    private VBox createSniffBox() {
-        VBox sniffLayout = new VBox(20);
-        sniffLayout.setPadding(new Insets(20));
-        sniffLayout.setAlignment(Pos.TOP_CENTER);
-        Label titleLabel = new Label("Remote Packet Sniffing");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        HBox remoteSelectionBox = new HBox(10);
-        remoteSelectionBox.setAlignment(Pos.CENTER);
-        Label remoteLabel = new Label("Target Remote:");
-        ComboBox<RemoteConnection> remoteSelector = new ComboBox<>(remoteConnections);
-        remoteSelectionBox.getChildren().addAll(remoteLabel, remoteSelector);
-        TextArea sniffOutput = new TextArea();
-        sniffOutput.setEditable(false);
-        sniffOutput.setPromptText("Sniffing output will appear here...");
-        sniffOutput.setPrefHeight(200);
-        sniffManager = new SniffManager(output -> Platform.runLater(() -> sniffOutput.appendText(output)));
-        Button startSniffButton = new Button("Start Sniffing");
-        Button stopSniffButton = new Button("Stop Sniffing");
-        startSniffButton.setOnAction(e -> {
-            RemoteConnection selected = remoteSelector.getValue();
-            if (selected == null) {
-                sniffOutput.appendText("Please select a remote target first.\n");
-                return;
-            }
-            TextInputDialog passwordDialog = new TextInputDialog();
-            passwordDialog.setTitle("SSH Password");
-            passwordDialog.setHeaderText("Enter password for " + selected.getConnectionString());
-            passwordDialog.setContentText("Password:");
-            Optional<String> result = passwordDialog.showAndWait();
-            result.ifPresent(password -> sniffManager.startSniffing(selected, password));
-        });
-        stopSniffButton.setOnAction(e -> sniffManager.stopSniffing());
-        HBox controlButtons = new HBox(20, startSniffButton, stopSniffButton);
-        controlButtons.setAlignment(Pos.CENTER);
-        sniffLayout.getChildren().addAll(titleLabel, remoteSelectionBox, controlButtons, new Label("Output:"), sniffOutput);
-        return sniffLayout;
+    private Node loadHashcatSetupScreen() {
+        try {
+            return loadFxml("HashcatSetup");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Hashcat Setup screen: " + e.getMessage());
+        }
     }
 
-    private void handleExport() {
+    private Node loadSniffScreen() {
+        try {
+            String fxmlPath = "/fxml/Sniff.fxml";
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            Parent root = fxmlLoader.load();
+            SniffController controller = fxmlLoader.getController();
+            controller.initData(this, remoteConnections);
+            return root;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading Sniff screen: " + e.getMessage());
+        }
+    }
+
+    public void handleExport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
@@ -398,13 +272,13 @@ public class App extends Application {
                     HhkUtil.exportConnections(file, password, new ArrayList<>(remoteConnections));
                     updateStatus("Successfully exported connections.");
                 } catch (IOException ex) {
-                    updateStatus("Error exporting connections: " + ex.getMessage());
+                    ErrorUtil.showError("Export Error", "Error exporting connections: " + ex.getMessage());
                 }
             });
         }
     }
 
-    private void handleImport() {
+    public void handleImport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Import Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
@@ -422,15 +296,15 @@ public class App extends Application {
                     remoteConnections.addAll(imported);
                     updateStatus("Successfully imported " + imported.size() + " connections.");
                 } catch (ZipException ex) {
-                    updateStatus("Error importing: Invalid password or corrupted file.");
+                    ErrorUtil.showError("Import Error", "Invalid password or corrupted file.");
                 } catch (IOException ex) {
-                    updateStatus("Error importing connections: " + ex.getMessage());
+                    ErrorUtil.showError("Import Error", "Error importing connections: " + ex.getMessage());
                 }
             });
         }
     }
 
-    private void showAddRemoteDialog() {
+    public void showAddRemoteDialog() {
         Dialog<RemoteConnection> dialog = new Dialog<>();
         dialog.setTitle("Add New Remote");
         ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
@@ -461,69 +335,33 @@ public class App extends Application {
         result.ifPresent(remoteConnections::add);
     }
 
-    private void createDictionaryInput() {
-        attackInputsContainer.getChildren().clear();
-        Label wordlistLabel = new Label("Wordlist:");
-        wordlistField = new TextField();
-        wordlistField.setPromptText("Path to wordlist file");
-        Button chooseFileButton = new Button("...");
-        chooseFileButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select Wordlist File");
-            File file = fileChooser.showOpenDialog(primaryStage);
-            if (file != null) {
-                wordlistField.setText(file.getAbsolutePath());
-            }
-        });
-        HBox dicBox = new HBox(5, wordlistField, chooseFileButton);
-        attackInputsContainer.getChildren().addAll(wordlistLabel, dicBox);
-    }
-
-    private void createMaskInput() {
-        attackInputsContainer.getChildren().clear();
-        Label maskLabel = new Label("Mask:");
-        maskField = new TextField();
-        maskField.setPromptText("e.g., ?d?d?d?d");
-
-        HBox maskHelperButtons = new HBox(5);
-        maskHelperButtons.setAlignment(Pos.CENTER_LEFT);
-
-        Label helperLabel = new Label("Append:");
-        Button lowerAlphaButton = new Button("?l");
-        lowerAlphaButton.setOnAction(e -> maskField.appendText("?l"));
-        Button upperAlphaButton = new Button("?u");
-        upperAlphaButton.setOnAction(e -> maskField.appendText("?u"));
-        Button digitsButton = new Button("?d");
-        digitsButton.setOnAction(e -> maskField.appendText("?d"));
-        Button specialButton = new Button("?s");
-        specialButton.setOnAction(e -> maskField.appendText("?s"));
-        Button allButton = new Button("?a");
-        allButton.setOnAction(e -> maskField.appendText("?a"));
-
-        maskHelperButtons.getChildren().addAll(helperLabel, lowerAlphaButton, upperAlphaButton, digitsButton, specialButton, allButton);
-
-        VBox maskLayout = new VBox(10, maskLabel, maskField, maskHelperButtons);
-
-        attackInputsContainer.getChildren().add(maskLayout);
-    }
-
     private VBox createResultsBox() {
         statusLog = new TextArea();
         statusLog.setEditable(false);
         statusLog.setPrefHeight(100);
         crackedPasswordLabel = new Label("Cracked Password: N/A");
         crackedPasswordLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        VBox box = new VBox(10, new Label("Status Log"), statusLog, crackedPasswordLabel);
+
+        hibpCheckButton = new Button("Check HIBP for Exposure");
+        hibpCheckButton.setDisable(true); // Disable until a password is cracked
+        hibpCheckButton.setOnAction(e -> checkHibp());
+
+        HBox crackedPasswordBox = new HBox(20, crackedPasswordLabel, hibpCheckButton);
+        crackedPasswordBox.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(10, new Label("Status Log"), statusLog, crackedPasswordBox);
         box.setPadding(new Insets(10));
         return box;
     }
 
-    private void updateStatus(String message) {
+    public void updateStatus(String message) {
         Platform.runLater(() -> statusLog.appendText(message + "\n"));
     }
 
     private void displayCrackedPassword(String password) {
         Platform.runLater(() -> {
+            lastCrackedPassword = password;
+            hibpCheckButton.setDisable(false);
             crackedPasswordLabel.setText("Cracked Password: " + password);
             updateStatus("SUCCESS: Password found! -> " + password);
             if (relayClient != null && relayClient.isOpen()) {
@@ -534,5 +372,39 @@ public class App extends Application {
                 relayClient.sendMessage(crackedMessage);
             }
         });
+    }
+
+    private void checkHibp() {
+        if (lastCrackedPassword == null || lastCrackedPassword.isEmpty()) {
+            return;
+        }
+        hibpCheckButton.setDisable(true); // Disable while checking
+        updateStatus("Checking password '" + lastCrackedPassword + "' against HIBP database...");
+
+        // Run the check on a background thread to avoid freezing the UI
+        new Thread(() -> {
+            try {
+                int count = HibpUtil.checkPassword(lastCrackedPassword);
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("HIBP Check Result");
+                    if (count > 0) {
+                        alert.setHeaderText("Password Found!");
+                        alert.setContentText("The password '" + lastCrackedPassword + "' has been found in " + String.format("%,d", count) + " data breaches.\n\nIt is strongly recommended not to use this password.");
+                    } else {
+                        alert.setHeaderText("Password Not Found");
+                        alert.setContentText("Good news! The password '" + lastCrackedPassword + "' was not found in the Have I Been Pwned database.");
+                    }
+                    alert.showAndWait();
+                    updateStatus("HIBP check complete.");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    ErrorUtil.showError("HIBP API Error", "Failed to check password: " + e.getMessage());
+                });
+            } finally {
+                Platform.runLater(() -> hibpCheckButton.setDisable(false)); // Re-enable the button
+            }
+        }).start();
     }
 }

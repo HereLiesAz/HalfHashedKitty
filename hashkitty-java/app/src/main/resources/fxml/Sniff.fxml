@@ -24,6 +24,7 @@
             <children>
                 <Button mnemonicParsing="false" onAction="#startSniffing" text="Start Sniffing" />
                 <Button mnemonicParsing="false" onAction="#stopSniffing" text="Stop Sniffing" />
+                <Button mnemonicParsing="false" onAction="#analyzePcap" text="Analyze PCAP File" />
             </children>
         </HBox>
         <Label text="Output:" />
