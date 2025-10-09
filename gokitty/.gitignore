@@ -1,9 +1,0 @@
-# Binaries
-gokitty
-gokitty.exe
-
-# Log files
-*.log
-
-# Dependency directories
-vendor/
