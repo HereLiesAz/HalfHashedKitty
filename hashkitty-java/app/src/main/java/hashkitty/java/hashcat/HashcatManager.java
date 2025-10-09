@@ -1,5 +1,7 @@
 package hashkitty.java.hashcat;
 
+import hashkitty.java.util.ErrorUtil;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -42,8 +44,8 @@ public class HashcatManager {
      * @param ruleFile   The path to a hashcat rule file (can be null).
      * @throws IOException if an I/O error occurs when starting the process.
      */
-    public void startAttackWithFile(String hashFile, String mode, String attackMode, String target, String ruleFile) throws IOException {
-        List<String> command = buildCommand(mode, attackMode, target, ruleFile);
+    public void startAttackWithFile(String hashFile, String mode, String attackMode, String target, String ruleFile, boolean force, boolean optimizedKernels, String workloadProfile) throws IOException {
+        List<String> command = buildCommand(mode, attackMode, target, ruleFile, force, optimizedKernels, workloadProfile);
         command.add(hashFile); // Add hash file as the main input
         startAttackInternal(command, null); // Pass null because we don't have a single hash to monitor
     }
@@ -59,7 +61,8 @@ public class HashcatManager {
      * @throws IOException if an I/O error occurs when starting the process.
      */
     public void startAttackWithString(String hashString, String mode, String attackMode, String target, String ruleFile) throws IOException {
-        List<String> command = buildCommand(mode, attackMode, target, ruleFile);
+        // Remote attacks do not yet support advanced options, so pass default values.
+        List<String> command = buildCommand(mode, attackMode, target, ruleFile, false, false, null);
         command.add(hashString); // Add the hash string directly to the command
         startAttackInternal(command, hashString); // Pass the hash string to monitor the output precisely
     }
@@ -67,12 +70,23 @@ public class HashcatManager {
     /**
      * Constructs the base hashcat command list.
      */
-    private List<String> buildCommand(String mode, String attackMode, String target, String ruleFile) {
+    private List<String> buildCommand(String mode, String attackMode, String target, String ruleFile, boolean force, boolean optimizedKernels, String workloadProfile) {
         List<String> command = new ArrayList<>();
         command.add("hashcat");
         command.add("-m");
         command.add(mode);
         command.add("--potfile-disable");
+
+        if (force) {
+            command.add("--force");
+        }
+        if (optimizedKernels) {
+            command.add("-O");
+        }
+        if (workloadProfile != null && !workloadProfile.isEmpty()) {
+            command.add("-w");
+            command.add(workloadProfile);
+        }
 
         if ("Dictionary".equalsIgnoreCase(attackMode)) {
             command.add("-a");
@@ -99,7 +113,7 @@ public class HashcatManager {
      */
     private void startAttackInternal(List<String> command, String hashToMonitor) throws IOException {
         if (hashcatProcess != null && hashcatProcess.isAlive()) {
-            onError.accept("A hashcat process is already running.");
+            ErrorUtil.showError("Process Error", "A hashcat process is already running.");
             return;
         }
 
@@ -123,7 +137,7 @@ public class HashcatManager {
         try {
             hashcatProcess = pb.start();
         } catch (IOException e) {
-            onError.accept("Failed to start hashcat. Is it installed and in your system's PATH?");
+            ErrorUtil.showError("Process Error", "Failed to start hashcat. Is it installed and in your system's PATH?");
             throw e;
         }
 
@@ -156,14 +170,14 @@ public class HashcatManager {
                     int exitCode = hashcatProcess.waitFor();
                     System.out.println("Hashcat process finished with exit code: " + exitCode);
                     if (exitCode != 0 && !found) {
-                        onError.accept("Hashcat exited with error code " + exitCode + ". Check parameters.");
+                        ErrorUtil.showError("Hashcat Error", "Hashcat exited with error code " + exitCode + ". Check parameters and hash file.");
                     }
 
                 } catch (IOException e) {
-                    onError.accept("Error reading hashcat output: " + e.getMessage());
+                    ErrorUtil.showError("I/O Error", "Error reading hashcat output: " + e.getMessage());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    onError.accept("Hashcat process was interrupted.");
+                    ErrorUtil.showError("Process Error", "Hashcat process was interrupted.");
                 }
             } finally {
                 if (onComplete != null) {

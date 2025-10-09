@@ -1,0 +1,36 @@
+/* Dark theme for HashKitty */
+
+.root {
+    -fx-base: #2E2E2E;
+    -fx-background: #1E1E1E;
+    -fx-control-inner-background: #3E3E3E;
+    -fx-control-inner-background-alt: #3E3E3E;
+    -fx-text-background-color: #DCDCDC;
+    -fx-accent: #007ACC;
+}
+
+.label {
+    -fx-text-fill: #DCDCDC;
+}
+
+.button {
+    -fx-text-fill: white;
+    -fx-background-color: #555555;
+    -fx-border-color: #777777;
+    -fx-border-radius: 3;
+}
+
+.button:hover {
+    -fx-background-color: #666666;
+}
+
+.text-field, .text-area {
+    -fx-text-fill: #DCDCDC;
+    -fx-background-color: #3E3E3E;
+    -fx-border-color: #555555;
+    -fx-border-radius: 3;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: #DCDCDC;
+}

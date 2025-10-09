@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "HalfHashedKitty"
 include(":app")
+project(":app").projectDir = file("hashkitty-java/app")

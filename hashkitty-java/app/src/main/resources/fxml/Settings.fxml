@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="TOP_LEFT" spacing="20.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hashkitty.java.settings.SettingsController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+    <children>
+        <VBox spacing="10.0">
+            <children>
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="%settings.savedRemotes" />
+                <ListView fx:id="remotesList" prefHeight="100.0" />
+                <HBox spacing="10.0">
+                    <children>
+                        <Button mnemonicParsing="false" onAction="#addRemote" text="%settings.button.add" />
+                        <Button mnemonicParsing="false" onAction="#removeRemote" text="%settings.button.remove" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+        <Separator prefWidth="200.0" />
+        <VBox spacing="10.0">
+            <children>
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="%settings.configManagement" />
+                <HBox spacing="10.0">
+                    <children>
+                        <Button mnemonicParsing="false" onAction="#importSettings" text="%settings.button.import" />
+                        <Button mnemonicParsing="false" onAction="#exportSettings" text="%settings.button.export" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+        <Separator prefWidth="200.0" />
+        <VBox spacing="10.0">
+            <children>
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="%settings.appearance" />
+                <ComboBox fx:id="themeSelector" prefWidth="150.0" />
+            </children>
+        </VBox>
+    </children>
+</VBox>
