@@ -20,6 +20,12 @@ class MainActivity : ComponentActivity() {
     }
     private val hashtopolisViewModel: HashtopolisViewModel by viewModels()
     private val piControlViewModel: PiControlViewModel by viewModels()
+    private val sniffViewModel: SniffViewModel by viewModels {
+        SniffViewModel.SniffViewModelFactory(
+            mainViewModel.getApiClient(), // A bit of a hack, better to have a shared DI container
+            mainViewModel
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,7 +36,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(mainViewModel, hashtopolisViewModel, piControlViewModel)
+                    MainScreen(mainViewModel, hashtopolisViewModel, piControlViewModel, sniffViewModel)
                 }
             }
         }

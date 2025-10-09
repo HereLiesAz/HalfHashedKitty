@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -211,7 +212,13 @@ public class App extends Application {
                 String mode = hashModeField.getText();
                 String attackMode = attackModeSelector.getValue();
                 String ruleFile = ruleFileField.getText();
-                String target = "Dictionary".equals(attackMode) ? wordlistField.getText() : maskField.getText();
+                String target;
+
+                if ("Dictionary".equals(attackMode)) {
+                    target = wordlistField.getText();
+                } else { // Mask attack
+                    target = maskField.getText();
+                }
 
                 if (hashFile.isEmpty() || mode.isEmpty() || target.isEmpty()) {
                     updateStatus("Error: Hash File, Hash Mode, and Wordlist/Mask cannot be empty.");
@@ -477,7 +484,27 @@ public class App extends Application {
         Label maskLabel = new Label("Mask:");
         maskField = new TextField();
         maskField.setPromptText("e.g., ?d?d?d?d");
-        attackInputsContainer.getChildren().addAll(maskLabel, maskField);
+
+        HBox maskHelperButtons = new HBox(5);
+        maskHelperButtons.setAlignment(Pos.CENTER_LEFT);
+
+        Label helperLabel = new Label("Append:");
+        Button lowerAlphaButton = new Button("?l");
+        lowerAlphaButton.setOnAction(e -> maskField.appendText("?l"));
+        Button upperAlphaButton = new Button("?u");
+        upperAlphaButton.setOnAction(e -> maskField.appendText("?u"));
+        Button digitsButton = new Button("?d");
+        digitsButton.setOnAction(e -> maskField.appendText("?d"));
+        Button specialButton = new Button("?s");
+        specialButton.setOnAction(e -> maskField.appendText("?s"));
+        Button allButton = new Button("?a");
+        allButton.setOnAction(e -> maskField.appendText("?a"));
+
+        maskHelperButtons.getChildren().addAll(helperLabel, lowerAlphaButton, upperAlphaButton, digitsButton, specialButton, allButton);
+
+        VBox maskLayout = new VBox(10, maskLabel, maskField, maskHelperButtons);
+
+        attackInputsContainer.getChildren().add(maskLayout);
     }
 
     private VBox createResultsBox() {
