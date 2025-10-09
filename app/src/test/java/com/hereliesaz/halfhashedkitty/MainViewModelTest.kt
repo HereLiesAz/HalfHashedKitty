@@ -77,7 +77,7 @@ class MainViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // When
-        val roomInfo = RoomInfo(type = "room_id", id = roomId)
+        val roomInfo = RoomInfo(id = roomId)
         val message = WebSocketMessage(type = "room_id", payload = Json.encodeToString(roomInfo), room_id = roomId)
         incomingMessages.emit(Json.encodeToString(message))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -94,7 +94,7 @@ class MainViewModelTest {
         // Given
         val roomId = "test-room"
         val connectJob = launch { viewModel.onQrCodeScanned(roomId) }
-        val roomInfo = RoomInfo(type = "room_id", id = roomId)
+        val roomInfo = RoomInfo(id = roomId)
         val connectMessage = WebSocketMessage(type = "room_id", payload = Json.encodeToString(roomInfo), room_id = roomId)
         incomingMessages.emit(Json.encodeToString(connectMessage))
         testDispatcher.scheduler.advanceUntilIdle()

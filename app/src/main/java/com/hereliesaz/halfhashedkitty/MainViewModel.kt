@@ -24,7 +24,7 @@ class MainViewModel(
     }
 
     private val RELAY_URL = BuildConfig.RELAY_URL
-    private var roomID: String? = null
+    internal var roomID = mutableStateOf<String?>(null)
 
     val manualInput = mutableStateOf("")
     val connectionType = mutableStateOf(ConnectionType.RELAY)
@@ -101,10 +101,10 @@ class MainViewModel(
                     "ws://$input"
                 }
                 terminalOutput.add("Attempting direct connection to: $url")
-                this.roomID = "direct_connection" // Use a consistent, non-null room ID for direct connections
+                this.roomID.value = "direct_connection" // Use a consistent, non-null room ID for direct connections
                 viewModelScope.launch {
                     try {
-                        apiClient.connect(url, roomID!!, viewModelScope)
+                        apiClient.connect(url, roomID.value!!, viewModelScope)
                     } catch (e: Exception) {
                         Log.e("MainViewModel", "Failed to connect directly", e)
                         isConnected.value = false
@@ -149,7 +149,7 @@ class MainViewModel(
 
     fun onQrCodeScanned(scannedRoomId: String) {
         terminalOutput.add("QR Code scanned. Room ID: $scannedRoomId")
-        this.roomID = scannedRoomId
+        this.roomID.value = scannedRoomId
         viewModelScope.launch {
             try {
                 apiClient.connect(RELAY_URL, scannedRoomId, viewModelScope)
@@ -160,8 +160,12 @@ class MainViewModel(
         }
     }
 
+    fun getApiClient(): HashcatApiClient {
+        return apiClient
+    }
+
     fun startAttack() {
-        val currentRoomId = roomID
+        val currentRoomId = roomID.value
         if (currentRoomId == null) {
             terminalOutput.add("Not connected. Please scan the QR code from the desktop client.")
             return

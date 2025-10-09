@@ -27,6 +27,7 @@ import com.hereliesaz.halfhashedkitty.ui.tabs.HashcatSetupTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.HashtopolisTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.InstructionsOverlay
 import com.hereliesaz.halfhashedkitty.ui.tabs.MaskTab
+import com.hereliesaz.halfhashedkitty.ui.tabs.SniffTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.ScreenTitle
 import com.hereliesaz.halfhashedkitty.ui.tabs.TerminalTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
@@ -36,7 +37,8 @@ import com.hereliesaz.halfhashedkitty.ui.tabs.WordlistTab
 fun MainScreen(
     viewModel: MainViewModel,
     hashtopolisViewModel: HashtopolisViewModel,
-    piControlViewModel: PiControlViewModel
+    piControlViewModel: PiControlViewModel,
+    sniffViewModel: SniffViewModel
 ) {
     var selectedId by remember { mutableStateOf("Attack") }
     var showInstructions by remember { mutableStateOf(false) }
@@ -81,6 +83,14 @@ fun MainScreen(
                             selectedId = "Terminal"; if (showInstructions) showInstructions = false
                         }
                         azRailItem(
+                            id = "Sniff",
+                            color = Color.White,
+                            text = "Sniff"
+                        ) {
+                            selectedId = "Sniff"; if (showInstructions) showInstructions =
+                            false
+                        }
+                        azRailItem(
                             id = "Hashtopolis",
                             color = Color.White,
                             text = "Hashtopolis"
@@ -118,6 +128,7 @@ fun MainScreen(
                                 "Wordlist" -> WordlistTab(viewModel)
                                 "Mask" -> MaskTab()
                                 "Terminal" -> TerminalTab(viewModel)
+                                "Sniff" -> SniffTab(viewModel, sniffViewModel)
                                 "Hashtopolis" -> HashtopolisTab(hashtopolisViewModel)
                                 "Connect" -> ConnectTab(viewModel)
                                 "Hashcat Setup" -> HashcatSetupTab()
@@ -146,6 +157,7 @@ fun DefaultPreview() {
             Cap2HashcatApiClient()
         ),
         HashtopolisViewModel(),
-        PiControlViewModel()
+        PiControlViewModel(),
+        SniffViewModel()
     )
 }

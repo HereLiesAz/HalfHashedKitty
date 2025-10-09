@@ -25,7 +25,8 @@ class MainScreenTest {
             MainScreen(
                 viewModel = MainViewModel(context, HashcatApiClient(), Cap2HashcatApiClient()),
                 hashtopolisViewModel = HashtopolisViewModel(),
-                piControlViewModel = PiControlViewModel()
+                piControlViewModel = PiControlViewModel(),
+                sniffViewModel = SniffViewModel()
             )
         }
 
