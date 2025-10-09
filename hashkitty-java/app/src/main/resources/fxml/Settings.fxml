@@ -16,12 +16,12 @@
     <children>
         <VBox spacing="10.0">
             <children>
-                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Saved Remotes" />
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="%settings.savedRemotes" />
                 <ListView fx:id="remotesList" prefHeight="100.0" />
                 <HBox spacing="10.0">
                     <children>
-                        <Button mnemonicParsing="false" onAction="#addRemote" text="Add" />
-                        <Button mnemonicParsing="false" onAction="#removeRemote" text="Remove" />
+                        <Button mnemonicParsing="false" onAction="#addRemote" text="%settings.button.add" />
+                        <Button mnemonicParsing="false" onAction="#removeRemote" text="%settings.button.remove" />
                     </children>
                 </HBox>
             </children>
@@ -29,11 +29,11 @@
         <Separator prefWidth="200.0" />
         <VBox spacing="10.0">
             <children>
-                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Configuration Management" />
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="%settings.configManagement" />
                 <HBox spacing="10.0">
                     <children>
-                        <Button mnemonicParsing="false" onAction="#importSettings" text="Import from .hhk file" />
-                        <Button mnemonicParsing="false" onAction="#exportSettings" text="Export to .hhk file" />
+                        <Button mnemonicParsing="false" onAction="#importSettings" text="%settings.button.import" />
+                        <Button mnemonicParsing="false" onAction="#exportSettings" text="%settings.button.export" />
                     </children>
                 </HBox>
             </children>
@@ -41,7 +41,7 @@
         <Separator prefWidth="200.0" />
         <VBox spacing="10.0">
             <children>
-                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Appearance" />
+                <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="%settings.appearance" />
                 <ComboBox fx:id="themeSelector" prefWidth="150.0" />
             </children>
         </VBox>
