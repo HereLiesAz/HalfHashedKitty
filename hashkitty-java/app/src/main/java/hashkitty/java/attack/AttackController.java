@@ -3,6 +3,7 @@ package hashkitty.java.attack;
 import hashkitty.java.App;
 import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.util.ErrorUtil;
+import hashkitty.java.util.NormalizationUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -96,9 +97,11 @@ public class AttackController {
 
     @FXML
     private void chooseHashFile() {
-        File file = new FileChooser().showOpenDialog(primaryStage);
-        if (file != null) {
-            hashFileField.setText(file.getAbsolutePath());
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Hash File");
+        File selectedFile = fileChooser.showOpenDialog(primaryStage);
+        if (selectedFile != null) {
+            normalizeAndSetHashFile(selectedFile);
         }
     }
 
@@ -157,44 +160,7 @@ public class AttackController {
         File potfile = fileChooser.showOpenDialog(primaryStage);
 
         if (potfile != null) {
-            List<String> hashes = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new FileReader(potfile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    int lastColonIndex = line.lastIndexOf(':');
-                    if (lastColonIndex > 0) { // Ensure there is a colon and the hash part is not empty
-                        String hash = line.substring(0, lastColonIndex);
-                        if (!hash.isEmpty()) {
-                            hashes.add(hash);
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                ErrorUtil.showError("File Error", "Failed to read the potfile: " + e.getMessage());
-                return;
-            }
-
-            if (!hashes.isEmpty()) {
-                try {
-                    File tempFile = File.createTempFile("imported_hashes_", ".txt");
-                    tempFile.deleteOnExit(); // Clean up the file when the application closes
-
-                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-                        for (String hash : hashes) {
-                            writer.write(hash);
-                            writer.newLine();
-                        }
-                    }
-
-                    hashFileField.setText(tempFile.getAbsolutePath());
-                    app.updateStatus("Successfully imported " + hashes.size() + " hashes from potfile.");
-
-                } catch (IOException e) {
-                    ErrorUtil.showError("File Error", "Failed to create temporary hash file: " + e.getMessage());
-                }
-            } else {
-                ErrorUtil.showError("Import Failed", "No valid hashes were found in the selected potfile.");
-            }
+            normalizeAndSetHashFile(potfile);
         }
     }
 
@@ -307,5 +273,16 @@ public class AttackController {
         }
         // Could add many more rules here...
         return null; // Not identified
+    }
+
+    private void normalizeAndSetHashFile(File inputFile) {
+        try {
+            app.updateStatus("Normalizing and cleaning hash file...");
+            File normalizedFile = NormalizationUtil.normalizeHashFile(inputFile);
+            hashFileField.setText(normalizedFile.getAbsolutePath());
+            app.updateStatus("Hash file processed successfully.");
+        } catch (IOException e) {
+            ErrorUtil.showError("File Processing Error", "Failed to process the selected file: " + e.getMessage());
+        }
     }
 }
