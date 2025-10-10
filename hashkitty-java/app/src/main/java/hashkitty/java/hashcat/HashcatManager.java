@@ -91,7 +91,7 @@ public class HashcatManager {
         if ("Dictionary".equalsIgnoreCase(attackMode)) {
             command.add("-a");
             command.add("0");
-        } else if ("Mask".equalsIgnoreCase(attackMode)) {
+        } else if ("Mask".equalsIgnoreCase(attackMode) || "Brute-force".equalsIgnoreCase(attackMode)) {
             command.add("-a");
             command.add("3");
         } else {
