@@ -4,8 +4,8 @@ This document outlines the future work planned for the HashKitty project.
 
 ## High Priority
 - **Full UI Parity:** The Java desktop application's UI must be expanded to include all features and screens present in the Android application, as specified in `AGENTS.md`.
-- **Implement Settings Screen:** Create the "Settings" screen in the Java application with functionality for managing remote connections, and importing/exporting configurations as `.hhk` files.
-- **Implement Learn Section:** Develop the "Learn" section to provide educational content on hashcat, hashtopolis, and general password cracking concepts.
+- **[DONE] Implement Settings Screen:** Create the "Settings" screen in the Java application with functionality for managing remote connections, and importing/exporting configurations as `.hhk` files.
+- **[DONE] Implement Learn Section:** Develop the "Learn" section to provide educational content on hashcat, hashtopolis, and general password cracking concepts.
 - **Advanced Attack Configuration:** Move beyond the hardcoded wordlist and allow users to configure different hashcat attack modes (e.g., mask, dictionary, brute-force) from the UI.
 
 ## Medium Priority
@@ -18,7 +18,7 @@ This document outlines the future work planned for the HashKitty project.
 - **Application Packaging:** Create native installers/packages for the Java application for Windows, macOS, and Linux using `jpackage`.
 - **Code Refactoring and Cleanup:** Refactor the codebase to improve maintainability, and add more comprehensive inline documentation.
 - **Localization:** Add support for multiple languages in the UI.
-- **Theming:** Allow users to choose between light and dark themes for the application.
+- **[DONE] Theming:** Allow users to choose between light and dark themes for the application.
 
 ## Future Feature Ideas / "Dream App" Integrations
 
