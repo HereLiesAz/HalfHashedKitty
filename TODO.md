@@ -18,7 +18,7 @@ This document outlines the future work planned for the HashKitty project.
 - **Application Packaging:** Create native installers/packages for the Java application for Windows, macOS, and Linux using `jpackage`.
 - **Code Refactoring and Cleanup:** Refactor the codebase to improve maintainability, and add more comprehensive inline documentation.
 - **Localization:** Add support for multiple languages in the UI.
-- **Theming:** Allow users to choose between light and dark themes for the application.
+- **[DONE] Theming:** Allow users to choose between light and dark themes for the application.
 
 ## Future Feature Ideas / "Dream App" Integrations
 

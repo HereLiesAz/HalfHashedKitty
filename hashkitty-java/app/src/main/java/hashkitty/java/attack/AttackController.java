@@ -54,7 +54,7 @@ public class AttackController {
 
     @FXML
     public void initialize() {
-        attackModeSelector.getItems().addAll("Dictionary", "Mask");
+        attackModeSelector.getItems().addAll("Dictionary", "Mask", "Brute-force");
         attackModeSelector.setValue("Dictionary");
 
         // Populate the hash mode selector with common types
