@@ -100,6 +100,7 @@ public class App extends Application {
 
         mainScene = new Scene(mainLayout, 600, 800);
         primaryStage.setScene(mainScene);
+        applyTheme("Dark");
 
         relayProcessManager.startRelay();
         connectToRelay();
