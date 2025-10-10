@@ -89,7 +89,11 @@ public class App extends Application {
         TabPane tabPane = new TabPane();
         tabPane.getTabs().addAll(
                 new Tab("Attack", loadAttackScreen()),
+                new Tab("Wordlist", loadFxmlScreen("Wordlist")),
+                new Tab("Mask", loadFxmlScreen("Mask")),
+                new Tab("Terminal", loadFxmlScreen("Terminal")),
                 new Tab("Sniff", loadSniffScreen()),
+                new Tab("Hashtopolis", loadFxmlScreen("Hashtopolis")),
                 new Tab("Settings", loadSettingsScreen()),
                 new Tab("Learn", loadLearnScreen()),
                 new Tab("Hashcat Setup", loadHashcatSetupScreen())
@@ -190,6 +194,15 @@ public class App extends Application {
         String fxmlPath = "/fxml/" + fxml + ".fxml";
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
         return fxmlLoader.load();
+    }
+
+    private Node loadFxmlScreen(String fxml) {
+        try {
+            return loadFxml(fxml);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new Label("Error loading " + fxml + " screen: " + e.getMessage());
+        }
     }
 
     private Node loadLearnScreen() {

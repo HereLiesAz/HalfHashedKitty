@@ -9,8 +9,8 @@ This document outlines the future work planned for the HashKitty project.
 - **Advanced Attack Configuration:** Move beyond the hardcoded wordlist and allow users to configure different hashcat attack modes (e.g., mask, dictionary, brute-force) from the UI.
 
 ## Medium Priority
-- **File System Integration:** Implement a file explorer in the Java application to allow users to select local wordlists, rule files, and hash files.
-- **"Sniff" Screen Functionality:** Develop the "Sniff" screen for managing remote packet capture on devices like a Raspberry Pi.
+- **[DONE] File System Integration:** Implement a file explorer in the Java application to allow users to select local wordlists, rule files, and hash files.
+- **[DONE] "Sniff" Screen Functionality:** Develop the "Sniff" screen for managing remote packet capture on devices like a Raspberry Pi.
 - **Direct Connection Mode:** Add the ability for the mobile app to connect directly to the desktop application without relying on the relay server.
 - **Robust Error Handling:** Improve error handling and provide more informative feedback to the user for both the client and server applications.
 
