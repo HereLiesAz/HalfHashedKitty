@@ -20,38 +20,38 @@
                 <Insets bottom="20.0" left="10.0" right="10.0" top="20.0" />
             </padding>
             <children>
-                <Label text="Hash File:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <Label text="%attack.hashFile" GridPane.columnIndex="0" GridPane.rowIndex="0" />
                 <HBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
                     <children>
-                        <TextField fx:id="hashFileField" promptText="Path to hash file" HBox.hgrow="ALWAYS" />
-                        <Button mnemonicParsing="false" onAction="#chooseHashFile" text="..." />
-                        <Button mnemonicParsing="false" onAction="#identifyHash" text="Identify" />
-                        <Button mnemonicParsing="false" onAction="#importPotfile" text="Import Potfile" />
+                        <TextField fx:id="hashFileField" promptText="%attack.hashFile.prompt" HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#chooseHashFile" text="%attack.button.choose" />
+                        <Button mnemonicParsing="false" onAction="#identifyHash" text="%attack.button.identify" />
+                        <Button mnemonicParsing="false" onAction="#importPotfile" text="%attack.button.importPotfile" />
                     </children>
                 </HBox>
-                <Label text="Hash Mode:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                <ComboBox fx:id="hashModeField" editable="true" prefWidth="250.0" promptText="Select or enter hash mode (e.g., 22000)" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                <Label text="Attack Mode:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                <Label text="%attack.hashMode" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <ComboBox fx:id="hashModeField" editable="true" prefWidth="250.0" promptText="%attack.hashMode.prompt" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <Label text="%attack.attackMode" GridPane.columnIndex="0" GridPane.rowIndex="2" />
                 <ComboBox fx:id="attackModeSelector" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                <Label text="Rule File:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                <Label text="%attack.ruleFile" GridPane.columnIndex="0" GridPane.rowIndex="3" />
                 <HBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
                     <children>
-                        <TextField fx:id="ruleFileField" promptText="(Optional) Path to rule file" HBox.hgrow="ALWAYS" />
-                        <Button mnemonicParsing="false" onAction="#chooseRuleFile" text="..." />
+                        <TextField fx:id="ruleFileField" promptText="%attack.ruleFile.prompt" HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#chooseRuleFile" text="%attack.button.choose" />
                     </children>
                 </HBox>
-                <Label text="Advanced Options:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-                <CheckBox fx:id="forceCheckbox" mnemonicParsing="false" text="Force (--force)" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                <CheckBox fx:id="optimizedKernelsCheckbox" mnemonicParsing="false" text="Optimized Kernels (-O)" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                <Label text="Workload Profile (-w):" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                <Label text="%attack.advancedOptions" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                <CheckBox fx:id="forceCheckbox" mnemonicParsing="false" text="%attack.force" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                <CheckBox fx:id="optimizedKernelsCheckbox" mnemonicParsing="false" text="%attack.optimizedKernels" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                <Label text="%attack.workloadProfile" GridPane.columnIndex="0" GridPane.rowIndex="6" />
                 <ComboBox fx:id="workloadProfileSelector" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
             </children>
         </GridPane>
         <VBox fx:id="attackInputsContainer" spacing="10.0" />
         <HBox alignment="CENTER" spacing="20.0">
             <children>
-                <Button mnemonicParsing="false" onAction="#startAttack" text="Start Local Attack" />
-                <Button mnemonicParsing="false" onAction="#stopAttack" text="Stop Attack" />
+                <Button mnemonicParsing="false" onAction="#startAttack" text="%attack.button.start" />
+                <Button mnemonicParsing="false" onAction="#stopAttack" text="%attack.button.stop" />
             </children>
         </HBox>
     </children>
