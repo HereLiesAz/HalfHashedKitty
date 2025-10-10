@@ -22,7 +22,7 @@ public class SettingsController {
     public void initialize() {
         // Populate the theme selector
         themeSelector.getItems().addAll("Light", "Dark");
-        themeSelector.setValue("Light"); // Default theme
+        themeSelector.setValue("Dark"); // Default theme
         // Add a listener to apply the theme when changed
         themeSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (app != null) {
