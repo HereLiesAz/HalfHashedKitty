@@ -13,21 +13,21 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
     <children>
-        <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Remote Packet Sniffing" />
+        <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="%sniff.remotePacketSniffing" />
         <HBox alignment="CENTER" spacing="10.0">
             <children>
-                <Label text="Target Remote:" />
+                <Label text="%sniff.targetRemote" />
                 <ComboBox fx:id="remoteSelector" prefWidth="200.0" />
             </children>
         </HBox>
         <HBox alignment="CENTER" spacing="20.0">
             <children>
-                <Button mnemonicParsing="false" onAction="#startSniffing" text="Start Sniffing" />
-                <Button mnemonicParsing="false" onAction="#stopSniffing" text="Stop Sniffing" />
-                <Button mnemonicParsing="false" onAction="#analyzePcap" text="Analyze PCAP File" />
+                <Button mnemonicParsing="false" onAction="#startSniffing" text="%sniff.button.start" />
+                <Button mnemonicParsing="false" onAction="#stopSniffing" text="%sniff.button.stop" />
+                <Button mnemonicParsing="false" onAction="#analyzePcap" text="%sniff.button.analyze" />
             </children>
         </HBox>
-        <Label text="Output:" />
-        <TextArea fx:id="sniffOutput" editable="false" prefHeight="200.0" promptText="Sniffing output will appear here..." />
+        <Label text="%sniff.output" />
+        <TextArea fx:id="sniffOutput" editable="false" prefHeight="200.0" promptText="%sniff.output.prompt" />
     </children>
 </VBox>
