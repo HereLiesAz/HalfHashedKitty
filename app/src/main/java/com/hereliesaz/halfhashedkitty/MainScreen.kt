@@ -160,6 +160,6 @@ fun DefaultPreview() {
         mainViewModel,
         HashtopolisViewModel(HashtopolisApiClient()),
         viewModel(),
-        viewModel()
+        viewModel(factory = SniffViewModel.SniffViewModelFactory(HashcatApiClient(), mainViewModel))
     )
 }
