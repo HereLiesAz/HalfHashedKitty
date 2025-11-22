@@ -22,11 +22,12 @@ class MainScreenTest {
         val context = ApplicationProvider.getApplicationContext<Application>()
         // Start the app
         composeTestRule.setContent {
+            val mainViewModel = MainViewModel(context, HashcatApiClient(), Cap2HashcatApiClient())
             MainScreen(
-                viewModel = MainViewModel(context, HashcatApiClient(), Cap2HashcatApiClient()),
-                hashtopolisViewModel = HashtopolisViewModel(),
+                viewModel = mainViewModel,
+                hashtopolisViewModel = HashtopolisViewModel(HashtopolisApiClient()),
                 piControlViewModel = PiControlViewModel(),
-                sniffViewModel = SniffViewModel()
+                sniffViewModel = SniffViewModel(HashcatApiClient(), mainViewModel)
             )
         }
 
