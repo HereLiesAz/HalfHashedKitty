@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.ConnectTab
@@ -150,15 +151,20 @@ fun MainScreen(
 @Preview()
 @Composable
 fun DefaultPreview() {
-    val mainViewModel = MainViewModel(
-        Application(),
-        HashcatApiClient(),
-        Cap2HashcatApiClient()
+    val mainViewModel: MainViewModel = viewModel(
+        factory = MainViewModel.MainViewModelFactory(
+            Application(),
+            HashcatApiClient(),
+            Cap2HashcatApiClient()
+        )
+    )
+    val sniffViewModel: SniffViewModel = viewModel(
+        factory = SniffViewModel.SniffViewModelFactory(HashcatApiClient(), mainViewModel)
     )
     MainScreen(
         mainViewModel,
         HashtopolisViewModel(HashtopolisApiClient()),
-        PiControlViewModel(),
-        SniffViewModel(HashcatApiClient(), mainViewModel)
+        viewModel(),
+        sniffViewModel
     )
 }
