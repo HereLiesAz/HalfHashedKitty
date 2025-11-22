@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hereliesaz.aznavrail.AzNavRail
 import com.hereliesaz.halfhashedkitty.ui.tabs.AttackTab
 import com.hereliesaz.halfhashedkitty.ui.tabs.ConnectTab
@@ -158,7 +159,7 @@ fun DefaultPreview() {
     MainScreen(
         mainViewModel,
         HashtopolisViewModel(HashtopolisApiClient()),
-        PiControlViewModel(),
-        SniffViewModel(HashcatApiClient(), mainViewModel)
+        viewModel(),
+        viewModel(factory = SniffViewModel.SniffViewModelFactory(HashcatApiClient(), mainViewModel))
     )
 }
