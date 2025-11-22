@@ -151,15 +151,20 @@ fun MainScreen(
 @Preview()
 @Composable
 fun DefaultPreview() {
-    val mainViewModel = MainViewModel(
-        Application(),
-        HashcatApiClient(),
-        Cap2HashcatApiClient()
+    val mainViewModel: MainViewModel = viewModel(
+        factory = MainViewModel.MainViewModelFactory(
+            Application(),
+            HashcatApiClient(),
+            Cap2HashcatApiClient()
+        )
+    )
+    val sniffViewModel: SniffViewModel = viewModel(
+        factory = SniffViewModel.SniffViewModelFactory(HashcatApiClient(), mainViewModel)
     )
     MainScreen(
         mainViewModel,
         HashtopolisViewModel(HashtopolisApiClient()),
         viewModel(),
-        viewModel(factory = SniffViewModel.SniffViewModelFactory(HashcatApiClient(), mainViewModel))
+        sniffViewModel
     )
 }
