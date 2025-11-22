@@ -42,6 +42,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.UUID;
 
 /**
@@ -179,7 +180,8 @@ public class App extends Application {
     private Node loadAttackScreen() {
         try {
             String fxmlPath = "/fxml/Attack.fxml";
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            ResourceBundle bundle = ResourceBundle.getBundle("messages");
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath), bundle);
             Parent root = fxmlLoader.load();
             AttackController controller = fxmlLoader.getController();
             controller.initData(this, hashcatManager, primaryStage);
@@ -192,7 +194,8 @@ public class App extends Application {
 
     private Parent loadFxml(String fxml) throws IOException {
         String fxmlPath = "/fxml/" + fxml + ".fxml";
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+        ResourceBundle bundle = ResourceBundle.getBundle("messages");
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath), bundle);
         return fxmlLoader.load();
     }
 
@@ -217,7 +220,8 @@ public class App extends Application {
     private Node loadSettingsScreen() {
         try {
             String fxmlPath = "/fxml/Settings.fxml";
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            ResourceBundle bundle = ResourceBundle.getBundle("messages");
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath), bundle);
             Parent root = fxmlLoader.load();
 
             // Get the controller and pass the App instance and remote connections list
@@ -259,7 +263,8 @@ public class App extends Application {
     private Node loadSniffScreen() {
         try {
             String fxmlPath = "/fxml/Sniff.fxml";
-            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath));
+            ResourceBundle bundle = ResourceBundle.getBundle("messages");
+            FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath), bundle);
             Parent root = fxmlLoader.load();
             SniffController controller = fxmlLoader.getController();
             controller.initData(this, remoteConnections);
