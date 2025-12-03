@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.material)
+    implementation("com.google.android.material:material:1.13.0")
     implementation(libs.compose.material.icons.extended)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
