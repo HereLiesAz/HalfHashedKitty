@@ -45,9 +45,10 @@ public class HashcatManager {
      * @throws IOException if an I/O error occurs when starting the process.
      */
     public void startAttackWithFile(String hashFile, String mode, String attackMode, String target, String ruleFile, boolean force, boolean optimizedKernels, String workloadProfile) throws IOException {
-        List<String> command = buildCommand(mode, attackMode, target, ruleFile, force, optimizedKernels, workloadProfile);
-        command.add(hashFile); // Add hash file as the main input
-        startAttackInternal(command, null); // Pass null because we don't have a single hash to monitor
+        List<String> command = buildCommand(mode, attackMode, ruleFile, force, optimizedKernels, workloadProfile);
+        command.add(hashFile); // Hash file comes before the target
+        command.add(target);   // Target (wordlist or mask) comes last
+        startAttackInternal(command, null);
     }
 
     /**
@@ -62,15 +63,17 @@ public class HashcatManager {
      */
     public void startAttackWithString(String hashString, String mode, String attackMode, String target, String ruleFile) throws IOException {
         // Remote attacks do not yet support advanced options, so pass default values.
-        List<String> command = buildCommand(mode, attackMode, target, ruleFile, false, false, null);
-        command.add(hashString); // Add the hash string directly to the command
-        startAttackInternal(command, hashString); // Pass the hash string to monitor the output precisely
+        List<String> command = buildCommand(mode, attackMode, ruleFile, false, false, null);
+        command.add(hashString); // Hash string as the "file"
+        command.add(target);     // Target (wordlist or mask)
+        startAttackInternal(command, hashString);
     }
 
     /**
-     * Constructs the base hashcat command list.
+     * Constructs the base hashcat command list (executable + options).
+     * Note: Does NOT add the hash file/string or the target.
      */
-    private List<String> buildCommand(String mode, String attackMode, String target, String ruleFile, boolean force, boolean optimizedKernels, String workloadProfile) {
+    List<String> buildCommand(String mode, String attackMode, String ruleFile, boolean force, boolean optimizedKernels, String workloadProfile) {
         List<String> command = new ArrayList<>();
         command.add("hashcat");
         command.add("-m");
@@ -103,8 +106,6 @@ public class HashcatManager {
             command.add(ruleFile);
         }
 
-        // The target (wordlist or mask) and hash source (file or string) are added after this
-        command.add(target);
         return command;
     }
 
@@ -116,20 +117,6 @@ public class HashcatManager {
             ErrorUtil.showError("Process Error", "A hashcat process is already running.");
             return;
         }
-
-        // The hash source (file or string) should be the last argument before the target
-        // The buildCommand method doesn't add the hash source, so we add it here at the correct position
-        // Let's re-order: hashcat [options] hash target
-        int targetIndex = command.size() - 1;
-        String target = command.get(targetIndex);
-        command.remove(targetIndex);
-        if (hashToMonitor != null) { // It's a string hash
-             command.add(hashToMonitor);
-        } else { // It's a file path, which should be the last argument before the target
-             // The calling methods already added the hash file path
-        }
-        command.add(target);
-
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.redirectErrorStream(true);
@@ -170,7 +157,15 @@ public class HashcatManager {
                     int exitCode = hashcatProcess.waitFor();
                     System.out.println("Hashcat process finished with exit code: " + exitCode);
                     if (exitCode != 0 && !found) {
-                        ErrorUtil.showError("Hashcat Error", "Hashcat exited with error code " + exitCode + ". Check parameters and hash file.");
+                        // Only show error if not just "exhausted" (code 1) or stopped?
+                        // Hashcat exit codes: 0=Cracked, 1=Exhausted, -1=Error.
+                        // But often checking exit code is enough.
+                        // If exitCode is 1 (Exhausted), it's not necessarily an error-error, just failed to crack.
+                        if (exitCode != 1) {
+                             ErrorUtil.showError("Hashcat Error", "Hashcat exited with code " + exitCode + ". Check console/logs.");
+                        } else {
+                             onError.accept("Attack finished. Password not found.");
+                        }
                     }
 
                 } catch (IOException e) {
