@@ -1,0 +1,25 @@
+name: Jules Agent
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  solve-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-labs-code/jules-invoke@v1
+        with:
+          prompt: |
+            You are Jules, an AI software engineer.
+            Please resolve the following issue:
+            Title: ${{ github.event.issue.title }}
+            Body: ${{ github.event.issue.body }}
+
+            When you have completed the task and verified it, please close the issue.
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
