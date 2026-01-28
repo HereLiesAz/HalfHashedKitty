@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      gradle_task:
+        description: 'Gradle task to execute'
+        required: false
+        default: ':app:assembleDebug'
+        type: string
 
 # ⚡ Concurrency: Cancels the entire job if a new push comes in.
 concurrency:
@@ -22,7 +28,7 @@ jobs:
       checks: read
 
     env:
-      GRADLE_TASK: ":app:assembleDebug"
+      GRADLE_TASK: ${{ inputs.gradle_task || ':app:assembleDebug' }}
 
     steps:
       - name: Checkout
