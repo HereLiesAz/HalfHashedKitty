@@ -41,6 +41,23 @@ application {
     mainClass.set("hashkitty.java.App")
 }
 
+val serverStartScripts = tasks.register<CreateStartScripts>("serverStartScripts") {
+    mainClass.set("hashkitty.java.server.ServerApp")
+    applicationName = "server"
+    outputDir = layout.buildDirectory.get().dir("server-scripts").asFile
+    classpath = tasks.named<CreateStartScripts>("startScripts").get().classpath
+}
+
+distributions {
+    main {
+        contents {
+            from(serverStartScripts) {
+                into("bin")
+            }
+        }
+    }
+}
+
 tasks.named<Test>("test") {
     useJUnitPlatform()
 }
