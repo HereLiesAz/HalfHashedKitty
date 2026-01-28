@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
- * Manages the lifecycle of the external gokitty-relay executable.
- * This class handles starting and stopping the standalone relay server process.
+ * Manages the lifecycle of the standalone relay server process.
  */
 public class RelayProcessManager {
 
@@ -23,8 +22,9 @@ public class RelayProcessManager {
     }
 
     /**
-     * Starts the external gokitty-relay process.
-     * It assumes the executable is located in the application's working directory.
+     * Starts the server process.
+     * It looks for 'server' or 'server.bat' (script) or 'server'/'server.exe' (binary)
+     * in the current directory or bin/ subdirectory.
      */
     public void startRelay() {
         if (relayProcess != null && relayProcess.isAlive()) {
@@ -34,23 +34,27 @@ public class RelayProcessManager {
 
         try {
             String os = System.getProperty("os.name").toLowerCase();
-            String executableName = "gokitty-relay";
-            if (os.contains("win")) {
-                executableName += ".exe";
-            }
+            boolean isWin = os.contains("win");
 
-            File executable = new File(executableName);
-            if (!executable.exists()) {
-                onStatusUpdate.accept("Error: gokitty-relay executable not found. Please place it next to the application.");
+            // Prioritize native launcher if using jpackage, or script if using installDist
+            String scriptName = isWin ? "server.bat" : "server";
+            String exeName = isWin ? "server.exe" : "server";
+
+            File executable = findExecutable(scriptName, exeName);
+
+            if (executable == null) {
+                onStatusUpdate.accept("Error: Server executable not found. Looked for " + exeName + " or " + scriptName);
                 return;
             }
 
-            executable.setExecutable(true);
+            if (!executable.canExecute()) {
+                executable.setExecutable(true);
+            }
 
             ProcessBuilder pb = new ProcessBuilder(executable.getAbsolutePath());
             pb.redirectErrorStream(true);
 
-            onStatusUpdate.accept("Starting standalone relay server...");
+            onStatusUpdate.accept("Starting standalone relay server from: " + executable.getAbsolutePath());
             relayProcess = pb.start();
 
             new Thread(() -> {
@@ -70,8 +74,27 @@ public class RelayProcessManager {
         }
     }
 
+    private File findExecutable(String scriptName, String exeName) {
+        String[] locations = {
+            exeName,
+            scriptName,
+            "bin/" + exeName,
+            "bin/" + scriptName,
+            "../bin/" + exeName,
+            "../bin/" + scriptName
+        };
+
+        for (String loc : locations) {
+            File f = new File(loc);
+            if (f.exists() && !f.isDirectory()) {
+                return f;
+            }
+        }
+        return null;
+    }
+
     /**
-     * Stops the external gokitty-relay process.
+     * Stops the external relay process.
      */
     public void stopRelay() {
         if (relayProcess != null && relayProcess.isAlive()) {
