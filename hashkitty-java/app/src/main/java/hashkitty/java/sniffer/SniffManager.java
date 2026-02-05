@@ -8,19 +8,25 @@ import java.util.function.Consumer;
 
 /**
  * Manages remote packet sniffing sessions over SSH.
- * This class uses the JSch library to connect to a remote device,
- * execute a sniffing command (e.g., tcpdump), and stream the output back.
+ * <p>
+ * This class uses the JSch library to establish SSH connections to remote devices
+ * (like a Raspberry Pi running Kali Linux). It executes a packet capture command
+ * (e.g., `tcpdump`) and streams the output back to the application in real-time.
+ * </p>
  */
 public class SniffManager {
 
+    /** The active SSH session. */
     private Session session;
+    /** The channel used for executing the command. */
     private ChannelExec channel;
+    /** Callback to stream text output (stdout/stderr) back to the UI. */
     private final Consumer<String> onOutput;
 
     /**
      * Constructs a new SniffManager.
      *
-     * @param onOutput A callback function to be executed with output from the sniffing process or status messages.
+     * @param onOutput A callback function to be executed when output is received from the remote process.
      */
     public SniffManager(Consumer<String> onOutput) {
         this.onOutput = onOutput;
@@ -28,19 +34,28 @@ public class SniffManager {
 
     /**
      * Starts a new remote sniffing session in a background thread.
-     * It establishes an SSH connection and executes a predefined sniffing command.
+     * <p>
+     * This method:
+     * 1. Connects to the host using JSch.
+     * 2. Authenticates using the provided password.
+     * 3. Runs `tcpdump` on the remote interface `wlan0` (hardcoded for now).
+     * 4. Streams the output until the process ends or is stopped.
+     * </p>
      *
      * @param connection The remote connection details (user and host).
      * @param password   The password for the SSH connection.
      */
     public void startSniffing(RemoteConnection connection, String password) {
+        // Prevent multiple simultaneous sessions.
         if (session != null && session.isConnected()) {
             onOutput.accept("Error: A session is already active. Please stop it first.");
             return;
         }
 
+        // Run network operations in a background thread.
         new Thread(() -> {
             try {
+                // Parse "user@host".
                 String[] connParts = connection.getConnectionString().split("@");
                 if (connParts.length != 2) {
                     onOutput.accept("Error: Invalid connection string format. Expected user@host.");
@@ -54,28 +69,38 @@ public class SniffManager {
                 session = jsch.getSession(user, host, 22);
                 session.setPassword(password);
 
+                // Disable strict host key checking for convenience (Note: Lower security).
                 session.setConfig("StrictHostKeyChecking", "no");
 
                 onOutput.accept("Connecting to " + host + "...");
-                session.connect(30000); // 30-second timeout
+                // Set connection timeout to 30 seconds.
+                session.connect(30000);
                 onOutput.accept("Connection established successfully.");
 
+                // The command to run remotely.
+                // -i wlan0: Listen on wireless interface.
+                // -l: Line buffered output.
+                // -U: Packet buffered output (write as soon as received).
+                // sudo is used assuming the user needs privileges to capture packets.
                 String command = "sudo tcpdump -i wlan0 -l -U";
                 onOutput.accept("Executing remote command: " + command);
 
                 channel = (ChannelExec) session.openChannel("exec");
                 channel.setCommand(command);
-                channel.setInputStream(null);
+                channel.setInputStream(null); // No input to send to remote.
 
+                // Get the output stream to read from remote command.
                 InputStream in = channel.getInputStream();
-                channel.connect(5000); // 5-second timeout for channel connection
+                channel.connect(5000); // 5-second timeout for channel connection.
                 onOutput.accept("Sniffing process started on remote host.");
 
+                // Read loop.
                 byte[] tmp = new byte[1024];
                 while (true) {
                     while (in.available() > 0) {
                         int i = in.read(tmp, 0, 1024);
                         if (i < 0) break;
+                        // Send chunk to UI callback.
                         onOutput.accept(new String(tmp, 0, i));
                     }
                     if (channel.isClosed()) {
@@ -88,9 +113,14 @@ public class SniffManager {
                         onOutput.accept(exitMessage);
                         break;
                     }
-                    Thread.sleep(500);
+                    try {
+                        Thread.sleep(500);
+                    } catch (Exception ee) {
+                        // Ignored
+                    }
                 }
             } catch (JSchException e) {
+                // Specific SSH error handling.
                 String errorMessage = e.getMessage();
                 if (errorMessage.contains("Auth fail")) {
                     onOutput.accept("SSH Error: Authentication failed. Please check your password.");
@@ -106,6 +136,7 @@ public class SniffManager {
                 onOutput.accept("An unexpected error occurred: " + e.getMessage());
                 e.printStackTrace();
             } finally {
+                // Ensure cleanup happens.
                 stopSniffing();
             }
         }).start();

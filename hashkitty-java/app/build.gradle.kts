@@ -13,6 +13,7 @@ dependencies {
     // JavaFX
     implementation(libs.javafx.controls)
     implementation(libs.javafx.fxml)
+    implementation(libs.javafx.web) // Added for WebView
 
     // QR Code Generation (ZXing)
     implementation(libs.zxing.core)
@@ -64,5 +65,5 @@ tasks.named<Test>("test") {
 
 javafx {
     version = libs.versions.javafx.get()
-    modules = listOf("javafx.controls", "javafx.fxml")
+    modules = listOf("javafx.controls", "javafx.fxml", "javafx.web")
 }

@@ -18,6 +18,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 java-websocket = { module = "org.java-websocket:Java-WebSocket", version.ref = "java-websocket" }
 javafx-controls = { module = "org.openjfx:javafx-controls", version.ref = "javafx" }
 javafx-fxml = { module = "org.openjfx:javafx-fxml", version.ref = "javafx" }
+javafx-web = { module = "org.openjfx:javafx-web", version.ref = "javafx" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }

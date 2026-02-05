@@ -8,23 +8,44 @@ import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import org.jsoup.Jsoup
 
+/**
+ * API client for interacting with the hashcat.net/cap2hashcat/ service.
+ * <p>
+ * This service converts .pcap/.pcapng capture files containing WPA handshakes
+ * into the .hc22000 format required by modern Hashcat versions.
+ * </p>
+ */
 class Cap2HashcatApiClient {
 
     companion object {
+        /** The URL of the conversion service. */
         private const val CAP2HASHCAT_URL = "https://hashcat.net/cap2hashcat/"
     }
 
+    /** Dedicated HTTP client for this service. */
     private val client = HttpClient(CIO)
 
+    /**
+     * Closes the underlying HTTP client resources.
+     */
     fun close() {
         client.close()
     }
 
+    /**
+     * Uploads a PCAP file to the conversion service and retrieves the converted hash string.
+     *
+     * @param file The byte array content of the .pcap file.
+     * @return The converted hash string (or status message) extracted from the response.
+     * @throws Exception if upload or parsing fails.
+     */
     suspend fun uploadPcapngFile(file: ByteArray): String {
+        // Perform a multipart POST request.
         val response = client.post(CAP2HASHCAT_URL) {
             setBody(
                 MultiPartFormDataContent(
                     formData {
+                        // Append the file part.
                         append("pcap", file, Headers.build {
                             append(HttpHeaders.ContentType, "application/vnd.tcpdump.pcap")
                             append(HttpHeaders.ContentDisposition, "filename=\"capture.pcapng\"")
@@ -35,14 +56,16 @@ class Cap2HashcatApiClient {
         }
         val responseBody = response.body<String>()
 
-        // Use Jsoup to reliably parse the HTML response
+        // The service returns an HTML page. We must parse it to find the output.
+        // The output is typically inside a <textarea> element.
         val doc = Jsoup.parse(responseBody)
-        val textarea = doc.select("textarea").firstOrNull() // Select the first textarea, or null
+        val textarea = doc.select("textarea").firstOrNull()
 
         return if (textarea != null) {
+            // Success: Return the content of the textarea.
             textarea.text().trim()
         } else {
-            // If the textarea is not found, return empty string or throw an exception
+            // Failure: Return empty string (or ideally parse error message from HTML).
             ""
         }
     }
