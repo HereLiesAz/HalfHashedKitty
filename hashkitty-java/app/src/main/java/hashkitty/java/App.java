@@ -1,5 +1,8 @@
 package hashkitty.java;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import hashkitty.java.attack.AttackParams;
 import hashkitty.java.hashcat.HashcatManager;
 import hashkitty.java.model.RemoteConnection;
 import hashkitty.java.relay.RelayClient;
@@ -29,8 +32,6 @@ import javafx.scene.layout.HBox;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import net.lingala.zip4j.exception.ZipException;
@@ -49,14 +50,7 @@ import java.util.UUID;
  * The main entry point and controller for the HashKitty JavaFX desktop application.
  * <p>
  * This class extends {@link Application} and manages the primary lifecycle of the GUI.
- * Its responsibilities include:
- * <ul>
- *     <li>Initializing the main UI layout and Scene.</li>
- *     <li>Starting and stopping background services (Relay Server, Hashcat Manager).</li>
- *     <li>Handling global application state (Remote Connections list).</li>
- *     <li>Loading and navigating between different functional tabs (Attack, Settings, etc.).</li>
- *     <li>Displaying global status updates and cracked passwords.</li>
- * </ul>
+ * It coordinates the various modules (Hashcat, Relay, Sniffer) and manages global state.
  * </p>
  */
 public class App extends Application {
@@ -84,6 +78,10 @@ public class App extends Application {
     /** Client to connect to the Relay Server (even the local one). */
     private RelayClient relayClient;
 
+    // Helpers
+    /** Gson instance for JSON parsing. */
+    private final Gson gson = new Gson();
+
     // Stage and Scene
     /** Reference to the primary window stage. */
     private Stage primaryStage;
@@ -101,8 +99,7 @@ public class App extends Application {
     /**
      * The main entry point for JavaFX applications.
      *
-     * @param primaryStage The primary stage for this application, onto which
-     *                     the application scene can be set.
+     * @param primaryStage The primary stage for this application.
      */
     @Override
     public void start(Stage primaryStage) {
@@ -114,9 +111,6 @@ public class App extends Application {
         remoteConnections.add(new RemoteConnection("cloud-cracker", "user@some-vps.com"));
 
         // Initialize the HashcatManager with callbacks for UI updates.
-        // Callback 1: Display cracked password.
-        // Callback 2: Append to status log.
-        // Callback 3: On complete (noop here).
         hashcatManager = new HashcatManager(this::displayCrackedPassword, this::updateStatus, () -> {});
 
         // Initialize the RelayProcessManager.
@@ -135,7 +129,6 @@ public class App extends Application {
 
         // Create the center section (Tabs).
         TabPane tabPane = new TabPane();
-        // Add all functional tabs.
         tabPane.getTabs().addAll(
                 new Tab("Attack", loadAttackScreen()),
                 new Tab("Wordlist", loadFxmlScreen("Wordlist")),
@@ -147,7 +140,6 @@ public class App extends Application {
                 new Tab("Learn", loadLearnScreen()),
                 new Tab("Hashcat Setup", loadHashcatSetupScreen())
         );
-        // Prevent users from closing tabs.
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         mainLayout.setCenter(tabPane);
 
@@ -203,7 +195,7 @@ public class App extends Application {
             updateStatus("Attempting to connect to local relay server...");
             // Initiate connection.
             relayClient.connect();
-            // Update the QR code with the actual IP address once connected logic flow allows (or immediately).
+            // Update the QR code.
             updateQRCode();
         } catch (URISyntaxException e) {
             ErrorUtil.showError("Connection Error", "Invalid relay server URI.");
@@ -213,42 +205,53 @@ public class App extends Application {
 
     /**
      * Handles incoming messages from the Relay Server.
-     * This is where remote commands from the Android app are processed.
+     * This processes commands received from the Android client.
      *
-     * @param message The parsed message object.
+     * @param message The parsed message object (outer envelope).
      */
     private void handleRelayMessage(RelayClient.Message message) {
         // Check if the message is a command to start an attack.
         if ("attack".equalsIgnoreCase(message.getType())) {
-            updateStatus("Received remote attack command for hash: " + message.getHash());
             try {
-                // Hardcoded defaults for remote attacks (MVP).
-                String wordlistPath = "/app/test-hashes-short.txt";
+                // Deserialize the payload into AttackParams.
+                AttackParams params = gson.fromJson(message.getPayload(), AttackParams.class);
+
+                updateStatus("Received remote attack command for job: " + params.jobId);
+
+                // Map the attack mode ID to string ("0" -> "Dictionary", "3" -> "Mask").
+                String attackModeName = "3".equals(params.attackMode) ? "Mask" : "Dictionary";
+
                 // Start the attack using the HashcatManager.
-                hashcatManager.startAttackWithString(message.getHash(), message.getMode(), "Dictionary", wordlistPath, null);
-            } catch (IOException e) {
-                ErrorUtil.showError("Remote Attack Error", "Error starting remote attack: " + e.getMessage());
+                // We assume file paths provided in params are valid on this machine.
+                // Force=true is safer for remote execution to avoid prompts.
+                hashcatManager.startAttackWithFile(
+                    params.file,
+                    params.mode,
+                    attackModeName,
+                    ("Dictionary".equals(attackModeName) ? params.wordlist : params.wordlist), // target logic depends on mode
+                    params.rules,
+                    true,
+                    false,
+                    null
+                );
+            } catch (JsonSyntaxException | IOException e) {
+                ErrorUtil.showError("Remote Attack Error", "Error processing remote attack command: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
 
     /**
      * Generates and updates the QR code displayed in the UI.
-     * The QR code contains the WebSocket URL including the local IP and Room ID.
      */
     private void updateQRCode() {
-        // Get the local network IP address.
         String ipAddress = NetworkUtil.getLocalIpAddress();
-        // Lookup UI elements (not ideal, better to keep references, but works for this structure).
         ImageView qrCodeView = (ImageView) mainScene.getRoot().lookup("#qrCodeView");
         Label connectionLabel = (Label) mainScene.getRoot().lookup("#connectionLabel");
 
         if (ipAddress != null && qrCodeView != null && connectionLabel != null) {
-            // Construct the connection string.
             String connectionString = "ws://" + ipAddress + ":" + RELAY_PORT + "/ws?roomId=" + roomId;
-            // Generate the QR image.
             qrCodeView.setImage(QRCodeUtil.generateQRCodeImage(connectionString, QR_CODE_SIZE, QR_CODE_SIZE));
-            // Update the text label.
             connectionLabel.setText("Scan to join room: " + roomId);
         } else if (connectionLabel != null) {
             connectionLabel.setText("Could not determine local IP address.");
@@ -257,8 +260,6 @@ public class App extends Application {
 
     /**
      * Creates the UI container for the connection info (QR code).
-     *
-     * @return A VBox containing the connection UI.
      */
     private VBox createConnectionBox() {
         VBox box = new VBox(10);
@@ -266,11 +267,9 @@ public class App extends Application {
         box.setPadding(new Insets(10));
         box.setStyle("-fx-border-color: lightgray; -fx-border-width: 1;");
 
-        // Image view for the QR code.
         ImageView qrCodeView = new ImageView();
         qrCodeView.setId("qrCodeView");
 
-        // Label for status text.
         Label connectionLabel = new Label("Initializing Relay Server...");
         connectionLabel.setId("connectionLabel");
 
@@ -280,18 +279,14 @@ public class App extends Application {
 
     /**
      * Loads the "Attack" screen from FXML and initializes its controller.
-     *
-     * @return The root Node of the Attack screen.
      */
     private Node loadAttackScreen() {
         try {
             String fxmlPath = "/fxml/Attack.fxml";
-            // Load resource bundle for localization.
             ResourceBundle bundle = ResourceBundle.getBundle("messages");
             FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath), bundle);
             Parent root = fxmlLoader.load();
 
-            // Inject dependencies into the controller.
             AttackController controller = fxmlLoader.getController();
             controller.initData(this, hashcatManager, primaryStage);
 
@@ -304,10 +299,6 @@ public class App extends Application {
 
     /**
      * Helper method to load a generic FXML screen by name.
-     *
-     * @param fxml The name of the FXML file (without extension).
-     * @return The loaded Parent node.
-     * @throws IOException If loading fails.
      */
     private Parent loadFxml(String fxml) throws IOException {
         String fxmlPath = "/fxml/" + fxml + ".fxml";
@@ -316,12 +307,6 @@ public class App extends Application {
         return fxmlLoader.load();
     }
 
-    /**
-     * Wrapper around loadFxml to handle exceptions and return a placeholder on error.
-     *
-     * @param fxml The screen name.
-     * @return The Node.
-     */
     private Node loadFxmlScreen(String fxml) {
         try {
             return loadFxml(fxml);
@@ -331,9 +316,6 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Loads the Learn screen (wrapper for consistency).
-     */
     private Node loadLearnScreen() {
         try {
             return loadFxml("Learn");
@@ -343,9 +325,6 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Loads the Settings screen and initializes its controller.
-     */
     private Node loadSettingsScreen() {
         try {
             String fxmlPath = "/fxml/Settings.fxml";
@@ -353,7 +332,6 @@ public class App extends Application {
             FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxmlPath), bundle);
             Parent root = fxmlLoader.load();
 
-            // Inject the App instance and the shared connections list.
             SettingsController controller = fxmlLoader.getController();
             controller.initData(this, remoteConnections);
 
@@ -364,17 +342,10 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Applies the specified CSS theme to the main scene.
-     *
-     * @param themeName The name of the theme (currently only "Dark" is implemented).
-     */
     public void applyTheme(String themeName) {
-        // Clear existing stylesheets.
         mainScene.getStylesheets().clear();
         if ("Dark".equals(themeName)) {
             try {
-                // Load the dark theme CSS.
                 String css = this.getClass().getResource("/styles/dark-theme.css").toExternalForm();
                 mainScene.getStylesheets().add(css);
                 updateStatus("Applied Dark Theme.");
@@ -387,9 +358,6 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Loads the Hashcat Setup screen.
-     */
     private Node loadHashcatSetupScreen() {
         try {
             return loadFxml("HashcatSetup");
@@ -399,9 +367,6 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Loads the Sniff screen and initializes its controller.
-     */
     private Node loadSniffScreen() {
         try {
             String fxmlPath = "/fxml/Sniff.fxml";
@@ -417,17 +382,12 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Handles the export of remote connections to an encrypted file.
-     * Called from SettingsController.
-     */
     public void handleExport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
         File file = fileChooser.showSaveDialog(primaryStage);
         if (file != null) {
-            // Prompt for a password to encrypt the archive.
             TextInputDialog passwordDialog = new TextInputDialog();
             passwordDialog.setTitle("Set Export Password");
             passwordDialog.setHeaderText("Enter a password to protect the .hhk file.");
@@ -435,7 +395,6 @@ public class App extends Application {
             Optional<String> result = passwordDialog.showAndWait();
             result.ifPresent(password -> {
                 try {
-                    // Delegate export logic to utility class.
                     HhkUtil.exportConnections(file, password, new ArrayList<>(remoteConnections));
                     updateStatus("Successfully exported connections.");
                 } catch (IOException ex) {
@@ -445,17 +404,12 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Handles the import of remote connections from an encrypted file.
-     * Called from SettingsController.
-     */
     public void handleImport() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Import Connections");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("HashKitty Config", "*.hhk"));
         File file = fileChooser.showOpenDialog(primaryStage);
         if (file != null) {
-            // Prompt for the decryption password.
             TextInputDialog passwordDialog = new TextInputDialog();
             passwordDialog.setTitle("Enter Import Password");
             passwordDialog.setHeaderText("Enter the password for " + file.getName());
@@ -463,9 +417,7 @@ public class App extends Application {
             Optional<String> result = passwordDialog.showAndWait();
             result.ifPresent(password -> {
                 try {
-                    // Delegate import logic to utility class.
                     List<RemoteConnection> imported = HhkUtil.importConnections(file, password);
-                    // Update the list.
                     remoteConnections.clear();
                     remoteConnections.addAll(imported);
                     updateStatus("Successfully imported " + imported.size() + " connections.");
@@ -478,17 +430,12 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Shows a dialog to manually add a new remote connection.
-     * Used by SettingsController/SniffController.
-     */
     public void showAddRemoteDialog() {
         Dialog<RemoteConnection> dialog = new Dialog<>();
         dialog.setTitle("Add New Remote");
         ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
 
-        // Layout controls.
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -506,12 +453,10 @@ public class App extends Application {
 
         dialog.getDialogPane().setContent(grid);
 
-        // Validate input: Disable Add button if name is empty.
         Node addButton = dialog.getDialogPane().lookupButton(addButtonType);
         addButton.setDisable(true);
         nameField.textProperty().addListener((observable, oldValue, newValue) -> addButton.setDisable(newValue.trim().isEmpty()));
 
-        // Convert result to RemoteConnection object.
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == addButtonType) {
                 return new RemoteConnection(nameField.getText(), connectionStringField.getText());
@@ -519,29 +464,20 @@ public class App extends Application {
             return null;
         });
 
-        // Show dialog and wait for result.
         Optional<RemoteConnection> result = dialog.showAndWait();
         result.ifPresent(remoteConnections::add);
     }
 
-    /**
-     * Creates the bottom section of the UI (Status Log and Cracked Password display).
-     *
-     * @return The VBox containing the results UI.
-     */
     private VBox createResultsBox() {
-        // Log area.
         statusLog = new TextArea();
         statusLog.setEditable(false);
         statusLog.setPrefHeight(100);
 
-        // Cracked password label.
         crackedPasswordLabel = new Label("Cracked Password: N/A");
         crackedPasswordLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        // HIBP Check Button.
         hibpCheckButton = new Button("Check HIBP for Exposure");
-        hibpCheckButton.setDisable(true); // Disable until a password is cracked.
+        hibpCheckButton.setDisable(true);
         hibpCheckButton.setOnAction(e -> checkHibp());
 
         HBox crackedPasswordBox = new HBox(20, crackedPasswordLabel, hibpCheckButton);
@@ -552,20 +488,10 @@ public class App extends Application {
         return box;
     }
 
-    /**
-     * Appends a message to the status log in a thread-safe manner.
-     *
-     * @param message The message to log.
-     */
     public void updateStatus(String message) {
         Platform.runLater(() -> statusLog.appendText(message + "\n"));
     }
 
-    /**
-     * Updates the UI when a password is successfully cracked.
-     *
-     * @param password The cracked password.
-     */
     private void displayCrackedPassword(String password) {
         Platform.runLater(() -> {
             lastCrackedPassword = password;
@@ -573,7 +499,6 @@ public class App extends Application {
             crackedPasswordLabel.setText("Cracked Password: " + password);
             updateStatus("SUCCESS: Password found! -> " + password);
 
-            // Forward the result to the Relay Server so connected mobiles are notified.
             if (relayClient != null && relayClient.isOpen()) {
                 RelayClient.Message crackedMessage = new RelayClient.Message();
                 crackedMessage.setType("cracked");
@@ -584,18 +509,13 @@ public class App extends Application {
         });
     }
 
-    /**
-     * Checks the currently displayed cracked password against the Have I Been Pwned API.
-     * Runs asynchronously to avoid blocking the UI thread.
-     */
     private void checkHibp() {
         if (lastCrackedPassword == null || lastCrackedPassword.isEmpty()) {
             return;
         }
-        hibpCheckButton.setDisable(true); // Disable while checking
+        hibpCheckButton.setDisable(true);
         updateStatus("Checking password '" + lastCrackedPassword + "' against HIBP database...");
 
-        // Run the check on a background thread.
         new Thread(() -> {
             try {
                 int count = HibpUtil.checkPassword(lastCrackedPassword);
@@ -617,7 +537,7 @@ public class App extends Application {
                     ErrorUtil.showError("HIBP API Error", "Failed to check password: " + e.getMessage());
                 });
             } finally {
-                Platform.runLater(() -> hibpCheckButton.setDisable(false)); // Re-enable the button
+                Platform.runLater(() -> hibpCheckButton.setDisable(false));
             }
         }).start();
     }

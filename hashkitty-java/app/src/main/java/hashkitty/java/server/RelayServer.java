@@ -29,8 +29,8 @@ import java.util.function.Consumer;
  * <ol>
  *     <li>Clients connect via WebSocket.</li>
  *     <li>Client sends a "join" message with a {@code roomId}.</li>
- *     <li>Server adds client to that room's set.</li>
- *     <li>When a client sends a message, the server broadcasts it to all *other* clients in that room.</li>
+ *     <li>Server validates and associates the client connection with that room.</li>
+ *     <li>When a client sends a message, the server broadcasts it to all *other* clients in that room (enforcing the room associated with the session).</li>
  * </ol>
  * </p>
  */
@@ -42,6 +42,13 @@ public class RelayServer extends WebSocketServer {
      * Value: A thread-safe Set of WebSocket connections.
      */
     private final Map<String, Set<WebSocket>> rooms = new ConcurrentHashMap<>();
+
+    /**
+     * Stores the room ID associated with each WebSocket connection.
+     * Key: WebSocket connection.
+     * Value: Room ID (String).
+     */
+    private final Map<WebSocket, String> connectionRoomMap = new ConcurrentHashMap<>();
 
     /**
      * Gson instance for JSON operations.
@@ -119,19 +126,30 @@ public class RelayServer extends WebSocketServer {
             // Parse the message.
             Message msg = gson.fromJson(message, Message.class);
 
-            // Validate that a room ID is present (essential for relay logic).
-            if (msg.getRoomId() == null || msg.getRoomId().isEmpty()) return;
-
             // Handle specific command types.
             if ("join".equalsIgnoreCase(msg.getType())) {
-                joinRoom(conn, msg.getRoomId());
-            } else if ("attack".equalsIgnoreCase(msg.getType())) {
-                // If this server is also the worker (Desktop App hosting relay), handle the attack.
-                handleAttack(msg);
+                // Client requesting to join a room.
+                if (msg.getRoomId() != null && !msg.getRoomId().isEmpty()) {
+                    joinRoom(conn, msg.getRoomId());
+                }
+            } else {
+                // Determine the correct room based on the authenticated session, not the payload.
+                String sessionRoomId = connectionRoomMap.get(conn);
+                if (sessionRoomId != null) {
+                    if ("attack".equalsIgnoreCase(msg.getType())) {
+                        // Inject the trusted room ID into the message for internal handling
+                        msg.setRoomId(sessionRoomId);
+                        // If this server is also the worker (Desktop App hosting relay), handle the attack.
+                        handleAttack(msg);
+                    }
+                    // The core relay function: Broadcast the message to everyone else in the room.
+                    broadcastToRoom(conn, sessionRoomId, message);
+                } else {
+                    // Client tried to send a message without joining a room first.
+                    // Silently ignore or log warning.
+                    onStatusUpdate.accept("Warning: Client tried to send message without joining a room.");
+                }
             }
-
-            // The core relay function: Broadcast the message to everyone else in the room.
-            broadcastToRoom(conn, msg.getRoomId(), message);
 
         } catch (JsonSyntaxException e) {
             System.err.println("Failed to parse message: " + message);
@@ -232,6 +250,9 @@ public class RelayServer extends WebSocketServer {
         // computeIfAbsent is atomic, ensuring thread safety.
         rooms.computeIfAbsent(roomId, k -> Collections.newSetFromMap(new ConcurrentHashMap<>())).add(conn);
 
+        // Map the connection to the room ID for secure lookup later.
+        connectionRoomMap.put(conn, roomId);
+
         System.out.println("Client " + conn.getRemoteSocketAddress() + " joined room " + roomId);
         onStatusUpdate.accept("Client joined room: " + roomId);
     }
@@ -262,17 +283,19 @@ public class RelayServer extends WebSocketServer {
      * @param conn The connection to remove.
      */
     private void removeConnectionFromAllRooms(WebSocket conn) {
-        // Iterate over all rooms.
-        for (Map.Entry<String, Set<WebSocket>> entry : rooms.entrySet()) {
-            // Attempt to remove the connection from the set.
-            if (entry.getValue().remove(conn)) {
-                System.out.println("Client " + conn.getRemoteSocketAddress() + " removed from room " + entry.getKey());
+        // Use the map for O(1) lookup of the room ID.
+        String roomId = connectionRoomMap.remove(conn);
+
+        if (roomId != null) {
+            Set<WebSocket> roomClients = rooms.get(roomId);
+            if (roomClients != null) {
+                roomClients.remove(conn);
+                System.out.println("Client " + conn.getRemoteSocketAddress() + " removed from room " + roomId);
+
                 // If the room is now empty, remove the room entry entirely to save memory.
-                if (entry.getValue().isEmpty()) {
-                    rooms.remove(entry.getKey());
+                if (roomClients.isEmpty()) {
+                    rooms.remove(roomId);
                 }
-                // A client is assumed to be in at most one room, so we can stop looking.
-                break;
             }
         }
     }
@@ -294,5 +317,6 @@ public class RelayServer extends WebSocketServer {
         public String getHash() { return hash; }
         public String getMode() { return mode; }
         public void setPayload(String payload) { this.payload = payload; }
+        public String getPayload() { return payload; }
     }
 }

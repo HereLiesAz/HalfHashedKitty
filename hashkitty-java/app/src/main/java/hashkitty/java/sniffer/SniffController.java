@@ -1,13 +1,12 @@
 package hashkitty.java.sniffer;
 
+import com.jcraft.jsch.UserInfo;
 import hashkitty.java.App;
 import hashkitty.java.model.RemoteConnection;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 
 import java.io.BufferedReader;
@@ -15,6 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Controller class for the "Sniff" tab in the user interface.
@@ -92,7 +93,10 @@ public class SniffController {
         // Wait for user input.
         Optional<String> result = passwordDialog.showAndWait();
         // If user entered a password and clicked OK, start the sniffing session.
-        result.ifPresent(password -> sniffManager.startSniffing(selected, password));
+        result.ifPresent(password -> {
+            UserInfo userInfo = new JavaFxUserInfo();
+            sniffManager.startSniffing(selected, password, userInfo);
+        });
     }
 
     /**
@@ -166,6 +170,61 @@ public class SniffController {
                     Platform.runLater(() -> sniffOutput.appendText("PCAP analysis was interrupted.\n"));
                 }
             }).start();
+        }
+    }
+
+    /**
+     * Inner class implementing JSch UserInfo to handle interactive prompts (host keys).
+     * This class uses JavaFX Alerts to prompt the user on the UI thread, blocking the SSH thread until response.
+     */
+    private class JavaFxUserInfo implements UserInfo {
+        @Override
+        public String getPassphrase() { return null; }
+
+        @Override
+        public String getPassword() { return null; }
+
+        @Override
+        public boolean promptPassword(String message) { return false; }
+
+        @Override
+        public boolean promptPassphrase(String message) { return false; }
+
+        @Override
+        public boolean promptYesNo(String message) {
+            // Need to prompt user on FX Thread and wait for result.
+            AtomicBoolean result = new AtomicBoolean(false);
+            CountDownLatch latch = new CountDownLatch(1);
+
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("SSH Security Warning");
+                alert.setHeaderText("Unknown Host Key");
+                alert.setContentText(message);
+
+                Optional<ButtonType> buttonType = alert.showAndWait();
+                if (buttonType.isPresent() && buttonType.get() == ButtonType.OK) {
+                    result.set(true);
+                }
+                latch.countDown();
+            });
+
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return result.get();
+        }
+
+        @Override
+        public void showMessage(String message) {
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("SSH Info");
+                alert.setContentText(message);
+                alert.showAndWait();
+            });
         }
     }
 }

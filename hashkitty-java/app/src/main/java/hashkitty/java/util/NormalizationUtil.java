@@ -1,6 +1,10 @@
 package hashkitty.java.util;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,7 +20,7 @@ public class NormalizationUtil {
 
     /**
      * Reads an input file, attempts to extract valid hashes, removes duplicates, and writes
-     * the result to a temporary file.
+     * the result to a secure temporary file.
      *
      * @param inputFile The raw file provided by the user (e.g., a potfile or dump).
      * @return A {@link File} object pointing to the temporary file containing clean hashes.
@@ -67,8 +71,24 @@ public class NormalizationUtil {
             throw new IOException("No valid hashes could be extracted from the input file.");
         }
 
-        // Create a temporary file to store the result.
-        File tempFile = File.createTempFile("normalized_hashes_", ".txt");
+        // Create a temporary file securely.
+        Path tempPath;
+        try {
+            // Attempt to use POSIX permissions (owner read/write only) if supported.
+            Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
+            tempPath = Files.createTempFile("normalized_hashes_", ".txt", PosixFilePermissions.asFileAttribute(perms));
+        } catch (UnsupportedOperationException e) {
+            // Fallback for non-POSIX systems (e.g., Windows).
+            // Files.createTempFile creates files with default restricted permissions on modern Windows/JDKs,
+            // but we explicitly lock it down just in case.
+            tempPath = Files.createTempFile("normalized_hashes_", ".txt");
+            File f = tempPath.toFile();
+            f.setReadable(true, true); // Readable by owner only
+            f.setWritable(true, true); // Writable by owner only
+            f.setExecutable(false);
+        }
+
+        File tempFile = tempPath.toFile();
         // Ensure the temp file is deleted when the VM exits (best effort).
         tempFile.deleteOnExit();
 

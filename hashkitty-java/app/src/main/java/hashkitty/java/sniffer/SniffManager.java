@@ -44,8 +44,9 @@ public class SniffManager {
      *
      * @param connection The remote connection details (user and host).
      * @param password   The password for the SSH connection.
+     * @param userInfo   The JSch UserInfo implementation for handling host key verification.
      */
-    public void startSniffing(RemoteConnection connection, String password) {
+    public void startSniffing(RemoteConnection connection, String password, UserInfo userInfo) {
         // Prevent multiple simultaneous sessions.
         if (session != null && session.isConnected()) {
             onOutput.accept("Error: A session is already active. Please stop it first.");
@@ -69,8 +70,11 @@ public class SniffManager {
                 session = jsch.getSession(user, host, 22);
                 session.setPassword(password);
 
-                // Disable strict host key checking for convenience (Note: Lower security).
-                session.setConfig("StrictHostKeyChecking", "no");
+                // Assign the UserInfo for interaction (e.g. host key confirmation).
+                session.setUserInfo(userInfo);
+
+                // Note: We removed "StrictHostKeyChecking=no" to improve security.
+                // The UserInfo callback will be used if the host key is unknown.
 
                 onOutput.accept("Connecting to " + host + "...");
                 // Set connection timeout to 30 seconds.
@@ -128,6 +132,8 @@ public class SniffManager {
                     onOutput.accept("SSH Error: Unknown host. Could not resolve " + connection.getConnectionString());
                 } else if (errorMessage.contains("Connection timed out")) {
                     onOutput.accept("SSH Error: Connection timed out. Check host address and network.");
+                } else if (errorMessage.contains("reject HostKey")) {
+                    onOutput.accept("SSH Error: Host key rejected by user.");
                 } else {
                     onOutput.accept("SSH Error: " + errorMessage);
                 }
