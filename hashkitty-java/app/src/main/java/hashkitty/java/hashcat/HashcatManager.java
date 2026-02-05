@@ -201,7 +201,7 @@ public class HashcatManager {
                     // This is a naive check; a more robust way is to use --outfile or --show.
                     // For now, we look for a colon separator where the first part matches a hash format (simplified).
                     // Actually, a safer heuristic for this MVP is: if line contains ':' and isn't a status line.
-                    if (line.contains(":") && !line.startsWith("Session") && !line.startsWith("Status") && !line.startsWith("Time")) {
+                    if (line.contains(":") && !line.startsWith("Session") && !line.startsWith("Status") && !line.startsWith("Time") && !line.startsWith("Speed.") && !line.startsWith("HWMon.") && !line.startsWith("Input.") && !line.startsWith("Progress.")) {
                          // Parse the password (right side of the last colon).
                          int lastColon = line.lastIndexOf(':');
                          if (lastColon != -1 && lastColon < line.length() - 1) {
